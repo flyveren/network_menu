@@ -1,0 +1,942 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Circular Navigation Demo</title>
+    <link rel="preconnect" href="https://fonts.bunny.net" />
+    <style>
+      @import url(https://fonts.bunny.net/css?family=jura:300,500);
+      @import url("https://fonts.googleapis.com/css2?family=Jersey+10&display=swap");
+      @layer base, demo;
+
+      @layer demo {
+        nav {
+          --degrees: 360deg;
+          --degree-start: -90deg;
+          --radius: 210px;
+          --items: 12;
+
+          --icon-size: 60px;
+          --icon-padding: 1rem;
+          --icon-clr: rgb(241, 245, 249);
+          --icon-clr-hover: white;
+
+          --nav-trans-duration: 300ms;
+          --nav-trans-easing: ease-in-out;
+
+          position: fixed;
+          inset: 0;
+          margin: auto;
+          width: 160px;
+          height: 160px;
+          border-radius: 50%;
+          color: white;
+          transition: transform var(--nav-trans-duration) var(--nav-trans-easing),
+            opacity var(--nav-trans-duration) var(--nav-trans-easing);
+        }
+
+        nav .nav-backdrop {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 520px;
+          height: 520px;
+          transform: translate(-50%, -50%) scale(0.2);
+          border-radius: 50%;
+          background-color: rgba(37, 99, 235, 0.15);
+          background-color: rgba(37, 99, 235, 0.15);
+          mask: radial-gradient(circle at center, transparent 0 125px, black 126px 235px, transparent 236px);
+          -webkit-mask: radial-gradient(circle at center, transparent 0 125px, black 126px 235px, transparent 236px);
+          pointer-events: none;
+          z-index: 1;
+          opacity: 0;
+          transition:
+            transform calc(var(--nav-trans-duration) * 2) var(--nav-trans-easing),
+            opacity var(--nav-trans-duration) ease-in-out;
+        }
+
+        nav > button {
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          width: 160px;
+          height: 160px;
+          margin: 0;
+          padding: 0;
+          border-radius: 50%;
+          appearance: none;
+          border: none;
+          background: transparent;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 5;
+          transform: translate(-50%, -50%);
+        }
+
+        nav > button:focus-visible {
+          outline: 2px solid rgba(255, 255, 255, 0.6);
+          outline-offset: 6px;
+        }
+
+        nav > button img {
+          width: 110px;
+          height: auto;
+          pointer-events: none;
+          filter: drop-shadow(0 0 12px rgba(0, 0, 0, 0.45));
+          transition: transform 200ms ease-in-out;
+        }
+
+        nav > button:hover img {
+          transform: scale(1.05);
+        }
+
+        nav > a {
+          --angle: calc(
+            (var(--degrees) / var(--items)) * (var(--i) - 1) + var(--degree-start)
+          );
+          --x: calc(cos(var(--angle)) * var(--radius));
+          --y: calc(sin(var(--angle)) * var(--radius));
+
+          position: absolute;
+          inset: 0;
+          margin: auto;
+          width: calc(var(--icon-size) * 1.2);
+          height: calc(var(--icon-size) * 1.2);
+          padding: calc(var(--icon-padding) * 0.85);
+          border-radius: 50%;
+          display: grid;
+          place-content: center;
+          color: inherit;
+          transition: transform var(--nav-trans-duration) var(--nav-trans-easing),
+            opacity var(--nav-trans-duration) var(--nav-trans-easing);
+          opacity: 0;
+          pointer-events: none;
+          transform: translate(0, 0);
+          z-index: 4;
+        }
+
+        nav > a:nth-of-type(1) {
+          --i: 1;
+        }
+
+        nav > a:nth-of-type(2) {
+          --i: 2;
+        }
+
+        nav > a:nth-of-type(3) {
+          --i: 3;
+        }
+
+        nav > a:nth-of-type(4) {
+          --i: 4;
+        }
+
+        nav > a:nth-of-type(5) {
+          --i: 5;
+        }
+
+        nav > a:nth-of-type(6) {
+          --i: 6;
+        }
+
+        nav > a:nth-of-type(7) {
+          --i: 7;
+        }
+
+        nav > a:nth-of-type(8) {
+          --i: 8;
+        }
+
+        nav > a:nth-of-type(9) {
+          --i: 9;
+        }
+
+        nav > a:nth-of-type(10) {
+          --i: 10;
+        }
+
+        nav > a:nth-of-type(11) {
+          --i: 11;
+        }
+
+        nav > a:nth-of-type(12) {
+          --i: 12;
+        }
+
+        nav > a::after {
+          content: attr(title);
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          translate: -50% 0;
+          font-size: 0.85rem;
+          letter-spacing: 0.02em;
+          opacity: 0;
+          color: white;
+          text-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+          transition: translate 150ms ease-in-out, opacity 150ms ease-in-out;
+          pointer-events: none;
+          white-space: nowrap;
+          padding-inline: 0.4rem;
+          text-align: center;
+        }
+
+        nav > a:hover::after {
+          opacity: 1;
+          translate: -50% 1.35rem;
+        }
+
+        nav > a img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
+          transition: transform 150ms ease-in-out, opacity 150ms ease-in-out;
+        }
+
+        nav > a:hover img {
+          transform: translateY(-0.35rem) scale(1.05);
+        }
+
+        nav[data-expanded="true"] > a {
+          transform: translate(var(--x), var(--y));
+          opacity: 1;
+          pointer-events: auto;
+          transition-delay: calc(var(--nav-trans-duration) * 0.2 * var(--i));
+        }
+
+        nav[data-expanded="false"] > a {
+          transform: translate(0, 0);
+          opacity: 0;
+          pointer-events: none;
+        }
+
+        nav[data-expanded="true"] .nav-backdrop {
+          transform: translate(-50%, -50%) scale(1);
+          opacity: 1;
+          background-color: rgba(37, 99, 235, 0.15);
+          mask: radial-gradient(circle at center, transparent 0 150px, black 151px 260px, transparent 261px);
+          -webkit-mask: radial-gradient(circle at center, transparent 0 150px, black 151px 260px, transparent 261px);
+        }
+
+        .quote-rotator {
+          position: fixed;
+          bottom: 10rem;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 6;
+          font-family: "Jersey 10", cursive;
+          color: #1111ea;
+          font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+          white-space: nowrap;
+          letter-spacing: 0.05em;
+          text-shadow: 0 0 10px rgba(17, 17, 234, 0.4);
+        }
+
+        .github-contrib {
+          position: fixed;
+          bottom: 0rem;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 5;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.5rem;
+          font-family: "Jersey 10", cursive;
+          color: #1111ea;
+          opacity: 0.85;
+          pointer-events: none;
+        }
+
+        .github-contrib-overlay {
+          position: relative;
+          width: min(92vw, 1100px);
+          aspect-ratio: 53 / 7;
+        }
+
+        .github-contrib-overlay canvas {
+          display: block;
+          width: 100%;
+          height: 100%;
+          filter: drop-shadow(0 0 18px rgba(17, 17, 234, 0.25));
+          pointer-events: none;
+        }
+
+        .quote-rotator .caret {
+          display: inline-block;
+          width: 0.55ch;
+          height: 0.82em;
+          margin-left: 0.2rem;
+          margin-bottom: -0.05em;
+          background-color: currentColor;
+          animation: caret-blink 1s steps(2, start) infinite;
+          filter: drop-shadow(0 0 6px rgba(17, 17, 234, 0.4));
+        }
+
+        @keyframes caret-blink {
+          0%,
+          49% {
+            opacity: 1;
+          }
+          50%,
+          100% {
+            opacity: 0;
+          }
+        }
+
+        .static-clock {
+          position: fixed;
+          top: 1.75rem;
+          right: 2.5rem;
+          font-family: "Jersey 10", cursive;
+          font-size: clamp(2.5rem, 6vw, 4.5rem);
+          color: #1111ea;
+          text-shadow: 0 0 16px rgba(17, 17, 234, 0.4);
+          letter-spacing: 0.15em;
+          font-variant-numeric: tabular-nums;
+          text-align: left;
+          z-index: 6;
+          user-select: none;
+          opacity: 0.7;
+        }
+
+        .news-feed {
+          position: fixed;
+          top: 50%;
+          left: clamp(2rem, 6vw, 4rem);
+          transform: translateY(-50%);
+          width: min(24rem, 32vw);
+          max-height: calc(100svh - 6rem);
+          display: flex;
+          flex-direction: column;
+          gap: 0.8rem;
+          padding: 0;
+          background: none;
+          border: none;
+          color: #dbeafe;
+          overflow-y: auto;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(17, 17, 234, 0.4) transparent;
+          z-index: 5;
+        }
+
+        .news-feed ul {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 0.9rem;
+        }
+
+        .news-feed li {
+          display: flex;
+          flex-direction: column;
+          gap: 0.3rem;
+        }
+
+        .news-feed a {
+          color: inherit;
+          text-decoration: none;
+          font-size: 1.15rem;
+          line-height: 1.35;
+          transition: color 160ms ease-in-out, text-shadow 160ms ease-in-out;
+        }
+
+        .news-feed a:hover,
+        .news-feed a:focus-visible {
+          color: #ffffff;
+          text-shadow: 0 0 10px rgba(17, 17, 234, 0.6);
+        }
+
+        .news-feed .news-meta {
+          font-size: 0.85rem;
+          letter-spacing: 0.08em;
+          color: rgba(148, 163, 255, 0.8);
+        }
+
+        .news-feed .news-error {
+          margin: 0;
+          font-size: 0.95rem;
+          color: rgba(255, 117, 117, 0.9);
+          text-shadow: 0 0 8px rgba(255, 25, 25, 0.3);
+        }
+
+        @media (max-width: 1024px) {
+          .news-feed {
+            position: static;
+            width: min(100%, 30rem);
+            max-height: none;
+            margin: 1.5rem auto 0;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .news-feed {
+            display: none;
+          }
+        }
+      }
+
+      @layer base {
+        * {
+          box-sizing: border-box;
+        }
+
+        :root {
+          color-scheme: light dark;
+          --bg-dark: rgb(12, 10, 9);
+          --bg-light: rgb(255, 237, 212);
+          --txt-light: rgb(10, 10, 10);
+          --txt-dark: rgb(245, 245, 245);
+        }
+
+        body {
+          position: relative;
+          background-color: light-dark(var(--bg-light), var(--bg-dark));
+          color: light-dark(var(--txt-light), var(--txt-dark));
+          min-height: 100svh;
+          margin: 0;
+          padding: 1rem;
+          font-family: "Jura", sans-serif;
+          font-size: 1rem;
+          line-height: 1.5;
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+          place-items: center;
+        }
+
+        body > *:not(.background-video, .background-overlay) {
+          position: relative;
+          z-index: 1;
+        }
+
+        .background-video {
+          position: fixed;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          z-index: -2;
+          pointer-events: none;
+        }
+
+        .background-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.80);
+          z-index: -1;
+          pointer-events: none;
+        }
+
+      }
+    </style>
+  </head>
+  <body>
+    <video
+      class="background-video"
+      id="background-video"
+      autoplay
+      muted
+      loop
+      playsinline
+      aria-hidden="true"
+    ></video>
+    <div class="background-overlay" aria-hidden="true"></div>
+    <nav aria-label="Main navigation (collapsed)" data-expanded="false">
+      <div class="nav-backdrop" aria-hidden="true"></div>
+      <button
+        type="button"
+        id="btn-nav-toggle"
+        aria-expanded="false"
+        aria-controls="nav-menu"
+        aria-label="Toggle navigation menu"
+      >
+        <img src="./LOGO.png" alt="Navigation" />
+      </button>
+
+      <a href="http://192.168.1.100:8096/web/#/home.html" title="Jellyfin" aria-label="Jellyfin">
+        <img src="./icons/128px-Jellyfin_-_icon-transparent.svg.png" alt="Jellyfin" />
+      </a>
+
+      <a href="http://192.168.1.100:5055/" title="Jellyseerr" aria-label="Jellyseerr">
+        <img src="./icons/Jellyseer_-_logo_filled.png" alt="Jellyseerr" />
+      </a>
+
+      <a href="#http://192.168.1.100:7878/" title="Radarr" aria-label="Radarr">
+        <img src="./icons/radarr.png" alt="Radarr" />
+      </a>
+
+      <a href="http://192.168.1.100:8989/" title="Sonarr" aria-label="Sonarr">
+        <img src="./icons/sonarr.png" alt="Sonarr" />
+      </a>
+
+      <a href="http://192.168.1.100:8686/" title="Lidarr" aria-label="Lidarr">
+        <img src="./icons/lidarr.png" alt="Lidarr" />
+      </a>
+
+      <a href="http://192.168.1.100:9696/" title="Prowlarr" aria-label="Prowlarr">
+        <img src="./icons/prowlarr.png" alt="Prowlarr" />
+      </a>
+
+      <a href="http://192.168.1.100:6789/" title="NZBGet" aria-label="NZBGet">
+        <img src="./icons/nzbget.png" alt="NZBGet" />
+      </a>
+
+      <a href="http://192.168.1.100:13378/" title="Audiobookshelf" aria-label="Audiobookshelf">
+        <img src="./icons/audiobookshelf.png" alt="Audiobookshelf" />
+      </a>
+
+      <a href="https://192.168.1.100:9443/#!/home" title="Portainer" aria-label="Portainer">
+        <img src="./icons/portainer_logo.png" alt="Portainer" />
+      </a>
+
+      <a href="http://192.168.1.100:9180/" title="Feishin" aria-label="Feishin">
+        <img src="./icons/feishin.png" alt="Feishin" />
+      </a>
+
+      <a href="http://192.168.1.100:8443/" title="VS Code" aria-label="VS Code">
+        <img src="./icons/vscode.png" alt="VS Code" />
+      </a>
+
+      <a href="http://192.168.1.167:8888/tree?" title="Jupyter" aria-label="Jupyter">
+        <img src="./icons/jupyter.png" alt="Jupyter" />
+      </a>
+    </nav>
+
+    <div class="quote-rotator" aria-live="polite">
+      <span id="quote-text"></span>
+      <span class="caret" aria-hidden="true"></span>
+    </div>
+    <div class="github-contrib">
+      <div class="github-contrib-overlay">
+        <canvas id="github-grid" aria-hidden="true"></canvas>
+      </div>
+    </div>
+    <div class="static-clock" id="static-clock" aria-live="off">--:--</div>
+    <aside class="news-feed" aria-label="Latest headlines from wallnot.dk">
+      <ul id="news-list" aria-live="polite"></ul>
+      <p class="news-error" id="news-error" hidden>
+        Unable to load headlines right now.
+      </p>
+    </aside>
+
+    <script>
+      const btnNav = document.getElementById("btn-nav-toggle");
+      const nav = btnNav.closest("nav");
+
+      btnNav.addEventListener("click", () => {
+        const isExpanded = btnNav.getAttribute("aria-expanded") === "true";
+        btnNav.setAttribute("aria-expanded", isExpanded ? "false" : "true");
+        nav.dataset.expanded = isExpanded ? "false" : "true";
+        nav.setAttribute(
+          "aria-label",
+          isExpanded ? "Main navigation (collapsed)" : "Main navigation (expanded)"
+        );
+      });
+
+      const quotes = [
+        "There are 10 kinds of people: those who understand binary and those who don't.",
+        "It's not a bug; it's an undocumented feature.",
+        "Sudo make me a sandwich... and it actually works.",
+        "In a world full of bits, be an open source byte.",
+        "I read manuals for the plot twists.",
+        "The cloud is just someone else's computer.",
+        "Never underestimate the bandwidth of a station wagon full of tapes.",
+        "Talk is cheap. Show me the shell script.",
+        "To iterate is human, to recurse divine.",
+        "Keep calm and clear the cache.",
+        "Beware of programmers with a soldering iron.",
+        "I void warranties professionally.",
+        "Home is where the Wi-Fi auto-connects.",
+        "Eat, sleep, commit, repeat.",
+        "May the source be with you.",
+        "I survived another refactor and all I got was better code.",
+        "Real devs ship on Friday (with tests).",
+        "Cache rules everything around me.",
+        "Shift happens; brace yourself.",
+        "0xC0FFEE is always a good idea.",
+        "While(true) { coffee(); }",
+        "My other computer is a data center.",
+        "First, solve the problem. Then, write the code.",
+        "I dream in semicolons.",
+        "Git happens.",
+        "Keep your friends close and your backups closer.",
+        "There is no place like 127.0.0.1.",
+        "Eat CSS, breathe HTML, dream JavaScript.",
+        "rm -rf doubt",
+        "Undefined is not a function, it's a lifestyle.",
+        "I see deadlocks.",
+        "Arrays start at zero; so do my expectations.",
+        "Silence is golden unless you have a muted mic.",
+        "Wi-Fi or why try?",
+        "My code never bugs; it just develops random features.",
+        "Stack overflow is my spirit animal.",
+        "404: Motivation not found.",
+        "Trust me, I'm root.",
+        "Everything is local when you work from home.",
+        "sudo rm -rf procrastination",
+        "Keep calm and sudo apt-get install coffee.",
+        "Sometimes I debug in production just to feel alive.",
+        "Keyboard not found. Press F1 to continue.",
+        "Legend says there's life outside the terminal.",
+        "Code is poetry, punctuation included.",
+        "Life is short; use Python decorators.",
+        "Friends don't let friends ship without tests.",
+        "Coffee: because adulting is hard.",
+        "Reboots fix 97% of feelings.",
+        "Commit early, commit often, revert rarely.",
+        "I turn caffeine into pull requests.",
+        "My password is the last eight digits of pi.",
+        "When in doubt, blame DNS.",
+        "Hardware: the thing that breaks when my software works.",
+        "The best UX is no stack trace.",
+        "You had me at dark mode.",
+        "Works on my machine is my love language.",
+        "All I want for Christmas is low latency.",
+        "My TODO list is just a suggestion.",
+        "Alt-tab is my cardio.",
+        "Ship it, then go play Factorio.",
+        "Tabs, spaces, and world peace.",
+        "Docstrings are love notes to future me.",
+        "Ping is my heartbeat monitor.",
+        "Version control is cheaper than therapy.",
+        "My weekend forecast: 100% chance of refactoring.",
+        "Hack the planet, secure the logs.",
+        "Ctrl+Z for life.",
+        "Chmod 777 the kitchen, we're cooking tonight.",
+        "Binary sunsets are twice as bright."
+      ];
+
+      const pickRandomQuoteIndex = (excludeIndex = -1) => {
+        if (quotes.length <= 1) {
+          return 0;
+        }
+        let nextIndex;
+        do {
+          nextIndex = Math.floor(Math.random() * quotes.length);
+        } while (nextIndex === excludeIndex);
+        return nextIndex;
+      };
+
+      const quoteElement = document.getElementById("quote-text");
+      let quoteIndex = pickRandomQuoteIndex();
+      let charIndex = 0;
+      let deleting = false;
+
+      const typeDelay = 85;
+      const deleteDelay = 18;
+      const pauseAfterType = 2200;
+      const pauseAfterDelete = 600;
+
+      function typeQuote() {
+        const currentQuote = quotes[quoteIndex];
+
+        if (!deleting) {
+          charIndex = Math.min(charIndex + 1, currentQuote.length);
+          quoteElement.textContent = currentQuote.slice(0, charIndex);
+
+          if (charIndex === currentQuote.length) {
+            deleting = true;
+            setTimeout(typeQuote, pauseAfterType);
+            return;
+          }
+        } else {
+          charIndex = Math.max(charIndex - 1, 0);
+          quoteElement.textContent = currentQuote.slice(0, charIndex);
+
+          if (charIndex === 0) {
+            deleting = false;
+            quoteIndex = pickRandomQuoteIndex(quoteIndex);
+            setTimeout(typeQuote, pauseAfterDelete);
+            return;
+          }
+        }
+
+        const nextDelay = deleting ? deleteDelay : typeDelay;
+        setTimeout(typeQuote, nextDelay);
+      }
+
+      setTimeout(typeQuote, 1500);
+
+      const backgroundVideo = document.getElementById("background-video");
+      const totalBackgroundVideos = 10;
+      if (backgroundVideo) {
+        const randomIndex =
+          Math.floor(Math.random() * totalBackgroundVideos) + 1;
+        const selectedSource = `./backgrounds/background${randomIndex}.mp4`;
+        backgroundVideo.src = selectedSource;
+        backgroundVideo.load();
+      }
+
+      const clockElement = document.getElementById("static-clock");
+
+      function updateClock() {
+        const now = new Date();
+        const formatted = now
+          .toLocaleTimeString("da-DK", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+          })
+          .replace(/\./g, ":");
+        clockElement.textContent = formatted;
+      }
+
+      updateClock();
+      setInterval(updateClock, 1000);
+
+      const newsListElement = document.getElementById("news-list");
+      const newsErrorElement = document.getElementById("news-error");
+
+      async function loadNewsFeed() {
+        if (!newsListElement || !newsErrorElement) return;
+        try {
+          newsErrorElement.hidden = true;
+          const response = await fetch(
+            `data/news.json?ts=${Date.now()}`,
+            {
+              cache: "no-store"
+            }
+          );
+          if (!response.ok) {
+            throw new Error(`News request returned ${response.status}`);
+          }
+          const payload = await response.json();
+          const items = Array.isArray(payload?.items) ? payload.items : [];
+
+          newsListElement.innerHTML = "";
+
+          if (!items.length) {
+            newsErrorElement.textContent = "No headlines available right now.";
+            newsErrorElement.hidden = false;
+            return;
+          }
+
+          const formatter = new Intl.DateTimeFormat("da-DK", {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "2-digit",
+            month: "short"
+          });
+
+          items.forEach((item) => {
+            const li = document.createElement("li");
+
+            if (item?.link) {
+              const link = document.createElement("a");
+              link.href = item.link;
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
+              link.textContent = item?.title?.trim() || "Untitled article";
+              li.appendChild(link);
+            } else {
+              const span = document.createElement("span");
+              span.textContent = item?.title?.trim() || "Untitled article";
+              li.appendChild(span);
+            }
+
+            if (item?.pubDate) {
+              const parsedDate = new Date(item.pubDate);
+              if (!Number.isNaN(parsedDate.valueOf())) {
+                const meta = document.createElement("span");
+                meta.className = "news-meta";
+                meta.textContent = formatter.format(parsedDate);
+                li.appendChild(meta);
+              }
+            }
+
+            newsListElement.appendChild(li);
+          });
+        } catch (error) {
+          console.error("Failed to load news feed:", error);
+          newsListElement.innerHTML = "";
+          newsErrorElement.textContent =
+            "Unable to load headlines right now.";
+          newsErrorElement.hidden = false;
+        }
+      }
+
+      loadNewsFeed();
+      setInterval(loadNewsFeed, 15 * 60 * 1000);
+
+    const gridCanvas = document.getElementById("github-grid");
+    const gridContainer = document.querySelector(".github-contrib-overlay");
+    let contributionMatrix = null;
+
+    async function fetchContributionData(username) {
+      try {
+        const response = await fetch(
+          `/api/contributions?user=${encodeURIComponent(username)}`
+        );
+        if (!response.ok) {
+          throw new Error(`Contribution API returned ${response.status}`);
+        }
+        const payload = await response.json();
+        const contributions = payload?.contributions;
+        if (!Array.isArray(contributions) || contributions.length === 0) {
+          return null;
+        }
+
+        const sorted = contributions
+          .map((entry) => ({
+            ...entry,
+            dateObj: new Date(`${entry.date}T00:00:00Z`),
+          }))
+          .sort((a, b) => a.dateObj - b.dateObj);
+
+        const firstDate = new Date(sorted[0].dateObj);
+        const lastDate = new Date(sorted[sorted.length - 1].dateObj);
+        firstDate.setUTCHours(0, 0, 0, 0);
+        lastDate.setUTCHours(0, 0, 0, 0);
+
+        const endOffset = 6 - lastDate.getUTCDay();
+        const alignedEnd = new Date(lastDate);
+        alignedEnd.setUTCDate(alignedEnd.getUTCDate() + endOffset);
+
+      const totalColumns = 54;
+        const alignedStart = new Date(alignedEnd);
+        alignedStart.setUTCDate(alignedStart.getUTCDate() - (totalColumns * 7 - 1));
+        const startOffset = alignedStart.getUTCDay();
+        alignedStart.setUTCDate(alignedStart.getUTCDate() - startOffset);
+
+        const matrix = Array.from({ length: 7 }, () =>
+          Array(totalColumns).fill(0)
+        );
+
+        sorted.forEach((entry) => {
+          const current = entry.dateObj;
+          const diffDays = Math.floor((current - alignedStart) / 86400000);
+          const column = Math.floor(diffDays / 7);
+          if (column < 0 || column >= totalColumns) {
+            return;
+          }
+          const row = current.getUTCDay();
+          const count = Math.max(entry.count ?? 0, 0);
+          matrix[row][column] = count;
+        });
+
+        return matrix;
+      } catch (error) {
+        console.error("Failed to load contributions:", error);
+        return null;
+      }
+    }
+
+    function ensureRoundRectSupport(ctx) {
+      if (typeof ctx.roundRect !== "function") {
+        CanvasRenderingContext2D.prototype.roundRect = function (
+          x,
+          y,
+          w,
+          h,
+          r = 0
+        ) {
+          const radius = Math.min(r, w / 2, h / 2);
+          this.beginPath();
+          this.moveTo(x + radius, y);
+          this.lineTo(x + w - radius, y);
+          this.quadraticCurveTo(x + w, y, x + w, y + radius);
+          this.lineTo(x + w, y + h - radius);
+          this.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+          this.lineTo(x + radius, y + h);
+          this.quadraticCurveTo(x, y + h, x, y + h - radius);
+          this.lineTo(x, y + radius);
+          this.quadraticCurveTo(x, y, x + radius, y);
+          this.closePath();
+          return this;
+        };
+      }
+    }
+
+    function drawContributionGrid(matrix) {
+      if (!gridCanvas || !gridContainer || !matrix) return;
+
+      const rows = matrix.length;
+      const cols = matrix[0]?.length || 0;
+      if (!rows || !cols) return;
+
+      const gap = 4;
+      const cornerRadius = 2;
+      const dpr = window.devicePixelRatio || 1;
+      const containerWidth = gridContainer.clientWidth || 600;
+      const squareSize = Math.floor(
+        (containerWidth - gap * (cols - 1)) / cols
+      );
+      const canvasWidth = squareSize * cols + gap * (cols - 1);
+      const canvasHeight = squareSize * rows + gap * (rows - 1);
+
+      gridCanvas.width = canvasWidth * dpr;
+      gridCanvas.height = canvasHeight * dpr;
+      gridCanvas.style.width = `${canvasWidth}px`;
+      gridCanvas.style.height = `${canvasHeight}px`;
+
+      const ctx = gridCanvas.getContext("2d");
+      if (!ctx) return;
+
+      ensureRoundRectSupport(ctx);
+
+      ctx.reset?.();
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      const palette = [
+        "rgba(0, 0, 0, 0.7)",
+        "#1d4ed8",
+        "#1e3a8a",
+        "#1824d0",
+        "#1111ea",
+      ];
+      const thresholds = [0, 1, 4, 8, 12];
+
+      for (let col = 0; col < cols; col++) {
+        for (let row = rows - 1; row >= 0; row--) {
+          const count = matrix[row][col] ?? 0;
+          let paletteIndex = 0;
+          for (let i = thresholds.length - 1; i >= 0; i--) {
+            if (count >= thresholds[i]) {
+              paletteIndex = i;
+              break;
+            }
+          }
+          const fillColor = palette[Math.min(paletteIndex, palette.length - 1)];
+          const x = col * (squareSize + gap);
+          const y = row * (squareSize + gap);
+
+          ctx.fillStyle = fillColor;
+          ctx.beginPath();
+          ctx.roundRect(x, y, squareSize, squareSize, cornerRadius);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    fetchContributionData("flyveren").then((matrix) => {
+      contributionMatrix = matrix;
+      if (!gridCanvas) return;
+      if (!contributionMatrix) {
+        gridCanvas.style.display = "none";
+        return;
+      }
+      gridCanvas.style.display = "block";
+      drawContributionGrid(contributionMatrix);
+    });
+
+    window.addEventListener("resize", () => {
+      if (contributionMatrix && gridCanvas) {
+        drawContributionGrid(contributionMatrix);
+      }
+    });
+    </script>
+  </body>
+</html>
+

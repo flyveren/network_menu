@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  navigation:
+    build: .
+    init: true
+    working_dir: /usr/src/app
+    volumes:
+      - ./app:/usr/src/app
+    environment:
+      - NODE_ENV=production
+      - PORT=8081
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    networks:
+      - navigation_net
+
+networks:
+  navigation_net:
+    driver: bridge
+
