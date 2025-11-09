@@ -1,8 +1,18 @@
 {
   "source": "https://wallnot.dk/rss?category=udland",
   "category": "udland",
-  "fetchedAt": "2025-11-09T14:45:06.051502+00:00",
+  "fetchedAt": "2025-11-09T15:30:05.020819+00:00",
   "items": [
+    {
+      "title": "Supertyfonen »Fung-wong« går i land i Filippinerne i aften | Video | Berlingske",
+      "link": "https://www.berlingske.dk/internationalt/supertyfonen-fung-wong-gaar-i-land-i-filippinerne-i-aften",
+      "pubDate": "Sun, 09 Nov 2025 14:41:15 +0100"
+    },
+    {
+      "title": "Krigen i Ukraine – få seneste nyt her | Video | Berlingske",
+      "link": "https://www.berlingske.dk/internationalt/krigen-i-ukraine--faa-seneste-nyt-her-97",
+      "pubDate": "Sun, 09 Nov 2025 14:26:44 +0100"
+    },
     {
       "title": "SAS-fly måtte sikkerhedslande efter akut situation",
       "link": "https://www.bt.dk/udland/sas-fly-maatte-sikkerhedslande-efter-akut-situation",
@@ -52,16 +62,6 @@
       "title": "Forsvandt under stor mystik: Kryptomillionær og hustru fundet parteret i ørken",
       "link": "https://www.bt.dk/udland/forsvandt-under-stor-mystik-kryptomillionaer-og-hustru-fundet-parteret-i-oerken",
       "pubDate": "Sun, 09 Nov 2025 10:40:28 +0100"
-    },
-    {
-      "title": "Hamas vil overdrage liget af israelsk soldat dræbt i 2014",
-      "link": "https://www.kristeligt-dagblad.dk/udland/hamas-vil-overdrage-liget-af-israelsk-soldat-draebt-i-2014",
-      "pubDate": "Sun, 09 Nov 2025 10:19:12 +0100"
-    },
-    {
-      "title": "Syriens præsident på charmetur til Det Hvide Hus | Video | Berlingske",
-      "link": "https://www.berlingske.dk/internationalt/syriens-praesident-paa-charmetur-til-det-hvide-hus",
-      "pubDate": "Sun, 09 Nov 2025 09:56:22 +0100"
     }
   ]
 }

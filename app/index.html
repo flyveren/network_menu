@@ -249,13 +249,14 @@
           font-family: "Jersey 10", cursive;
           color: #1111ea;
           opacity: 0.85;
-          pointer-events: none;
+          pointer-events: auto;
         }
 
         .github-contrib-overlay {
           position: relative;
           width: min(92vw, 1100px);
           aspect-ratio: 53 / 7;
+          cursor: crosshair;
         }
 
         .github-contrib-overlay canvas {
@@ -263,7 +264,35 @@
           width: 100%;
           height: 100%;
           filter: drop-shadow(0 0 18px rgba(17, 17, 234, 0.25));
+          pointer-events: auto;
+        }
+
+        .github-contrib-tooltip {
+          position: absolute;
+          padding: 0.45rem 0.75rem;
+          border-radius: 0.6rem;
+          background: rgba(8, 12, 32, 0.9);
+          border: 1px solid rgba(17, 17, 234, 0.35);
+          color: #e0e7ff;
+          font-family: "Jersey 10", cursive;
+          font-size: 0.95rem;
           pointer-events: none;
+          white-space: pre;
+          transform: translate(-50%, -110%);
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+          display: none;
+          z-index: 7;
+        }
+
+        .github-contrib-tooltip::after {
+          content: "";
+          position: absolute;
+          bottom: -8px;
+          left: 50%;
+          transform: translateX(-50%);
+          border-width: 8px 8px 0 8px;
+          border-style: solid;
+          border-color: rgba(8, 12, 32, 0.9) transparent transparent transparent;
         }
 
         .quote-rotator .caret {
@@ -653,6 +682,7 @@
     <div class="github-contrib">
       <div class="github-contrib-overlay">
         <canvas id="github-grid" aria-hidden="true"></canvas>
+        <div class="github-contrib-tooltip" id="github-tooltip" role="status"></div>
       </div>
     </div>
     <div class="static-clock" id="static-clock" aria-live="off">--:--</div>
@@ -1085,7 +1115,9 @@
 
     const gridCanvas = document.getElementById("github-grid");
     const gridContainer = document.querySelector(".github-contrib-overlay");
+    const contribTooltip = document.getElementById("github-tooltip");
     let contributionMatrix = null;
+    let contributionCells = [];
 
     async function fetchContributionData(username) {
       try {
@@ -1124,7 +1156,7 @@
         alignedStart.setUTCDate(alignedStart.getUTCDate() - startOffset);
 
         const matrix = Array.from({ length: 7 }, () =>
-          Array(totalColumns).fill(0)
+          Array.from({ length: totalColumns }, () => ({ count: 0, level: 0, date: null }))
         );
 
         sorted.forEach((entry) => {
@@ -1136,7 +1168,11 @@
           }
           const row = current.getUTCDay();
           const count = Math.max(entry.count ?? 0, 0);
-          matrix[row][column] = count;
+          const level =
+            Number.isFinite(entry.level) && entry.level !== undefined
+              ? Number(entry.level)
+              : 0;
+          matrix[row][column] = { count, level, date: entry.date };
         });
 
         return matrix;
@@ -1206,24 +1242,21 @@
 
       const palette = [
         "rgba(0, 0, 0, 0.7)",
+        "#113264",
         "#1d4ed8",
-        "#1e3a8a",
-        "#1824d0",
-        "#1111ea",
+        "#2346ff",
+        "#6d7dff",
       ];
-      const thresholds = [0, 1, 4, 8, 12];
+      contributionCells = [];
 
       for (let col = 0; col < cols; col++) {
         for (let row = rows - 1; row >= 0; row--) {
-          const count = matrix[row][col] ?? 0;
-          let paletteIndex = 0;
-          for (let i = thresholds.length - 1; i >= 0; i--) {
-            if (count >= thresholds[i]) {
-              paletteIndex = i;
-              break;
-            }
-          }
-          const fillColor = palette[Math.min(paletteIndex, palette.length - 1)];
+          const cell = matrix[row][col] ?? { count: 0, level: 0, date: null };
+          const paletteIndex = Math.max(
+            0,
+            Math.min(Number.parseInt(cell.level ?? 0, 10), palette.length - 1)
+          );
+          const fillColor = palette[paletteIndex];
           const x = col * (squareSize + gap);
           const y = row * (squareSize + gap);
 
@@ -1231,6 +1264,14 @@
           ctx.beginPath();
           ctx.roundRect(x, y, squareSize, squareSize, cornerRadius);
           ctx.fill();
+
+          contributionCells.push({
+            x,
+            y,
+            size: squareSize,
+            count: cell.count ?? 0,
+            date: cell.date,
+          });
         }
       }
 
@@ -1253,6 +1294,84 @@
         drawContributionGrid(contributionMatrix);
       }
     });
+
+    function formatContributionDate(dateString) {
+      if (!dateString) return "Unknown date";
+      const dateObj = new Date(`${dateString}T00:00:00Z`);
+      if (Number.isNaN(dateObj.valueOf())) return dateString;
+      return dateObj.toLocaleDateString("da-DK", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    }
+
+    function handleContributionHover(event) {
+      if (!gridCanvas || !contribTooltip || !contributionCells.length) return;
+      const rect = gridCanvas.getBoundingClientRect();
+      const renderedProjectWidth = rect.width;
+      const renderedProjectHeight = rect.height;
+      const canvasWidth = gridCanvas.width;
+      const canvasHeight = gridCanvas.height;
+      const pointerX = event.clientX - rect.left;
+      const pointerY = event.clientY - rect.top;
+
+      if (
+        pointerX < 0 ||
+        pointerY < 0 ||
+        pointerX > renderedProjectWidth ||
+        pointerY > renderedProjectHeight
+      ) {
+        contribTooltip.style.display = "none";
+        return;
+      }
+
+      const scaleX = canvasWidth / renderedProjectWidth;
+      const scaleY = canvasHeight / renderedProjectHeight;
+      const canvasPointerX = pointerX * scaleX;
+      const canvasPointerY = pointerY * scaleY;
+
+      const targetCell = contributionCells.find(
+        (cell) =>
+          canvasPointerX >= cell.x &&
+          canvasPointerX <= cell.x + cell.size &&
+          canvasPointerY >= cell.y &&
+          canvasPointerY <= cell.y + cell.size
+      );
+
+      if (!targetCell || targetCell.count === undefined || targetCell.date === null) {
+        contribTooltip.style.display = "none";
+        return;
+      }
+
+      const contributionLabel =
+        targetCell.count === 1
+          ? "1 contribution"
+          : `${targetCell.count} contributions`;
+      contribTooltip.textContent = `${contributionLabel}\n${formatContributionDate(
+        targetCell.date
+      )}`;
+      const tooltipX =
+        (targetCell.x + targetCell.size / 2) / scaleX;
+      const tooltipY =
+        (targetCell.y + targetCell.size / 2) / scaleY;
+
+      contribTooltip.style.left = `${tooltipX}px`;
+      contribTooltip.style.top = `${tooltipY}px`;
+      contribTooltip.style.display = "block";
+    }
+
+    function hideContributionTooltip() {
+      if (contribTooltip) {
+        contribTooltip.style.display = "none";
+      }
+    }
+
+    if (gridCanvas) {
+      gridCanvas.addEventListener("mousemove", handleContributionHover);
+      gridCanvas.addEventListener("mouseleave", hideContributionTooltip);
+    }
     </script>
   </body>
 </html>

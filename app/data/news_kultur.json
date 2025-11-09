@@ -1,8 +1,13 @@
 {
   "source": "https://wallnot.dk/rss?category=kultur",
   "category": "kultur",
-  "fetchedAt": "2025-11-09T14:45:04.024695+00:00",
+  "fetchedAt": "2025-11-09T15:30:04.970648+00:00",
   "items": [
+    {
+      "title": "Populært TV 2-program vender tilbage: 'Nybyggerne' med stor ændring",
+      "link": "https://ekstrabladet.dk/underholdning/filmogtv/populaert-tv-2-program-vender-tilbage-nybyggerne-med-stor-aendring/11003451",
+      "pubDate": "Sun, 09 Nov 2025 15:41:56 +0100"
+    },
     {
       "title": "Dennis Knudsen udgiver bog om episode ved Molslinjen: Kunne godt mærke, at jeg 'var ude at skide'",
       "link": "https://dr.dk/nyheder/kultur/dennis-knudsen-udgiver-bog-om-episode-ved-molslinjen-kunne-godt-maerke-jeg-var-ude-skide",
@@ -57,11 +62,6 @@
       "title": "'Forræder'-vindere afslører: Det skal pengene gå til",
       "link": "https://ekstrabladet.dk/underholdning/filmogtv/forraeder-vindere-afsloerer-det-skal-pengene-gaa-til/10999595",
       "pubDate": "Sat, 08 Nov 2025 20:59:36 +0100"
-    },
-    {
-      "title": "Slut med dum sæd: Dansk sædbank har minimumskrav til donorers IQ",
-      "link": "https://dr.dk/nyheder/kultur/slut-med-dum-saed-dansk-saedbank-har-minimumskrav-til-donorers-iq",
-      "pubDate": "Sat, 08 Nov 2025 19:40:00 +0100"
     }
   ]
 }

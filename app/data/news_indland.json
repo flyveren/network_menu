@@ -1,8 +1,18 @@
 {
   "source": "https://wallnot.dk/rss?category=indland",
   "category": "indland",
-  "fetchedAt": "2025-11-09T14:45:06.047968+00:00",
+  "fetchedAt": "2025-11-09T15:30:03.255903+00:00",
   "items": [
+    {
+      "title": "Regeringen vil gøre det lettere for lejere at etablere andelsboliger",
+      "link": "https://www.kristeligt-dagblad.dk/danmark/regeringen-vil-goere-det-lettere-lejere-etablere-andelsboliger",
+      "pubDate": "Sun, 09 Nov 2025 16:19:01 +0100"
+    },
+    {
+      "title": "Billige boliger skal løse pædagogkrise i Allerød",
+      "link": "https://dr.dk/nyheder/indland/billige-boliger-skal-loese-paedagogkrise-i-alleroed",
+      "pubDate": "Sun, 09 Nov 2025 16:18:00 +0100"
+    },
     {
       "title": "Forsker: Når statsministeren må flytte til en hemmelig kommune, er det del af en ødelæggende tendens",
       "link": "https://dr.dk/nyheder/politik/forsker-naar-statsministeren-maa-flytte-til-en-hemmelig-kommune-er-det-del-af-en-oedelaeggende",
@@ -22,6 +32,11 @@
       "title": "Motorvejsrampe spærret efter uheld",
       "link": "https://ekstrabladet.dk/krimi/motorvejsrampe-spaerret-efter-uheld/11003448",
       "pubDate": "Sun, 09 Nov 2025 14:36:09 +0100"
+    },
+    {
+      "title": "Kommunalvalg 2025 – følg med her | Berlingske",
+      "link": "https://www.berlingske.dk/politik/kommunalvalg-2025--foelg-med-her-11",
+      "pubDate": "Sun, 09 Nov 2025 14:31:05 +0100"
     },
     {
       "title": "Et klimavendepunkt: For første gang nogensinde overhaler grøn strøm kullet",
@@ -47,21 +62,6 @@
       "title": "Pornostjerne i retten for at have halshugget sin ekskæreste",
       "link": "https://ekstrabladet.dk/krimi/pornostjerne-i-retten-for-at-have-halshugget-sin-ekskaereste/11003141",
       "pubDate": "Sun, 09 Nov 2025 13:08:13 +0100"
-    },
-    {
-      "title": "Mettes tatovering gav hende så voldsomme bivirkninger, at hun måtte opereres",
-      "link": "https://dr.dk/nyheder/indland/mettes-tatovering-gav-hende-saa-voldsomme-bivirkninger-hun-maatte-opereres",
-      "pubDate": "Sun, 09 Nov 2025 12:20:00 +0100"
-    },
-    {
-      "title": "Populær overborgmesterkandidat: Lortesager vælter frem",
-      "link": "https://ekstrabladet.dk/nyheder/politik/danskpolitik/populaer-overborgmesterkandidat-lortesager-vaelter-frem/11003219",
-      "pubDate": "Sun, 09 Nov 2025 12:15:16 +0100"
-    },
-    {
-      "title": "Kørsel i mørke: Derfor bliver du ofte blændet af modkørende bilister",
-      "link": "https://avisendanmark.dk/danmark/koersel-i-moerke-derfor-bliver-du-ofte-blaendet-af-modkoerende-bilister",
-      "pubDate": "Sun, 09 Nov 2025 12:01:26 +0100"
     }
   ]
 }
