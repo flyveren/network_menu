@@ -1,0 +1,15 @@
+{
+  "source": "https://vejr.tv2.dk/vejr/maribo-2617072",
+  "fetchedAt": "2025-11-09T14:45:02.657321+00:00",
+  "temperature_c": 8.0,
+  "temperature_text": "8°",
+  "feels_like_c": 7.0,
+  "feels_like_text": "Føles som 7°",
+  "symbol_url": "https://web.tv2a.dk/gfx/weather/symbols/cloudy.svg",
+  "symbol_description": "Skyet",
+  "precipitation_mm": 0.0,
+  "precipitation_text": "0",
+  "wind_speed_ms": 2.0,
+  "wind_text": "2",
+  "wind_direction": "Svag vind fra sydvest"
+}

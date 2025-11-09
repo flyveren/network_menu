@@ -1,56 +1,67 @@
 {
   "source": "https://wallnot.dk/rss",
-  "fetchedAt": "2025-11-08T22:03:37.694193+00:00",
+  "category": "all",
+  "fetchedAt": "2025-11-09T14:45:06.266823+00:00",
   "items": [
     {
-      "title": "Chelsea ordnede bundholdet i anden halvleg",
-      "link": "https://ekstrabladet.dk/sport/fodbold/udenlandsk_fodbold/engelsk_fodbold/PremierLeague/chelsea-ordnede-bundholdet-i-anden-halvleg/11003075",
-      "pubDate": "Sat, 08 Nov 2025 22:56:23 +0100"
+      "title": "Team Esbjerg tager stensikker CL-sejr mod montenegrinere",
+      "link": "https://avisendanmark.dk/sport/team-esbjerg-tager-stensikker-cl-sejr-mod-montenegrinere",
+      "pubDate": "Sun, 09 Nov 2025 15:31:22 +0100"
     },
     {
-      "title": "AC Milan smider 2-0-føring mod Parma og Oliver Sørensen",
-      "link": "https://avisendanmark.dk/sport/ac-milan-smider-2-0-foering-mod-parma-og-oliver-soerensen",
-      "pubDate": "Sat, 08 Nov 2025 22:51:21 +0100"
+      "title": "Dennis Knudsen udgiver bog om episode ved Molslinjen: Kunne godt mærke, at jeg 'var ude at skide'",
+      "link": "https://dr.dk/nyheder/kultur/dennis-knudsen-udgiver-bog-om-episode-ved-molslinjen-kunne-godt-maerke-jeg-var-ude-skide",
+      "pubDate": "Sun, 09 Nov 2025 15:30:00 +0100"
     },
     {
-      "title": "Andreas Schjelderup erkender: Jeg har delt en ulovlig video",
-      "link": "https://ekstrabladet.dk/sport/fodbold/dansk_fodbold/andreas-schjelderup-erkender-jeg-har-delt-en-ulovlig-video/11003067",
-      "pubDate": "Sat, 08 Nov 2025 22:44:42 +0100"
+      "title": "Caspar Phillipsons jul har mange toner og traditioner samlet sammen fra flere lande",
+      "link": "https://avisendanmark.dk/kultur/caspar-phillipsons-jul-har-mange-toner-og-traditioner-samlet-sammen-fra-flere-lande",
+      "pubDate": "Sun, 09 Nov 2025 15:11:00 +0100"
     },
     {
-      "title": "Tidligere superligaspiller erkender deling af seksuelt materiale med børn",
-      "link": "https://www.kristeligt-dagblad.dk/tidligere-superligaspiller-erkender-deling-af-seksuelt-materiale-med-boern",
-      "pubDate": "Sat, 08 Nov 2025 22:42:50 +0100"
+      "title": "Michael Smith brød sammen under interview: - Der har været lang vej",
+      "link": "https://ekstrabladet.dk/sport/anden_sport/anden_sport/michael-smith-broed-sammen-under-interview-der-har-vaeret-lang-vej/11003461",
+      "pubDate": "Sun, 09 Nov 2025 15:10:44 +0100"
     },
     {
-      "title": "Politi har ikke identificeret død person på adresse i Årslev i Aarhus",
-      "link": "https://jyllands-posten.dk/indland/ECE18722091/politi-har-ikke-identificeret-doed-person-paa-adresse-i-aarslev-i-aarhus/",
-      "pubDate": "Sat, 08 Nov 2025 22:21:08 +0100"
+      "title": "Sen udligning sikrer AaB point i Hvidovre",
+      "link": "https://avisendanmark.dk/sport/sen-udligning-sikrer-aab-point-i-hvidovre",
+      "pubDate": "Sun, 09 Nov 2025 15:01:27 +0100"
     },
     {
-      "title": "Rygterne svirrer: Drama i Putin-land?",
-      "link": "https://ekstrabladet.dk/nyheder/Udland/rygterne-svirrer-drama-i-putin-land/11002807",
-      "pubDate": "Sat, 08 Nov 2025 22:17:54 +0100"
+      "title": "Er stadionleje ulovlig? Nu reagerer Fredericia-direktør",
+      "link": "https://sport.tv2.dk/fodbold/2025-11-09-er-stadionleje-ulovlig-nu-reagerer-fredericia-direktoer",
+      "pubDate": "Sun, 09 Nov 2025 15:00:15 +0100"
     },
     {
-      "title": "Vingegaard gør status: - Det har uden tvivl været en god sæson",
-      "link": "https://sport.tv2.dk/cykling/2025-11-08-vingegaard-goer-status-det-har-uden-tvivl-vaeret-en-god-saeson",
-      "pubDate": "Sat, 08 Nov 2025 22:15:19 +0100"
+      "title": "18-årig reddede AaB i Hvidovre",
+      "link": "https://ekstrabladet.dk/sport/fodbold/dansk_fodbold/1division/18-aarig-reddede-aab-i-hvidovre/11003464",
+      "pubDate": "Sun, 09 Nov 2025 14:53:55 +0100"
     },
     {
-      "title": "Cyklist i kritisk tilstand efter alvorlig ulykke",
-      "link": "https://ekstrabladet.dk/krimi/cyklist-i-kritisk-tilstand-efter-alvorlig-ulykke/11003058",
-      "pubDate": "Sat, 08 Nov 2025 22:06:35 +0100"
+      "title": "Forsker: Når statsministeren må flytte til en hemmelig kommune, er det del af en ødelæggende tendens",
+      "link": "https://dr.dk/nyheder/politik/forsker-naar-statsministeren-maa-flytte-til-en-hemmelig-kommune-er-det-del-af-en-oedelaeggende",
+      "pubDate": "Sun, 09 Nov 2025 14:45:00 +0100"
     },
     {
-      "title": "Stemt ud på målstregen: - Jeg var helt afkræftet",
-      "link": "https://ekstrabladet.dk/underholdning/filmogtv/stemt-ud-paa-maalstregen-jeg-var-helt-afkraeftet/11001974",
-      "pubDate": "Sat, 08 Nov 2025 22:03:49 +0100"
+      "title": "Rasmus Bruun tager hjem med to skovle fra byggemarked: Her er de mest nødvendige haveredskaber",
+      "link": "https://dr.dk/nyheder/kultur/rasmus-bruun-tager-hjem-med-skovle-fra-byggemarked-her-er-de-mest-noedvendige-haveredskaber",
+      "pubDate": "Sun, 09 Nov 2025 14:40:00 +0100"
     },
     {
-      "title": "Danske fiskeres net er med til at afværge droner i Ukraine",
-      "link": "https://www.kristeligt-dagblad.dk/danmark/danske-fiskeres-net-er-med-til-afvaerge-droner-i-ukraine",
-      "pubDate": "Sat, 08 Nov 2025 22:02:36 +0100"
+      "title": "Skidt fyr knaldet på solskins-ø: Dømt for 27 kriminelle forhold",
+      "link": "https://ekstrabladet.dk/krimi/skidt-fyr-knaldet-paa-solskins-oe-doemt-for-27-kriminelle-forhold/11001894",
+      "pubDate": "Sun, 09 Nov 2025 14:37:00 +0100"
+    },
+    {
+      "title": "Shaka Loveless skal være far - igen!",
+      "link": "https://ekstrabladet.dk/underholdning/dkkendte/shaka-loveless-skal-vaere-far-igen/11003261",
+      "pubDate": "Sun, 09 Nov 2025 14:36:18 +0100"
+    },
+    {
+      "title": "Motorvejsrampe spærret efter uheld",
+      "link": "https://ekstrabladet.dk/krimi/motorvejsrampe-spaerret-efter-uheld/11003448",
+      "pubDate": "Sun, 09 Nov 2025 14:36:09 +0100"
     }
   ]
 }

@@ -21,8 +21,13 @@ RUN chmod 0644 /etc/crontabs/root
 # Install Node dependencies (currently none, but keep for future packages)
 RUN npm install --production
 
-# Prime the news feed during build (best-effort)
-RUN python3 scripts/fetch_news.py || true
+# Prime cached data during build (best-effort)
+RUN python3 scripts/fetch_weather.py || true
+RUN python3 scripts/fetch_news.py --category all || true
+RUN python3 scripts/fetch_news.py --category indland || true
+RUN python3 scripts/fetch_news.py --category udland || true
+RUN python3 scripts/fetch_news.py --category kultur || true
+RUN python3 scripts/fetch_news.py --category debat || true
 
 ENV NODE_ENV=production
 ENV PORT=8081

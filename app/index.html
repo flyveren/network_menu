@@ -224,9 +224,9 @@
 
         .quote-rotator {
           position: fixed;
-          bottom: 10rem;
+          top: 1.75rem;
           left: 50%;
-          transform: translateX(-50%);
+          transform: translate(-50%, 0);
           z-index: 6;
           font-family: "Jersey 10", cursive;
           color: #1111ea;
@@ -291,14 +291,15 @@
         .static-clock {
           position: fixed;
           top: 1.75rem;
-          right: 2.5rem;
+          right: clamp(2rem, 6vw, 4rem);
           font-family: "Jersey 10", cursive;
-          font-size: clamp(2.5rem, 6vw, 4.5rem);
-          color: #1111ea;
+          font-size: clamp(2rem, 4.5vw, 2.8rem);
+          color: #ffffff;
           text-shadow: 0 0 16px rgba(17, 17, 234, 0.4);
           letter-spacing: 0.15em;
           font-variant-numeric: tabular-nums;
           text-align: left;
+          padding-right: 0.5rem;
           z-index: 6;
           user-select: none;
           opacity: 0.7;
@@ -309,7 +310,7 @@
           top: 50%;
           left: clamp(2rem, 6vw, 4rem);
           transform: translateY(-50%);
-          width: min(24rem, 32vw);
+          width: min(16rem, 22vw);
           max-height: calc(100svh - 6rem);
           display: flex;
           flex-direction: column;
@@ -318,6 +319,7 @@
           background: none;
           border: none;
           color: #dbeafe;
+          font-family: "Jersey 10", cursive;
           overflow-y: auto;
           scrollbar-width: thin;
           scrollbar-color: rgba(17, 17, 234, 0.4) transparent;
@@ -340,7 +342,7 @@
         }
 
         .news-feed a {
-          color: inherit;
+          color: rgba(255, 255, 255, 0.8);
           text-decoration: none;
           font-size: 1.15rem;
           line-height: 1.35;
@@ -350,13 +352,13 @@
         .news-feed a:hover,
         .news-feed a:focus-visible {
           color: #ffffff;
-          text-shadow: 0 0 10px rgba(17, 17, 234, 0.6);
+          text-shadow: 0 0 12px rgba(17, 17, 234, 0.55);
         }
 
         .news-feed .news-meta {
           font-size: 0.85rem;
           letter-spacing: 0.08em;
-          color: rgba(148, 163, 255, 0.8);
+          color: #1111ea;
         }
 
         .news-feed .news-error {
@@ -364,6 +366,120 @@
           font-size: 0.95rem;
           color: rgba(255, 117, 117, 0.9);
           text-shadow: 0 0 8px rgba(255, 25, 25, 0.3);
+        }
+
+        .news-feed--secondary {
+          left: auto;
+          right: clamp(2rem, 6vw, 4rem);
+          text-align: right;
+        }
+
+        .news-feed--secondary .news-meta {
+          align-self: flex-end;
+        }
+
+        .weather-widget {
+          position: fixed;
+          top: 1.5rem;
+          left: clamp(2rem, 6vw, 4rem);
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+          color: #1111ea;
+          font-family: "Jersey 10", cursive;
+          width: min(18rem, 26vw);
+          z-index: 6;
+        }
+
+        .weather-widget__primary {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .weather-widget__icon {
+          width: clamp(3rem, 5vw, 3.75rem);
+          height: clamp(3rem, 5vw, 3.75rem);
+          object-fit: contain;
+          filter: drop-shadow(0 0 12px rgba(17, 17, 234, 0.45));
+        }
+
+        .weather-widget__temperature {
+          font-size: clamp(2rem, 4.5vw, 2.8rem);
+          color: #ffffff;
+        }
+
+        .weather-widget__values {
+          display: flex;
+          align-items: baseline;
+          gap: 0.3rem;
+        }
+
+        .weather-widget__feels {
+          font-size: clamp(1.1rem, 3.2vw, 1.35rem);
+          color: #1111ea;
+          letter-spacing: 0.04em;
+        }
+
+        .weather-widget__secondary {
+          display: flex;
+          gap: 1.25rem;
+          flex-wrap: nowrap;
+          font-size: clamp(1rem, 2.6vw, 1.2rem);
+          color: #1111ea;
+        }
+
+        .weather-widget__secondary span {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.35rem;
+          white-space: nowrap;
+        }
+
+        .weather-widget__error {
+          margin: 0;
+          font-size: 0.95rem;
+          color: rgba(255, 117, 117, 0.85);
+          text-shadow: 0 0 10px rgba(255, 25, 25, 0.35);
+        }
+
+        .corner-links {
+          position: fixed;
+          display: flex;
+          gap: 1.75rem;
+          font-family: "Jersey 10", cursive;
+          font-size: clamp(1rem, 2.8vw, 1.25rem);
+          z-index: 6;
+        }
+
+        .corner-links--bottom-left {
+          bottom: 1.75rem;
+          left: clamp(2rem, 6vw, 4rem);
+          justify-content: flex-start;
+        }
+
+        .corner-links--bottom-right {
+          bottom: 1.75rem;
+          right: clamp(2rem, 6vw, 4rem);
+          justify-content: flex-end;
+        }
+
+        .corner-link {
+          color: #1111ea;
+          text-decoration: none;
+          letter-spacing: 0.08em;
+          transition: color 160ms ease-in-out, text-shadow 160ms ease-in-out;
+        }
+
+        .corner-link--active {
+          color: #ffffff;
+          text-shadow: 0 0 12px rgba(17, 17, 234, 0.55);
+        }
+
+        .corner-link:hover,
+        .corner-link:focus-visible {
+          color: #ffffff;
+          text-shadow: 0 0 12px rgba(17, 17, 234, 0.55);
         }
 
         @media (max-width: 1024px) {
@@ -448,6 +564,31 @@
       aria-hidden="true"
     ></video>
     <div class="background-overlay" aria-hidden="true"></div>
+    <aside class="weather-widget" id="weather-widget" aria-live="polite">
+      <div class="weather-widget__primary">
+        <img
+          id="weather-icon"
+          class="weather-widget__icon"
+          alt=""
+          hidden
+        />
+        <div class="weather-widget__values">
+          <div class="weather-widget__temperature" id="weather-temp">--°</div>
+          <div class="weather-widget__feels" id="weather-feels">--°</div>
+        </div>
+      </div>
+      <div class="weather-widget__secondary">
+        <span id="weather-rain">Regn -- mm</span>
+        <span id="weather-wind">Vind: --</span>
+      </div>
+      <p class="weather-widget__error" id="weather-error" hidden>
+        Kan ikke hente vejret lige nu.
+      </p>
+    </aside>
+    <div class="quote-rotator" aria-live="polite">
+      <span id="quote-text"></span>
+      <span class="caret" aria-hidden="true"></span>
+    </div>
     <nav aria-label="Main navigation (collapsed)" data-expanded="false">
       <div class="nav-backdrop" aria-hidden="true"></div>
       <button
@@ -509,10 +650,6 @@
       </a>
     </nav>
 
-    <div class="quote-rotator" aria-live="polite">
-      <span id="quote-text"></span>
-      <span class="caret" aria-hidden="true"></span>
-    </div>
     <div class="github-contrib">
       <div class="github-contrib-overlay">
         <canvas id="github-grid" aria-hidden="true"></canvas>
@@ -520,11 +657,26 @@
     </div>
     <div class="static-clock" id="static-clock" aria-live="off">--:--</div>
     <aside class="news-feed" aria-label="Latest headlines from wallnot.dk">
-      <ul id="news-list" aria-live="polite"></ul>
+      <ul id="news-list-primary" aria-live="polite"></ul>
       <p class="news-error" id="news-error" hidden>
         Unable to load headlines right now.
       </p>
     </aside>
+    <aside
+      class="news-feed news-feed--secondary"
+      aria-label="More headlines from wallnot.dk"
+      hidden
+    >
+      <ul id="news-list-secondary" aria-live="polite"></ul>
+    </aside>
+    <div class="corner-links corner-links--bottom-left" aria-label="Bottom left links">
+      <a href="#" class="corner-link" data-category="indland">Indland</a>
+      <a href="#" class="corner-link" data-category="udland">Udland</a>
+    </div>
+    <div class="corner-links corner-links--bottom-right" aria-label="Bottom right links">
+      <a href="#" class="corner-link" data-category="kultur">Kultur</a>
+      <a href="#" class="corner-link" data-category="debat">Debat</a>
+    </div>
 
     <script>
       const btnNav = document.getElementById("btn-nav-toggle");
@@ -692,15 +844,143 @@
       updateClock();
       setInterval(updateClock, 1000);
 
-      const newsListElement = document.getElementById("news-list");
-      const newsErrorElement = document.getElementById("news-error");
+      const weatherContainer = document.getElementById("weather-widget");
+      const weatherTempElement = document.getElementById("weather-temp");
+      const weatherFeelsElement = document.getElementById("weather-feels");
+      const weatherRainElement = document.getElementById("weather-rain");
+      const weatherWindElement = document.getElementById("weather-wind");
+      const weatherIconElement = document.getElementById("weather-icon");
+      const weatherErrorElement = document.getElementById("weather-error");
 
-      async function loadNewsFeed() {
-        if (!newsListElement || !newsErrorElement) return;
+      async function loadWeather() {
+        if (!weatherContainer || !weatherTempElement) return;
+
         try {
-          newsErrorElement.hidden = true;
+          if (weatherErrorElement) {
+            weatherErrorElement.hidden = true;
+          }
+
           const response = await fetch(
-            `data/news.json?ts=${Date.now()}`,
+            `data/weather.json?ts=${Date.now()}`,
+            { cache: "no-store" }
+          );
+          if (!response.ok) {
+            throw new Error(`Weather request returned ${response.status}`);
+          }
+          const payload = await response.json();
+          if (!payload || typeof payload !== "object") {
+            throw new Error("Weather payload malformed");
+          }
+
+          const {
+            temperature_text: temperatureText,
+            feels_like_text: feelsLikeText,
+            feels_like_c: feelsLikeValue,
+            precipitation_mm: precipitationMm,
+            wind_text: windText,
+            wind_direction: windDirection,
+            symbol_url: iconUrl,
+            symbol_description: iconDescription,
+          } = payload;
+
+          if (weatherTempElement) {
+            weatherTempElement.textContent = temperatureText ?? "--°";
+          }
+          if (weatherFeelsElement) {
+            const feelsDisplay =
+              feelsLikeText?.replace(/^Føles som\s*/i, "") ??
+              (typeof feelsLikeValue === "number"
+                ? `${feelsLikeValue.toFixed(0)}°`
+                : "--°");
+            weatherFeelsElement.textContent = feelsDisplay;
+          }
+
+          const rainValueRaw =
+            typeof precipitationMm === "number"
+              ? precipitationMm
+              : typeof precipitationMm === "string"
+              ? Number.parseFloat(precipitationMm.replace(",", "."))
+              : null;
+          const rainValueText =
+            Number.isFinite(rainValueRaw) && rainValueRaw !== null
+              ? rainValueRaw.toFixed(1)
+              : precipitationMm ?? "--";
+          if (weatherRainElement) {
+            weatherRainElement.textContent = `Regn ${rainValueText} mm`;
+          }
+
+          const windSummary =
+            windDirection || windText
+              ? `${windDirection ?? ""}${windText ? ` (${windText})` : ""}`.trim()
+              : "--";
+          if (weatherWindElement) {
+            weatherWindElement.textContent = `Vind: ${windSummary}`;
+          }
+
+          if (weatherIconElement) {
+            if (iconUrl) {
+              weatherIconElement.src = iconUrl;
+              weatherIconElement.alt = iconDescription ?? "";
+              weatherIconElement.hidden = false;
+            } else {
+              weatherIconElement.hidden = true;
+            }
+          }
+        } catch (error) {
+          console.error("Failed to load weather:", error);
+          if (weatherErrorElement) {
+            weatherErrorElement.hidden = false;
+          }
+          if (weatherTempElement) weatherTempElement.textContent = "--°";
+          if (weatherFeelsElement) weatherFeelsElement.textContent = "--°";
+          if (weatherRainElement) weatherRainElement.textContent = "Regn -- mm";
+          if (weatherWindElement) weatherWindElement.textContent = "Vind: --";
+          if (weatherIconElement) {
+            weatherIconElement.hidden = true;
+          }
+        }
+      }
+
+      loadWeather();
+      setInterval(loadWeather, 15 * 60 * 1000);
+
+      const newsListPrimary = document.getElementById("news-list-primary");
+      const newsListSecondary = document.getElementById("news-list-secondary");
+      const newsErrorElement = document.getElementById("news-error");
+      const newsSecondaryContainer = document.querySelector(".news-feed--secondary");
+      const categoryLinks = document.querySelectorAll(".corner-link[data-category]");
+      const newsCategoryFiles = {
+        all: "news.json",
+        indland: "news_indland.json",
+        udland: "news_udland.json",
+        kultur: "news_kultur.json",
+        debat: "news_debat.json"
+      };
+      let currentNewsCategory = "all";
+
+      function updateActiveCategoryLink(category) {
+        categoryLinks.forEach((link) => {
+          if ((link.dataset.category || "").toLowerCase() === category) {
+            link.classList.add("corner-link--active");
+          } else {
+            link.classList.remove("corner-link--active");
+          }
+        });
+      }
+
+      async function loadNewsFeed(category = currentNewsCategory) {
+        if (!newsListPrimary || !newsErrorElement) return;
+        try {
+          const normalizedCategory = newsCategoryFiles[category]
+            ? category
+            : "all";
+          currentNewsCategory = normalizedCategory;
+          updateActiveCategoryLink(normalizedCategory);
+
+          newsErrorElement.hidden = true;
+          const fileName = newsCategoryFiles[normalizedCategory] ?? newsCategoryFiles.all;
+          const response = await fetch(
+            `data/${fileName}?ts=${Date.now()}`,
             {
               cache: "no-store"
             }
@@ -711,11 +991,17 @@
           const payload = await response.json();
           const items = Array.isArray(payload?.items) ? payload.items : [];
 
-          newsListElement.innerHTML = "";
+          newsListPrimary.innerHTML = "";
+          if (newsListSecondary) {
+            newsListSecondary.innerHTML = "";
+          }
 
           if (!items.length) {
-            newsErrorElement.textContent = "No headlines available right now.";
+            newsErrorElement.textContent = "No headlines available in this category right now.";
             newsErrorElement.hidden = false;
+            if (newsSecondaryContainer) {
+              newsSecondaryContainer.hidden = true;
+            }
             return;
           }
 
@@ -726,7 +1012,10 @@
             month: "short"
           });
 
-          items.forEach((item) => {
+          const primaryItems = items.slice(0, 6);
+          const secondaryItems = items.slice(6, 12);
+
+          const createListItem = (item) => {
             const li = document.createElement("li");
 
             if (item?.link) {
@@ -752,19 +1041,47 @@
               }
             }
 
-            newsListElement.appendChild(li);
+            return li;
+          };
+
+          primaryItems.forEach((item) => {
+            newsListPrimary.appendChild(createListItem(item));
           });
+
+          if (secondaryItems.length && newsListSecondary && newsSecondaryContainer) {
+            newsListSecondary.innerHTML = "";
+            secondaryItems.forEach((item) => {
+              newsListSecondary.appendChild(createListItem(item));
+            });
+            newsSecondaryContainer.hidden = false;
+          } else if (newsSecondaryContainer) {
+            newsSecondaryContainer.hidden = true;
+          }
         } catch (error) {
           console.error("Failed to load news feed:", error);
-          newsListElement.innerHTML = "";
+          newsListPrimary.innerHTML = "";
+          if (newsListSecondary) {
+            newsListSecondary.innerHTML = "";
+          }
           newsErrorElement.textContent =
-            "Unable to load headlines right now.";
+            "Unable to load headlines for this category right now.";
           newsErrorElement.hidden = false;
+          if (newsSecondaryContainer) {
+            newsSecondaryContainer.hidden = true;
+          }
         }
       }
 
-      loadNewsFeed();
-      setInterval(loadNewsFeed, 15 * 60 * 1000);
+      categoryLinks.forEach((link) => {
+        link.addEventListener("click", (event) => {
+          event.preventDefault();
+          const desiredCategory = (link.dataset.category || "all").toLowerCase();
+          loadNewsFeed(desiredCategory);
+        });
+      });
+
+      loadNewsFeed("all");
+      setInterval(() => loadNewsFeed(), 15 * 60 * 1000);
 
     const gridCanvas = document.getElementById("github-grid");
     const gridContainer = document.querySelector(".github-contrib-overlay");

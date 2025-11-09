@@ -1,2 +1,7 @@
-*/15 * * * * cd /usr/src/app && python3 scripts/fetch_news.py >> /var/log/cron.log 2>&1
+*/15 * * * * cd /usr/src/app && python3 scripts/fetch_news.py --category all >> /var/log/cron.log 2>&1
+*/15 * * * * cd /usr/src/app && python3 scripts/fetch_news.py --category indland >> /var/log/cron.log 2>&1
+*/15 * * * * cd /usr/src/app && python3 scripts/fetch_news.py --category udland >> /var/log/cron.log 2>&1
+*/15 * * * * cd /usr/src/app && python3 scripts/fetch_news.py --category kultur >> /var/log/cron.log 2>&1
+*/15 * * * * cd /usr/src/app && python3 scripts/fetch_news.py --category debat >> /var/log/cron.log 2>&1
+*/15 * * * * cd /usr/src/app && python3 scripts/fetch_weather.py >> /var/log/cron.log 2>&1
 
