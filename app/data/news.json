@@ -1,8 +1,13 @@
 {
   "source": "https://wallnot.dk/rss",
   "category": "all",
-  "fetchedAt": "2025-11-10T22:05:54.482800+00:00",
+  "fetchedAt": "2025-11-10T22:30:03.910013+00:00",
   "items": [
+    {
+      "title": "Britisk-ungarsk forfatter vinder prestigefyldt litteraturpris",
+      "link": "https://www.kristeligt-dagblad.dk/kultur/britisk-ungarsk-forfatter-vinder-prestigefyldt-litteraturpris",
+      "pubDate": "Mon, 10 Nov 2025 23:13:24 +0100"
+    },
     {
       "title": "Tv-kendis i vild afsløring: Havde sex foran Vestre Fængsel",
       "link": "https://ekstrabladet.dk/underholdning/dkkendte/tv-kendis-i-vild-afsloering-havde-sex-foran-vestre-faengsel/11004628",
@@ -57,11 +62,6 @@
       "title": "Forskere mener, de har løst mysterium om halvanden kilometer langt areal med 5.200 huller",
       "link": "https://dr.dk/nyheder/udland/forskere-mener-de-har-loest-mysterium-om-halvanden-kilometer-langt-areal-med-5-200-huller",
       "pubDate": "Mon, 10 Nov 2025 22:00:00 +0100"
-    },
-    {
-      "title": "Partier vil lave nødlagre på københavnske skoler",
-      "link": "https://www.bt.dk/politik/partier-vil-lave-noedlagre-paa-koebenhavnske-skoler",
-      "pubDate": "Mon, 10 Nov 2025 21:59:52 +0100"
     }
   ]
 }

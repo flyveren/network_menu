@@ -112,7 +112,7 @@
         .spotify-player {
           position: fixed;
           left: 50%;
-          bottom: 30px;
+          bottom: 80px;
           transform: translateX(-50%);
           display: flex;
           flex-direction: column;
@@ -246,17 +246,18 @@
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          color: rgba(224, 236, 255, 0.9);
+          color: #ffffff;
           font-family: "JetBrains Mono", system-ui, sans-serif;
-          font-size: 0.95rem;
+          font-size: 0.75rem;
           letter-spacing: 0.04em;
-          margin-top: 130px;
+          margin-top: 120px;
         }
 
         .spotify-player__track {
-          font-size: 1rem;
+          font-size: 0.75rem;
           font-weight: 600;
           margin: 0;
+          color:#1111ea;
           white-space: nowrap;
         }
 
@@ -264,8 +265,45 @@
           margin: 0;
           font-size: 0.85rem;
           letter-spacing: 0.05em;
-          color: rgba(168, 198, 255, 0.75);
+          color: #fff;
           white-space: nowrap;
+        }
+
+        .spotify-player__volume {
+          margin-top: 24px;
+          margin-bottom: -70px;
+          width: 260px;
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          align-self: center;
+        }
+
+        .spotify-player__volume input[type="range"] {
+          flex: 1;
+          appearance: none;
+          height: 4px;
+          border-radius: 2px;
+          background: rgba(99, 102, 241, 0.35);
+          outline: none;
+        }
+
+        .spotify-player__volume input[type="range"]::-webkit-slider-thumb {
+          appearance: none;
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: rgba(99, 102, 241, 0.95);
+          cursor: pointer;
+        }
+
+        .spotify-player__volume input[type="range"]::-moz-range-thumb {
+          width: 16px;
+          height: 16px;
+          border-radius: 50%;
+          background: rgba(99, 102, 241, 0.95);
+          cursor: pointer;
+          border: none;
         }
 
         .spotify-auth-modal {
@@ -1352,6 +1390,9 @@
       <div class="spotify-player__meta">
         <p class="spotify-player__track" id="spotify-player-track">Spotify</p>
         <p class="spotify-player__artist" id="spotify-player-artist">Not connected</p>
+      </div>
+      <div class="spotify-player__volume">
+        <input type="range" id="spotify-player-volume" min="0" max="100" value="60" />
       </div>
     </div>
     <div class="spotify-auth-modal" id="spotify-auth-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="spotify-auth-modal-title">
@@ -2970,7 +3011,15 @@
       }
 
       if (spotifyPlayerContainer) {
-        spotifyPlayerContainer.addEventListener("click", () => {
+        spotifyPlayerContainer.addEventListener("click", (event) => {
+          const target = event.target;
+          if (
+            target === spotifyVolumeSlider ||
+            spotifyVolumeSlider?.contains?.(target) ||
+            target?.closest?.(".spotify-player__volume")
+          ) {
+            return;
+          }
           if (spotifyPlayerInstance) {
             spotifyPlayerInstance.togglePlay().catch((error) => {
               console.warn("Spotify toggle play failed:", error);
@@ -3012,6 +3061,45 @@
         });
       }
 
+      const spotifyVolumeSlider = document.getElementById("spotify-player-volume");
+      async function setSpotifyVolume(percent, suppressUi = false) {
+        if (!spotifyPlayerInstance) return;
+        const volume = Math.max(0, Math.min(1, percent / 100));
+        try {
+          await spotifyPlayerInstance.setVolume(volume);
+          if (!suppressUi && spotifyVolumeSlider) {
+            spotifyVolumeSlider.value = String(Math.round(percent));
+          }
+        } catch (error) {
+          console.warn("Failed to set Spotify volume:", error);
+        }
+      }
+
+      let spotifyVolumeDebounce = null;
+      if (spotifyVolumeSlider) {
+        const applyVolume = (value) => {
+          const numeric = Number.parseFloat(value);
+          if (Number.isFinite(numeric)) {
+            setSpotifyVolume(numeric);
+          }
+        };
+
+        spotifyVolumeSlider.addEventListener("input", (event) => {
+          const { value } = event.target;
+          reflectVolumeText(value);
+          if (spotifyVolumeDebounce) {
+            clearTimeout(spotifyVolumeDebounce);
+          }
+          spotifyVolumeDebounce = setTimeout(() => {
+            applyVolume(value);
+          }, 120);
+        });
+
+        spotifyVolumeSlider.addEventListener("change", (event) => {
+          applyVolume(event.target.value);
+        });
+      }
+
       window.addEventListener("spotify-auth-complete", async (event) => {
         const detail = event?.detail;
         if (!detail?.success || !detail.payload?.tokens) {
@@ -3026,6 +3114,9 @@
         storeSpotifyAuth(tokens);
         setSpotifyUiConnected(true);
         await initializeSpotifyPlayer();
+        if (spotifyVolumeSlider) {
+          applyVolume(spotifyVolumeSlider.value);
+        }
       });
 
       (async () => {
@@ -3033,6 +3124,9 @@
         if (stored?.accessToken && stored?.refreshToken) {
           setSpotifyUiConnected(true);
           await initializeSpotifyPlayer();
+          if (spotifyVolumeSlider) {
+            applyVolume(spotifyVolumeSlider.value);
+          }
         } else {
           setSpotifyUiConnected(false);
         }

@@ -1,8 +1,13 @@
 {
   "source": "https://wallnot.dk/rss?category=kultur",
   "category": "kultur",
-  "fetchedAt": "2025-11-10T22:05:57.702996+00:00",
+  "fetchedAt": "2025-11-10T22:30:03.129458+00:00",
   "items": [
+    {
+      "title": "Britisk-ungarsk forfatter vinder prestigefyldt litteraturpris",
+      "link": "https://www.kristeligt-dagblad.dk/kultur/britisk-ungarsk-forfatter-vinder-prestigefyldt-litteraturpris",
+      "pubDate": "Mon, 10 Nov 2025 23:13:24 +0100"
+    },
     {
       "title": "Noma får anmærkning af Fødevarestyrelsen: Fjerner elitesmiley",
       "link": "https://ekstrabladet.dk/underholdning/kultur/noma-faar-anmaerkning-af-foedevarestyrelsen-fjerner-elitesmiley/11004707",
@@ -57,11 +62,6 @@
       "title": "Det er ikke kun uslinge, der begår økonomisk kriminalitet",
       "link": "https://arbejderen.dk/kultur/det-er-ikke-kun-uslinge-der-begaar-oekonomisk-kriminalitet/",
       "pubDate": "Mon, 10 Nov 2025 06:04:00 +0100"
-    },
-    {
-      "title": "Er du rigtig klog: Hvad ved du om Leonardo DiCaprio? | Berlingske",
-      "link": "https://www.berlingske.dk/kultur/er-du-rigtig-klog-hvad-ved-du-om-leonardo-dicaprio",
-      "pubDate": "Mon, 10 Nov 2025 06:00:44 +0100"
     }
   ]
 }
