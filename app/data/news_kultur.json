@@ -1,8 +1,38 @@
 {
   "source": "https://wallnot.dk/rss?category=kultur",
   "category": "kultur",
-  "fetchedAt": "2025-11-10T11:48:20.640152+00:00",
+  "fetchedAt": "2025-11-10T21:15:04.156693+00:00",
   "items": [
+    {
+      "title": "Noma får anmærkning af Fødevarestyrelsen: Fjerner elitesmiley",
+      "link": "https://ekstrabladet.dk/underholdning/kultur/noma-faar-anmaerkning-af-foedevarestyrelsen-fjerner-elitesmiley/11004707",
+      "pubDate": "Mon, 10 Nov 2025 21:59:22 +0100"
+    },
+    {
+      "title": "Kulturminister forsvarer ny arkitekturpolitik efter lokal kritik",
+      "link": "https://www.kristeligt-dagblad.dk/kultur/kulturminister-forsvarer-ny-arkitekturpolitik-efter-lokal-kritik",
+      "pubDate": "Mon, 10 Nov 2025 21:00:08 +0100"
+    },
+    {
+      "title": "Kevin 'Bro' erkender utroskab: - Jeg har været en dårlig kæreste",
+      "link": "https://ekstrabladet.dk/underholdning/filmogtv/kevin-bro-erkender-utroskab-jeg-har-vaeret-en-daarlig-kaereste/11004847",
+      "pubDate": "Mon, 10 Nov 2025 20:39:11 +0100"
+    },
+    {
+      "title": "Direktør har sagt op, og Trump truer med milliardkrav: Her er BBC-klippet, det hele drejer sig om | Video | Berlingske",
+      "link": "https://www.berlingske.dk/kultur/direktoer-har-sagt-op-og-trump-truer-med-milliardkrav-her-er-bbc-klippet-det-hele-drejer-sig-om",
+      "pubDate": "Mon, 10 Nov 2025 19:37:10 +0100"
+    },
+    {
+      "title": "Skal du have en bid af Zirkus Nemo? Så er det nu, du skal slå til",
+      "link": "https://avisendanmark.dk/kultur/skal-du-have-en-bid-af-zirkus-nemo-saa-er-det-nu-du-skal-slaa-til",
+      "pubDate": "Mon, 10 Nov 2025 17:02:00 +0100"
+    },
+    {
+      "title": "Medarbejdere sender mistillidserklæring til Jyllands-Postens ledelse",
+      "link": "https://ekstrabladet.dk/underholdning/filmogtv/medarbejdere-sender-mistillidserklaering-til-jyllands-postens-ledelse/11004214",
+      "pubDate": "Mon, 10 Nov 2025 13:16:27 +0100"
+    },
     {
       "title": "TV 2 afslører: 24 kendte med i ny julekalender",
       "link": "https://ekstrabladet.dk/underholdning/filmogtv/tv-2-afsloerer-24-kendte-med-i-ny-julekalender/11004320",
@@ -32,36 +62,6 @@
       "title": "Er du rigtig klog: Hvad ved du om Leonardo DiCaprio? | Berlingske",
       "link": "https://www.berlingske.dk/kultur/er-du-rigtig-klog-hvad-ved-du-om-leonardo-dicaprio",
       "pubDate": "Mon, 10 Nov 2025 06:00:44 +0100"
-    },
-    {
-      "title": "Efter Trump-ballade: BBC's generaldirektør går af",
-      "link": "https://ekstrabladet.dk/underholdning/filmogtv/efter-trump-ballade-bbcs-generaldirektoer-gaar-af/11003714",
-      "pubDate": "Sun, 09 Nov 2025 19:13:04 +0100"
-    },
-    {
-      "title": "Første gang nogensinde: Queen Machine måtte afbryde koncert",
-      "link": "https://ekstrabladet.dk/musik/dkmusiknyt/foerste-gang-nogensinde-queen-machine-maatte-afbryde-koncert/11003290",
-      "pubDate": "Sun, 09 Nov 2025 18:03:53 +0100"
-    },
-    {
-      "title": "Bekræfter: Tine Maria Hansen flyttet sammen med kæresten",
-      "link": "https://ekstrabladet.dk/underholdning/filmogtv/bekraefter-tine-maria-hansen-flyttet-sammen-med-kaeresten/11002605",
-      "pubDate": "Sun, 09 Nov 2025 16:45:51 +0100"
-    },
-    {
-      "title": "Populært TV 2-program vender tilbage: 'Nybyggerne' med stor ændring",
-      "link": "https://ekstrabladet.dk/underholdning/filmogtv/populaert-tv-2-program-vender-tilbage-nybyggerne-med-stor-aendring/11003451",
-      "pubDate": "Sun, 09 Nov 2025 15:41:56 +0100"
-    },
-    {
-      "title": "Dennis Knudsen udgiver bog om episode ved Molslinjen: Kunne godt mærke, at jeg 'var ude at skide'",
-      "link": "https://dr.dk/nyheder/kultur/dennis-knudsen-udgiver-bog-om-episode-ved-molslinjen-kunne-godt-maerke-jeg-var-ude-skide",
-      "pubDate": "Sun, 09 Nov 2025 15:30:00 +0100"
-    },
-    {
-      "title": "Caspar Phillipsons jul har mange toner og traditioner samlet sammen fra flere lande",
-      "link": "https://avisendanmark.dk/kultur/caspar-phillipsons-jul-har-mange-toner-og-traditioner-samlet-sammen-fra-flere-lande",
-      "pubDate": "Sun, 09 Nov 2025 15:11:00 +0100"
     }
   ]
 }
