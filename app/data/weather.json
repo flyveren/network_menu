@@ -1,6 +1,6 @@
 {
   "source": "https://vejr.tv2.dk/vejr/maribo-2617072",
-  "fetchedAt": "2025-11-10T21:15:01.612943+00:00",
+  "fetchedAt": "2025-11-10T22:05:53.110694+00:00",
   "temperature_c": 8.0,
   "temperature_text": "8°",
   "feels_like_c": 7.0,
@@ -11,5 +11,5 @@
   "precipitation_text": "0",
   "wind_speed_ms": 2.0,
   "wind_text": "2",
-  "wind_direction": "Næsten stille fra sydøst"
+  "wind_direction": "Svag vind fra syd"
 }

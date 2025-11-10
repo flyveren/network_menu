@@ -1,8 +1,13 @@
 {
   "source": "https://wallnot.dk/rss?category=indland",
   "category": "indland",
-  "fetchedAt": "2025-11-10T21:15:02.978151+00:00",
+  "fetchedAt": "2025-11-10T22:05:55.608503+00:00",
   "items": [
+    {
+      "title": "Tv-kendis i vild afsløring: Havde sex foran Vestre Fængsel",
+      "link": "https://ekstrabladet.dk/underholdning/dkkendte/tv-kendis-i-vild-afsloering-havde-sex-foran-vestre-faengsel/11004628",
+      "pubDate": "Mon, 10 Nov 2025 23:00:48 +0100"
+    },
     {
       "title": "Fra taget af bygning: Kastede sten mod folk på gaden",
       "link": "https://ekstrabladet.dk/krimi/fra-taget-af-bygning-kastede-sten-mod-folk-paa-gaden/11004163",
@@ -57,11 +62,6 @@
       "title": "Glemte at trække håndbremsen: Bil endte i søen",
       "link": "https://ekstrabladet.dk/krimi/glemte-at-traekke-haandbremsen-bil-endte-i-soeen/11004784",
       "pubDate": "Mon, 10 Nov 2025 19:18:27 +0100"
-    },
-    {
-      "title": "De vidste ikke, hvad 'feminist' betød. Og internettet gik amok",
-      "link": "https://dr.dk/nyheder/indland/de-vidste-ikke-hvad-feminist-betoed-og-internettet-gik-amok",
-      "pubDate": "Mon, 10 Nov 2025 19:09:00 +0100"
     }
   ]
 }

@@ -1,8 +1,13 @@
 {
   "source": "https://wallnot.dk/rss?category=udland",
   "category": "udland",
-  "fetchedAt": "2025-11-10T21:15:03.988900+00:00",
+  "fetchedAt": "2025-11-10T22:05:56.650565+00:00",
   "items": [
+    {
+      "title": "Trump roser aftale om at stoppe historisk nedlukning",
+      "link": "https://www.kristeligt-dagblad.dk/udland/trump-roser-aftale-om-stoppe-historisk-nedlukning",
+      "pubDate": "Mon, 10 Nov 2025 22:46:58 +0100"
+    },
     {
       "title": "Efter møde mellem Trump og al-Sharaa: USA hæver sanktioner mod Syrien",
       "link": "https://dr.dk/nyheder/udland/efter-moede-mellem-trump-og-al-sharaa-usa-haever-sanktioner-mod-syrien",
@@ -19,9 +24,19 @@
       "pubDate": "Mon, 10 Nov 2025 21:35:00 +0100"
     },
     {
+      "title": "Donald Trump præsenterer aftale: 'Vil gå meget hurtigt'",
+      "link": "https://www.bt.dk/udland/donald-trump-praesenterer-aftale-vil-gaa-meget-hurtigt",
+      "pubDate": "Mon, 10 Nov 2025 21:30:32 +0100"
+    },
+    {
       "title": "En syrisk præsident lagde for første gang vejen forbi Washington mandag",
       "link": "https://www.kristeligt-dagblad.dk/udland/en-syrisk-praesident-lagde-foerste-gang-vejen-forbi-washington-mandag",
       "pubDate": "Mon, 10 Nov 2025 21:26:38 +0100"
+    },
+    {
+      "title": "Særlig detalje vækker opsigt: Hvad fejler Putin?",
+      "link": "https://www.bt.dk/udland/saerlig-detalje-vaekker-opsigt-hvad-fejler-putin",
+      "pubDate": "Mon, 10 Nov 2025 21:23:31 +0100"
     },
     {
       "title": "Adskillige døde: Rusland angreb ukrainsk medaljeceremoni – blev afsløret via gruppechat",
@@ -47,21 +62,6 @@
       "title": "Naboer raser over Mark Zuckerberg: Havde hemmelig skole i hjemmet",
       "link": "https://www.bt.dk/udland/naboer-raser-over-mark-zuckerberg-havde-hemmelig-skole-i-hjemmet",
       "pubDate": "Mon, 10 Nov 2025 19:40:54 +0100"
-    },
-    {
-      "title": "Vild redningsaktion: Båd kæntret",
-      "link": "https://www.bt.dk/udland/vild-redningsaktion-baad-kaentret",
-      "pubDate": "Mon, 10 Nov 2025 19:29:22 +0100"
-    },
-    {
-      "title": "Efter 25 dage langs Amazonfloden er et særligt skib ankommet til klimatopmødet i Belém",
-      "link": "https://dr.dk/nyheder/udland/efter-25-dage-langs-amazonfloden-er-et-saerligt-skib-ankommet-til-klimatopmoedet-i-belem",
-      "pubDate": "Mon, 10 Nov 2025 18:39:00 +0100"
-    },
-    {
-      "title": "Spekulationerne tager til efter Novo-topmøde - sov Donald Trump virkelig?",
-      "link": "https://www.bt.dk/udland/spekulationerne-tager-til-efter-novo-topmoede-sov-donald-trump-virkelig",
-      "pubDate": "Mon, 10 Nov 2025 18:31:13 +0100"
     }
   ]
 }

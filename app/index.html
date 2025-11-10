@@ -112,12 +112,11 @@
         .spotify-player {
           position: fixed;
           left: 50%;
-          bottom: 100px;
+          bottom: 30px;
           transform: translateX(-50%);
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 0.9rem;
           padding: 0;
           border-radius: 0;
           background: none;
@@ -129,6 +128,38 @@
 
         .spotify-player[aria-hidden="true"] {
           display: none;
+        }
+
+        .spotify-player__controls {
+          display: flex;
+          justify-content: center;
+          gap: 1.25rem;
+          transform: translateY(80px);
+        }
+
+        .spotify-player__control {
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          border: none;
+          background: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          margin-top: 90px;
+          transition: transform 160ms ease-in-out;
+        }
+
+        .spotify-player__control svg {
+          width: 32px;
+          height: 32px;
+          fill: rgba(168, 198, 255, 0.85);
+        }
+
+        .spotify-player__control:hover,
+        .spotify-player__control:focus-visible {
+          transform: translateY(-3px);
         }
 
         .spotify-player__art-wrap {
@@ -145,10 +176,13 @@
         }
 
         .spotify-player__art {
+          position: absolute;
+          inset: 0;
           width: 100%;
           height: 100%;
           border-radius: 50%;
           object-fit: cover;
+          object-position: center;
           transition: filter 180ms ease-in-out;
         }
 
@@ -216,8 +250,7 @@
           font-family: "JetBrains Mono", system-ui, sans-serif;
           font-size: 0.95rem;
           letter-spacing: 0.04em;
-          margin-top: 60px;
-          margin-bottom: -45px;
+          margin-top: 130px;
         }
 
         .spotify-player__track {
@@ -1286,9 +1319,35 @@
       <img src="./spotify_connect.png" alt="Connect Spotify" />
     </button>
     <div class="spotify-player spotify-player--inactive" id="spotify-player" aria-hidden="true">
-      <div class="spotify-player__art-wrap">
-        <img src="" alt="" class="spotify-player__art" id="spotify-player-art" />
-        <div class="spotify-player__center-icon" id="spotify-player-center-icon" data-state="play"></div>
+      <div class="spotify-player__controls">
+        <button
+          type="button"
+          class="spotify-player__control"
+          id="spotify-player-prev"
+          aria-label="Previous track"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M7 12.001 17 5v14l-10-6.999zM5 5h2v14H5z"
+            />
+          </svg>
+        </button>
+        <div class="spotify-player__art-wrap">
+          <img src="" alt="" class="spotify-player__art" id="spotify-player-art" />
+          <div class="spotify-player__center-icon" id="spotify-player-center-icon" data-state="play"></div>
+        </div>
+        <button
+          type="button"
+          class="spotify-player__control"
+          id="spotify-player-next"
+          aria-label="Next track"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M17 11.999 7 19V5l10 6.999zM19 5h-2v14h2z"
+            />
+          </svg>
+        </button>
       </div>
       <div class="spotify-player__meta">
         <p class="spotify-player__track" id="spotify-player-track">Spotify</p>
@@ -2916,6 +2975,39 @@
             spotifyPlayerInstance.togglePlay().catch((error) => {
               console.warn("Spotify toggle play failed:", error);
             });
+          }
+        });
+      }
+
+      const spotifyPrevButton = document.getElementById("spotify-player-prev");
+      const spotifyNextButton = document.getElementById("spotify-player-next");
+
+      if (spotifyPrevButton) {
+        spotifyPrevButton.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          if (!spotifyPlayerInstance) {
+            console.warn("Spotify player not ready for previous track.");
+            return;
+          }
+          try {
+            await spotifyPlayerInstance.previousTrack();
+          } catch (error) {
+            console.error("Failed to skip to previous Spotify track:", error);
+          }
+        });
+      }
+
+      if (spotifyNextButton) {
+        spotifyNextButton.addEventListener("click", async (event) => {
+          event.stopPropagation();
+          if (!spotifyPlayerInstance) {
+            console.warn("Spotify player not ready for next track.");
+            return;
+          }
+          try {
+            await spotifyPlayerInstance.nextTrack();
+          } catch (error) {
+            console.error("Failed to skip to next Spotify track:", error);
           }
         });
       }
