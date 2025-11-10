@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Music Reactive Shader</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: transparent;
+        overflow: hidden;
+      }
+      @keyframes noise {
+        0% {
+          transform: translate(0, 0);
+        }
+        25% {
+          transform: translate(-2%, 2%);
+        }
+        50% {
+          transform: translate(3%, -2%);
+        }
+        75% {
+          transform: translate(-1%, -3%);
+        }
+        100% {
+          transform: translate(0, 0);
+        }
+      }
+      canvas {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+        z-index: -1;
+        pointer-events: none;
+      }
+      .controls {
+        display: none !important;
+      }
+      .controls button {
+        padding: 6px 22px;
+        border-radius: 999px;
+        border: 1px solid rgba(120, 150, 255, 0.3);
+        background: linear-gradient(135deg, rgba(40, 60, 255, 0.22), rgba(10, 18, 60, 0.3));
+        color: inherit;
+        letter-spacing: inherit;
+        text-transform: inherit;
+        font-size: inherit;
+        cursor: pointer;
+        transition: background 0.3s ease, border-color 0.3s ease, transform 0.15s ease;
+      }
+      .controls button:hover {
+        border-color: rgba(120, 150, 255, 0.5);
+        background: linear-gradient(135deg, rgba(60, 90, 255, 0.28), rgba(20, 32, 80, 0.4));
+      }
+      .controls button:active {
+        transform: scale(0.97);
+      }
+      .controls__status {
+        opacity: 0.75;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="shader-canvas"></canvas>
+    <div class="controls" aria-hidden="true" hidden></div>
+    <script type="module">
+      import * as THREE from "https://esm.sh/three@0.175.0";
+
+      const settings = {
+        baseSpeed: 1.0,
+        idleSpeed: 0.08,
+        bassReactivity: 0.45,
+        midReactivity: 0.5,
+        highReactivity: 0.45,
+        kickReactivity: 0.6,
+        bounceIntensity: 0.12,
+        waveIntensity: 0.06,
+        waveComplexity: 2.3,
+        rippleIntensity: 0.2,
+        lineThickness: 0.18,
+        lineStraightness: 2.3,
+        idleWaveHeight: 0.012,
+        transitionSmoothness: 0.03,
+        enableGrain: false,
+        grainIntensity: 0.045,
+        grainSpeed: 1.6,
+        grainMean: 0.0,
+        grainVariance: 0.38,
+        grainBlendMode: 0,
+        bgColorDown: [10, 0, 26],
+        bgColorUp: [0, 12, 24],
+        color1In: [30, 70, 220],
+        color1Out: [80, 140, 255],
+        color2In: [90, 160, 255],
+        color2Out: [150, 200, 255],
+        color3In: [240, 245, 255],
+        color3Out: [210, 220, 240],
+      };
+
+      let scene, camera, renderer, shaderMaterial;
+      let time = 0;
+      let frameCount = 0;
+      let lastTime = performance.now();
+
+      let audioContext;
+      let analyser;
+      let dataArray;
+      let audioElement;
+      let audioSource;
+      let playing = false;
+
+      let lowFreq = 0;
+      let midFreq = 0;
+      let highFreq = 0;
+
+      let kickEnergy = 0;
+      let kickDetected = false;
+      let kickImpactFrames = 0;
+      const kickDecay = 0.8;
+      const kickThreshold = 0.05;
+      const kickSensitivity = 2.0;
+
+      let lastKickTime = 0;
+      let beatInterval = 0;
+      let beatPhase = 0;
+      let beatTime = 0;
+
+      const historyLength = 4;
+      const bandEnergies = Array(8).fill(0);
+      const bandHistories = Array(8)
+        .fill()
+        .map(() => []);
+
+      let transitionFactor = 0;
+      let idleAnimation = 0;
+
+      let defaultAudioSrc = "";
+      let currentExternalAudioUrl = null;
+
+      const vertexShader = `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `;
+
+      const fragmentShader = `
+        precision highp float;
+
+        varying vec2 vUv;
+        uniform vec2 iResolution;
+        uniform float iTime;
+        uniform float transitionFactor;
+        uniform float idleAnimation;
+        uniform float idleWaveHeight;
+        uniform float lowFreq;
+        uniform float midFreq;
+        uniform float highFreq;
+        uniform float kickEnergy;
+        uniform float beatPhase;
+        uniform float bounceEffect;
+        uniform float baseSpeed;
+        uniform float idleSpeed;
+        uniform float bassReactivity;
+        uniform float midReactivity;
+        uniform float highReactivity;
+        uniform float kickReactivity;
+        uniform float bounceIntensity;
+        uniform float waveIntensity;
+        uniform float waveComplexity;
+        uniform float rippleIntensity;
+        uniform float lineThickness;
+        uniform float lineStraightness;
+        uniform float verticalOffset;
+        uniform bool enableGrain;
+        uniform float grainIntensity;
+        uniform float grainSpeed;
+        uniform float grainMean;
+        uniform float grainVariance;
+        uniform int grainBlendMode;
+        uniform vec3 bgColorDown;
+        uniform vec3 bgColorUp;
+        uniform vec3 color1In;
+        uniform vec3 color1Out;
+        uniform vec3 color2In;
+        uniform vec3 color2Out;
+        uniform vec3 color3In;
+        uniform vec3 color3Out;
+
+        float smootherstep(float edge0, float edge1, float x) {
+          float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+          return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+        }
+
+        vec3 screen(vec3 a, vec3 b, float w) {
+          return mix(a, vec3(1.0) - (vec3(1.0) - a) * (vec3(1.0) - b), w);
+        }
+
+        vec3 overlay(vec3 a, vec3 b, float w) {
+          return mix(a, mix(2.0 * a * b, vec3(1.0) - 2.0 * (vec3(1.0) - a) * (vec3(1.0) - b), step(vec3(0.5), a)), w);
+        }
+
+        vec3 softLight(vec3 a, vec3 b, float w) {
+          return mix(a, pow(a, pow(vec3(2.0), 2.0 * (vec3(0.5) - b))), w);
+        }
+
+        vec3 applyGrain(vec3 color, vec2 uv, float time) {
+          if (!enableGrain) return color;
+
+          float seed = dot(uv, vec2(12.9898, 78.233));
+          float noise = fract(sin(seed) * 43758.5453 + time * grainSpeed);
+          float variance = max(0.0005, grainVariance);
+          noise = (1.0 / (variance * sqrt(6.28318))) * exp(-((noise - grainMean) * (noise - grainMean)) / (2.0 * variance * variance));
+          vec3 grain = vec3(noise);
+
+          if (grainBlendMode == 0) {
+            color += grain * grainIntensity;
+          } else if (grainBlendMode == 1) {
+            color = screen(color, grain, grainIntensity);
+          } else if (grainBlendMode == 2) {
+            color = overlay(color, grain, grainIntensity);
+          } else if (grainBlendMode == 3) {
+            color = softLight(color, grain, grainIntensity);
+          } else if (grainBlendMode == 4) {
+            color = max(color, grain * grainIntensity);
+          }
+
+          return color;
+        }
+
+        float kickRipple(vec2 uv, float energy, float time) {
+          float dist = distance(uv, vec2(0.5, 0.5));
+          float width = 0.05;
+          float speed = 1.25;
+          float ripple = smootherstep(energy * speed * time - width, energy * speed * time, dist);
+          ripple *= smootherstep(dist, dist + width, energy * speed * time + width);
+          float ripple2 = smootherstep(energy * speed * (time - 0.2) - width, energy * speed * (time - 0.2), dist);
+          ripple2 *= smootherstep(dist, dist + width, energy * speed * (time - 0.2) + width);
+          return (ripple + ripple2 * 0.45) * energy * 0.65;
+        }
+
+        void main() {
+          vec2 p = vUv;
+          p.y = clamp(p.y - verticalOffset, 0.0, 1.0);
+
+          float tf = mix(0.4, 1.0, transitionFactor);
+          vec3 bgCol = mix(bgColorDown, bgColorUp, clamp(p.y * (1.0 + tf * 0.8), 0.0, 1.0));
+
+          float speed = mix(idleSpeed, baseSpeed, tf);
+          float straightness = mix(1.15, lineStraightness, tf);
+          float idleWave = idleWaveHeight * sin(p.x * 4.0 + idleAnimation * 0.25);
+
+          float bassPulse = pow(lowFreq, 2.0) * bassReactivity * tf;
+          float midPulse = pow(midFreq, 2.0) * midReactivity * tf;
+          float highPulse = pow(highFreq, 2.0) * highReactivity * tf;
+          float kickPulse = pow(kickEnergy, 2.0) * kickReactivity * tf;
+          float bounce = bounceEffect * bounceIntensity * tf;
+
+          float baseMotion = 0.035 * sin(p.x * 9.0 + iTime * 0.45);
+          float curveIntensity = mix(idleWaveHeight, 0.05 + waveIntensity * (bassPulse + kickPulse * 0.75), tf);
+          float curve = curveIntensity * sin((6.05 * p.x) + (speed * iTime)) + baseMotion;
+          float ripple = rippleIntensity * kickRipple(p, kickEnergy, mod(iTime, 8.0)) * tf;
+
+          float audioWave =
+            (0.085 * sin(p.x * 18.0 * waveComplexity) * bassPulse +
+             0.065 * sin(p.x * 28.0 * waveComplexity) * midPulse +
+             0.045 * sin(p.x * 44.0 * waveComplexity) * highPulse) / straightness;
+          audioWave += 0.02 * sin(p.x * 14.0 + iTime * 0.8);
+
+          float lineAFreq = 42.0 * waveComplexity + 85.0 * bassPulse + 90.0 * kickPulse;
+          float lineASpeed = 1.42 * speed + 5.8 * bassPulse + 6.0 * kickPulse;
+          float lineAWave = mix(idleWave, (0.012 + 0.045 * bassPulse + 0.08 * kickPulse) / straightness, tf);
+          float kickWave = kickEnergy > 0.08 ? kickEnergy * 0.3 * sin(14.0 * (p.x - iTime * 0.48)) * tf : 0.0;
+          float lineAOffset = bassPulse * 0.26 * sin(p.x * 10.0 - iTime * 2.0) + kickWave;
+
+          float lineAIdle = 0.5 + idleWave;
+          float lineAActive = 0.5 + curve + audioWave + lineAWave * sin((lineAFreq * p.x) + (-lineASpeed * iTime)) + lineAOffset - bounce;
+          float lineA = mix(lineAIdle, lineAActive, tf);
+          float lineAThickness = lineThickness * (1.0 + bassPulse * 0.28 + kickPulse * 0.6);
+          float lineADist = distance(p.y, lineA) * (2.0 / lineAThickness);
+          float lineAShape = smootherstep(1.0 - clamp(lineADist, 0.0, 1.0), 1.0, 0.99);
+
+          vec3 enhancedColor1In = mix(color1In, vec3(0.4, 0.6, 1.0), kickEnergy * 0.45 * tf);
+          vec3 enhancedColor1Out = mix(color1Out, vec3(0.6, 0.8, 1.0), kickEnergy * 0.3 * tf);
+          vec3 lineACol = (1.0 - lineAShape) * mix(enhancedColor1In, enhancedColor1Out, lineAShape);
+
+          float lineBFreq = 52.0 * waveComplexity + 100.0 * midPulse;
+          float lineBSpeed = 1.85 * speed + 7.5 * midPulse;
+          float lineBWave = mix(idleWave * 0.75, (0.012 + 0.045 * midPulse) / straightness, tf);
+          float lineBOffset = midPulse * 0.19 * sin(p.x * 15.0 - iTime * 1.5) + kickEnergy * 0.1 * sin(p.x * 23.0 - iTime * 3.3) * tf;
+
+          float lineBIdle = 0.5 + idleWave * 0.75;
+          float lineBActive = 0.5 + curve - audioWave + lineBWave * sin((lineBFreq * p.x) + (lineBSpeed * iTime)) * sin(lineBSpeed * iTime) + lineBOffset - bounce * 0.4;
+          float lineB = mix(lineBIdle, lineBActive, tf);
+          float lineBThickness = lineThickness * (1.0 + midPulse * 0.24 + kickEnergy * 0.22 * tf);
+          float lineBDist = distance(p.y, lineB) * (2.0 / lineBThickness);
+          float lineBShape = smootherstep(1.0 - clamp(lineBDist, 0.0, 1.0), 1.0, 0.99);
+          vec3 enhancedColor2In = mix(color2In, vec3(0.7, 0.85, 1.0), kickEnergy * 0.22 * tf);
+          vec3 lineBCol = (1.0 - lineBShape) * mix(enhancedColor2In, color2Out, lineBShape);
+
+          float lineCFreq = 64.0 * waveComplexity + 120.0 * highPulse;
+          float lineCSpeed = 2.18 * speed + 9.0 * highPulse;
+          float lineCWave = mix(idleWave * 1.12, (0.012 + 0.04 * highPulse) / straightness, tf);
+          float lineCOffset = highPulse * 0.16 * sin(p.x * 20.0 - iTime * 1.0);
+
+          float lineCIdle = 0.5 + idleWave * 1.1;
+          float lineCActive = 0.5 + curve * 0.72 - audioWave * 0.55 + lineCWave * sin((lineCFreq * p.x) + (lineCSpeed * iTime)) * sin(lineCSpeed * (iTime + 0.1)) + lineCOffset - bounce * 0.28;
+          float lineC = mix(lineCIdle, lineCActive, tf);
+          float lineCThickness = lineThickness * (1.0 + highPulse * 0.2 + kickEnergy * 0.12 * tf);
+          float lineCDist = distance(p.y, lineC) * (2.0 / lineCThickness);
+          float lineCShape = smootherstep(1.0 - clamp(lineCDist, 0.0, 1.0), 1.0, 0.99);
+          vec3 lineCCol = (1.0 - lineCShape) * mix(color3In, color3Out, lineCShape);
+
+          vec3 color = lineACol + lineBCol + lineCCol + vec3(1.0, 0.8, 0.4) * ripple;
+          color = applyGrain(color, p, iTime);
+          vec3 emissive = clamp(color, 0.0, 1.0);
+
+          float alpha = clamp(max(max(emissive.r, emissive.g), emissive.b), 0.0, 1.0);
+          gl_FragColor = vec4(emissive, alpha);
+        }
+      `;
+
+      function initThree() {
+        const canvas = document.getElementById("shader-canvas");
+        renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setClearColor(0x000000, 0);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        scene = new THREE.Scene();
+        camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+        resizeRenderer();
+
+        shaderMaterial = new THREE.ShaderMaterial({
+          vertexShader,
+          fragmentShader,
+          uniforms: {
+            iResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+            iTime: { value: 0 },
+            transitionFactor: { value: 0 },
+            idleAnimation: { value: 0 },
+            idleWaveHeight: { value: settings.idleWaveHeight },
+            lowFreq: { value: 0 },
+            midFreq: { value: 0 },
+            highFreq: { value: 0 },
+            kickEnergy: { value: 0 },
+            beatPhase: { value: 0 },
+            bounceEffect: { value: 0 },
+            baseSpeed: { value: settings.baseSpeed },
+            idleSpeed: { value: settings.idleSpeed },
+            bassReactivity: { value: settings.bassReactivity },
+            midReactivity: { value: settings.midReactivity },
+            highReactivity: { value: settings.highReactivity },
+            kickReactivity: { value: settings.kickReactivity },
+            bounceIntensity: { value: settings.bounceIntensity },
+            waveIntensity: { value: settings.waveIntensity },
+            waveComplexity: { value: settings.waveComplexity },
+            rippleIntensity: { value: settings.rippleIntensity },
+            lineThickness: { value: settings.lineThickness },
+            lineStraightness: { value: settings.lineStraightness },
+            verticalOffset: { value: 0 },
+            enableGrain: { value: settings.enableGrain },
+            grainIntensity: { value: settings.grainIntensity },
+            grainSpeed: { value: settings.grainSpeed },
+            grainMean: { value: settings.grainMean },
+            grainVariance: { value: settings.grainVariance },
+            grainBlendMode: { value: settings.grainBlendMode },
+            bgColorDown: {
+              value: new THREE.Vector3(
+                settings.bgColorDown[0] / 255,
+                settings.bgColorDown[1] / 255,
+                settings.bgColorDown[2] / 255
+              ),
+            },
+            bgColorUp: {
+              value: new THREE.Vector3(
+                settings.bgColorUp[0] / 255,
+                settings.bgColorUp[1] / 255,
+                settings.bgColorUp[2] / 255
+              ),
+            },
+            color1In: {
+              value: new THREE.Vector3(
+                settings.color1In[0] / 255,
+                settings.color1In[1] / 255,
+                settings.color1In[2] / 255
+              ),
+            },
+            color1Out: {
+              value: new THREE.Vector3(
+                settings.color1Out[0] / 255,
+                settings.color1Out[1] / 255,
+                settings.color1Out[2] / 255
+              ),
+            },
+            color2In: {
+              value: new THREE.Vector3(
+                settings.color2In[0] / 255,
+                settings.color2In[1] / 255,
+                settings.color2In[2] / 255
+              ),
+            },
+            color2Out: {
+              value: new THREE.Vector3(
+                settings.color2Out[0] / 255,
+                settings.color2Out[1] / 255,
+                settings.color2Out[2] / 255
+              ),
+            },
+            color3In: {
+              value: new THREE.Vector3(
+                settings.color3In[0] / 255,
+                settings.color3In[1] / 255,
+                settings.color3In[2] / 255
+              ),
+            },
+            color3Out: {
+              value: new THREE.Vector3(
+                settings.color3Out[0] / 255,
+                settings.color3Out[1] / 255,
+                settings.color3Out[2] / 255
+              ),
+            },
+          },
+        });
+
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), shaderMaterial);
+        scene.add(mesh);
+        resizeRenderer();
+      }
+
+      function resizeRenderer() {
+        if (!renderer || !shaderMaterial) return;
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height, false);
+        shaderMaterial.uniforms.iResolution.value.set(width, height);
+        const offsetPixels = 44;
+        shaderMaterial.uniforms.verticalOffset.value = offsetPixels / Math.max(height, 1);
+      }
+
+      function initAudio() {
+        audioElement = new Audio();
+        audioElement.crossOrigin = "anonymous";
+        audioElement.loop = false;
+        audioElement.volume = 1;
+      }
+
+      function ensureAudio(startPlayback = true) {
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          analyser = audioContext.createAnalyser();
+          analyser.fftSize = 1024;
+          dataArray = new Uint8Array(analyser.frequencyBinCount);
+          audioSource = audioContext.createMediaElementSource(audioElement);
+          audioSource.connect(analyser);
+          analyser.connect(audioContext.destination);
+        }
+        if (startPlayback) {
+          playing = true;
+          updateControls();
+          audioContext.resume().then(() => {
+            audioElement.play().catch(() => {
+              playing = false;
+              updateControls();
+            });
+          }).catch(() => {
+            playing = false;
+            updateControls();
+          });
+        } else {
+          updateControls();
+        }
+      }
+
+      function startAudio() {
+        ensureAudio(true);
+      }
+
+      function stopAudio() {
+        if (audioElement) {
+          audioElement.pause();
+        }
+        playing = false;
+        updateControls();
+      }
+
+      function updateControls() {
+        if (!playToggle || !statusLabel) return;
+        playToggle.textContent = playing ? "Stop" : "Play";
+        statusLabel.textContent = playing ? "Playing" : "Idle";
+      }
+
+      function getWeightedAverage(array) {
+        if (!array.length) return 0;
+        let sum = 0;
+        let weight = 0;
+        let maxVal = 0;
+        const emphasize = 1.5;
+        for (let i = 0; i < array.length; i++) {
+          const value = array[i] / 255;
+          maxVal = Math.max(maxVal, value);
+          const emphasized = Math.pow(value, emphasize);
+          sum += emphasized;
+          weight++;
+        }
+        const avg = sum / weight;
+        return avg * 0.7 + maxVal * 0.3;
+      }
+
+      function updateFrequencies() {
+        if (!playing || !analyser) return;
+        analyser.getByteFrequencyData(dataArray);
+
+        const bands = [
+          [1, 4],
+          [4, 9],
+          [9, 20],
+          [20, 40],
+          [40, 80],
+          [80, 160],
+          [160, 300],
+          [300, 500],
+        ];
+
+        bands.forEach(([start, end], index) => {
+          const bandSlice = dataArray.slice(start, end);
+          const bandAvg = getWeightedAverage(bandSlice);
+          bandEnergies[index] = bandAvg;
+          bandHistories[index].unshift(bandAvg);
+          if (bandHistories[index].length > historyLength) {
+            bandHistories[index].pop();
+          }
+        });
+
+        const kickAvg = bandEnergies[1];
+        const kickHistory = bandHistories[1];
+        const recentKickAvg =
+          kickHistory.slice(1).reduce((sum, value) => sum + value, 0) /
+          (kickHistory.length - 1 || 1);
+        const kickJump = kickAvg - recentKickAvg;
+        const newKickDetected =
+          kickJump > kickThreshold * 1.2 &&
+          kickAvg > 0.15 &&
+          (!kickDetected || performance.now() - lastKickTime > 160);
+
+        if (newKickDetected) {
+          kickDetected = true;
+          kickEnergy = Math.min(1.0, kickAvg * kickSensitivity);
+          kickImpactFrames = 10;
+
+          const now = performance.now();
+          if (lastKickTime > 0) {
+            const interval = now - lastKickTime;
+            if (interval > 200 && interval < 2000) {
+              beatInterval = beatInterval * 0.7 + interval * 0.3;
+            }
+          }
+          lastKickTime = now;
+          beatTime = 0;
+        } else {
+          kickEnergy *= kickDecay;
+          if (kickEnergy < 0.05) {
+            kickDetected = false;
+          }
+          if (kickImpactFrames > 0) {
+            kickImpactFrames--;
+          }
+        }
+
+        if (beatInterval > 0) {
+          beatTime += 16.67;
+          beatPhase = (beatTime % beatInterval) / beatInterval;
+        }
+
+        let bounce = 0.0;
+        if (kickImpactFrames > 0) {
+          bounce = Math.pow(kickImpactFrames / 10.0, 0.6) * 0.026;
+        }
+        bounce += kickEnergy * 0.022;
+
+        const combinedBass = (bandEnergies[1] * 1.2 + bandEnergies[2]) / 2.2;
+        if (combinedBass > lowFreq * 1.1) {
+          lowFreq = lowFreq * 0.3 + combinedBass * 0.7;
+        } else {
+          lowFreq = lowFreq * 0.85 + combinedBass * 0.15;
+        }
+
+        const combinedMid = (bandEnergies[3] + bandEnergies[4]) / 2;
+        if (combinedMid > midFreq * 1.1) {
+          midFreq = midFreq * 0.4 + combinedMid * 0.6;
+        } else {
+          midFreq = midFreq * 0.8 + combinedMid * 0.2;
+        }
+
+        const combinedHigh = (bandEnergies[5] + bandEnergies[6] + bandEnergies[7]) / 3;
+        if (combinedHigh > highFreq * 1.05) {
+          highFreq = highFreq * 0.5 + combinedHigh * 0.5;
+        } else {
+          highFreq = highFreq * 0.8 + combinedHigh * 0.2;
+        }
+
+        lowFreq = Math.max(lowFreq, kickEnergy * 0.6);
+
+        shaderMaterial.uniforms.lowFreq.value = lowFreq;
+        shaderMaterial.uniforms.midFreq.value = midFreq;
+        shaderMaterial.uniforms.highFreq.value = highFreq;
+        shaderMaterial.uniforms.kickEnergy.value = kickEnergy;
+        shaderMaterial.uniforms.beatPhase.value = beatPhase;
+        shaderMaterial.uniforms.bounceEffect.value = bounce;
+        shaderMaterial.uniforms.lineStraightness.value = settings.lineStraightness;
+      }
+
+      function animate(timestamp) {
+        requestAnimationFrame(animate);
+
+        time += 0.01;
+        shaderMaterial.uniforms.iTime.value = time;
+
+        idleAnimation += 0.01;
+        shaderMaterial.uniforms.idleAnimation.value = idleAnimation;
+
+        const transitionRate = settings.transitionSmoothness;
+        if (playing && transitionFactor < 1.0) {
+          transitionFactor = Math.min(transitionFactor + transitionRate, 1.0);
+        } else if (!playing && transitionFactor > 0.0) {
+          transitionFactor = Math.max(transitionFactor - transitionRate, 0.0);
+          if (transitionFactor === 0) {
+            lowFreq = midFreq = highFreq = kickEnergy = 0;
+            shaderMaterial.uniforms.lowFreq.value = 0;
+            shaderMaterial.uniforms.midFreq.value = 0;
+            shaderMaterial.uniforms.highFreq.value = 0;
+            shaderMaterial.uniforms.kickEnergy.value = 0;
+            shaderMaterial.uniforms.bounceEffect.value = 0;
+          }
+        }
+        shaderMaterial.uniforms.transitionFactor.value = transitionFactor;
+
+        updateFrequencies();
+        renderer.render(scene, camera);
+
+        frameCount++;
+        if (timestamp - lastTime >= 1000) {
+          frameCount = 0;
+          lastTime = timestamp;
+        }
+      }
+
+      function init() {
+        initThree();
+        initAudio();
+        ensureAudio(false);
+        playing = true;
+        animate(0);
+        updateControls();
+      }
+
+      window.addEventListener("resize", resizeRenderer, { passive: true });
+      const playToggle = document.getElementById("play-toggle");
+      const statusLabel = document.getElementById("play-status");
+      if (playToggle) {
+        playToggle.addEventListener("click", () => {
+          if (!playing) {
+            startAudio();
+          } else {
+            stopAudio();
+          }
+        });
+
+        window.addEventListener(
+          "keydown",
+          (event) => {
+            if (event.code === "Space") {
+              event.preventDefault();
+              playToggle.click();
+            }
+          },
+          { passive: false }
+        );
+      }
+      window.addEventListener(
+        "pointerdown",
+        () => {
+          if (!playing && audioContext && audioContext.state === "suspended") {
+            audioContext.resume();
+          }
+        },
+        { passive: true }
+      );
+
+      function playExternalAudioUrl(url, contentType) {
+        if (!audioElement) return;
+        if (currentExternalAudioUrl) {
+          URL.revokeObjectURL(currentExternalAudioUrl);
+          currentExternalAudioUrl = null;
+        }
+
+        currentExternalAudioUrl = url;
+        audioElement.pause();
+        audioElement.src = url;
+        audioElement.currentTime = 0;
+        audioElement.loop = false;
+        ensureAudio(true);
+        audioElement.play().catch((error) => {
+          console.warn("Visualizer audio playback failed:", error);
+        });
+        audioElement.onended = () => {
+          audioElement.onended = null;
+          restoreDefaultAudio();
+        };
+      }
+
+      function restoreDefaultAudio() {
+        if (!audioElement) return;
+        audioElement.pause();
+        if (currentExternalAudioUrl) {
+          URL.revokeObjectURL(currentExternalAudioUrl);
+          currentExternalAudioUrl = null;
+        }
+      }
+
+      window.addEventListener("message", (event) => {
+        if (event.origin !== window.location.origin) return;
+        const data = event.data;
+        if (data?.type === "brainAudio" && data.audioBuffer) {
+          try {
+            const blob = new Blob([data.audioBuffer], {
+              type: data.contentType || "audio/mpeg",
+            });
+            const url = URL.createObjectURL(blob);
+            playExternalAudioUrl(url, data.contentType);
+          } catch (error) {
+            console.warn("Failed to handle brain audio message:", error);
+          }
+        } else if (data?.type === "brainAudioFinished") {
+          restoreDefaultAudio();
+        }
+      });
+
+      window.addEventListener("load", () => {
+        init();
+      });
+    </script>
+  </body>
+</html>
+

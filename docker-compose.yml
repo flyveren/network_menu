@@ -7,9 +7,13 @@ services:
     working_dir: /usr/src/app
     volumes:
       - ./app:/usr/src/app
+      - ./app/certs:/usr/src/app/certs
     environment:
       - NODE_ENV=production
       - PORT=8081
+      - ENABLE_SELF_SIGNED_CERT=true
+      - SELF_SIGNED_CERT_SUBJECT=/CN=localhost
+      - SELF_SIGNED_CERT_DAYS=365
     ports:
       - "8081:8081"
     restart: unless-stopped

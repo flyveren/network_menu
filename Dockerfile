@@ -7,7 +7,8 @@ RUN apk add --no-cache \
     py3-beautifulsoup4 \
     py3-lxml \
     curl \
-    ca-certificates
+    ca-certificates \
+    openssl
 
 WORKDIR /usr/src/app
 
