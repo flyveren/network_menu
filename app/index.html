@@ -306,6 +306,66 @@
           border: none;
         }
 
+        .news-viewer {
+          position: fixed;
+          inset: 0;
+          display: none;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.5);
+          z-index: 80;
+          padding: clamp(0.5rem, 2vw, 1.5rem);
+        }
+
+        .news-viewer[data-active="true"] {
+          display: flex;
+        }
+
+        .news-viewer__dialog {
+          position: relative;
+          width: min(94vw, 1200px);
+          height: min(97vh, 1000px);
+          border-radius: 12px;
+          background: #ffffff;
+          box-shadow: 0 40px 80px rgba(0, 0, 0, 0.45);
+          overflow: hidden;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .news-viewer__close {
+          position: absolute;
+          top: 0.8rem;
+          right: 0.8rem;
+          width: 40px;
+          height: 40px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(15, 23, 42, 0.1);
+          color: rgba(15, 23, 42, 0.85);
+          font-size: 1.4rem;
+          line-height: 1;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: background 160ms ease, transform 160ms ease;
+        }
+
+        .news-viewer__close:hover,
+        .news-viewer__close:focus-visible {
+          background: rgba(15, 23, 42, 0.2);
+          transform: translateY(-1px);
+        }
+
+        .news-viewer__frame {
+          flex: 1;
+          border: none;
+          width: 100%;
+          height: 100%;
+          background: #ffffff;
+        }
+
         .spotify-auth-modal {
           position: fixed;
           inset: 0;
@@ -597,10 +657,10 @@
         }
 
         .brain-loader {
-          width: 250px;
-          height: 200px;
+          width: 280px;
+          height: 160px;
           display: block;
-          filter: hue-rotate(205deg) saturate(1.8);
+          filter: hue-rotate(205deg) saturate(10);
         }
 
         .brain-loader img {
@@ -611,13 +671,13 @@
 
         .quote-rotator {
           position: fixed;
-          top: calc(clamp(1rem, 3vh, 1.6rem) - 18px);
+          top: calc(clamp(1rem, 3vh, 1.6rem) - 12px);
           left: 50%;
           transform: translate(-50%, 0);
           z-index: 7;
           font-family: "Jersey 10", cursive;
-          color: #1111ea;
-          font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+          color: #ffffff;
+          font-size: clamp(0.8rem, 2vw, 1.1rem);
           white-space: nowrap;
           letter-spacing: 0.05em;
           text-shadow: 0 0 10px rgba(17, 17, 234, 0.4);
@@ -669,43 +729,28 @@
 
         .github-contrib {
           position: fixed;
+          left: 0;
           right: 0;
-          left: auto;
-          transform: none;
+          width: 100%;
           z-index: 5;
-          display: flex;
-          flex-direction: column;
-          align-items: stretch;
-          gap: 0.5rem;
-          font-family: "Jersey 10", cursive;
-          color: #1111ea;
-          opacity: 0.85;
-          width: min(100vw, 1600px);
-          max-width: 1600px;
-        }
-
-        .github-contrib--bottom {
-          bottom: 0;
-          pointer-events: auto;
+          pointer-events: none;
         }
 
         .github-contrib--top {
           top: 0;
-          bottom: auto;
-          pointer-events: none;
         }
 
-        .github-contrib--top .github-contrib-overlay {
-          pointer-events: auto;
-          height: calc(3 * 16px + 8px);
+        .github-contrib--bottom {
+          bottom: 0;
         }
 
         .github-contrib-overlay {
           position: relative;
           width: 100%;
-          aspect-ratio: 53 / 7;
+          max-width: 100%;
           cursor: crosshair;
           overflow: hidden;
+          pointer-events: auto;
         }
 
         .github-contrib-overlay--bottom {
@@ -955,7 +1000,7 @@
         }
 
         .news-feed a {
-          color: rgba(202, 215, 255, 0.85);
+          color: rgba(255, 255, 255, 1);
           text-decoration: none;
           font-family: "JetBrains Mono", system-ui, sans-serif;
           font-weight: 500;
@@ -968,13 +1013,13 @@
 
         .news-feed a:hover,
         .news-feed a:focus-visible {
-          color: #ffffff;
+          color: rgba(255, 255, 255, 0.75);
           text-shadow: 0 0 12px rgba(70, 116, 255, 0.55);
         }
 
         .news-feed .news-meta {
-          font-family: "JetBrains Mono", system-ui, sans-serif;
-          font-size: clamp(0.75rem, 1.6vw, 0.85rem);
+          font-family: "Jersey 10", cursive;
+          font-size: clamp(0.75rem, 1.6vw, 0.9rem);
           letter-spacing: 0.08em;
           color: #1111ea;
         }
@@ -1164,6 +1209,10 @@
           z-index: 1;
         }
 
+        body.news-viewer-open {
+          overflow: hidden;
+        }
+
         .background-video {
           position: fixed;
           inset: 0;
@@ -1327,19 +1376,6 @@
       ></iframe>
     </section>
 
-    <div class="github-contrib github-contrib--top">
-      <div class="github-contrib-overlay github-contrib-overlay--top">
-        <canvas id="github-grid-top" aria-hidden="true"></canvas>
-        <div class="github-contrib-tooltip" id="github-tooltip-top" role="status"></div>
-      </div>
-    </div>
-
-    <div class="github-contrib github-contrib--bottom">
-      <div class="github-contrib-overlay github-contrib-overlay--bottom">
-        <canvas id="github-grid" aria-hidden="true"></canvas>
-        <div class="github-contrib-tooltip" id="github-tooltip" role="status"></div>
-      </div>
-    </div>
     <aside class="news-feed" aria-label="Latest headlines from wallnot.dk">
       <ul id="news-list-primary" aria-live="polite"></ul>
       <p class="news-error" id="news-error" hidden>
@@ -1411,6 +1447,31 @@
             Cancel
           </button>
         </div>
+      </div>
+    </div>
+    <div class="news-viewer" id="news-viewer" aria-hidden="true">
+      <div class="news-viewer__dialog" role="dialog" aria-modal="true" aria-label="News article viewer">
+        <button type="button" class="news-viewer__close" id="news-viewer-close" aria-label="Close news viewer">×</button>
+        <iframe
+          class="news-viewer__frame"
+          id="news-viewer-frame"
+          title="News article viewer"
+          sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+          src="about:blank"
+        ></iframe>
+      </div>
+    </div>
+    <div class="github-contrib github-contrib--top">
+      <div class="github-contrib-overlay github-contrib-overlay--top">
+        <canvas id="github-grid-top" aria-hidden="true"></canvas>
+        <div class="github-contrib-tooltip" id="github-tooltip-top" role="status"></div>
+      </div>
+    </div>
+
+    <div class="github-contrib github-contrib--bottom">
+      <div class="github-contrib-overlay github-contrib-overlay--bottom">
+        <canvas id="github-grid" aria-hidden="true"></canvas>
+        <div class="github-contrib-tooltip" id="github-tooltip" role="status"></div>
       </div>
     </div>
 
@@ -1633,6 +1694,16 @@
           if (brainToggle.hasAttribute("disabled")) return;
           isPressingBrain = true;
           setBrainPressed(true);
+          if (spotifyPlayerInstance) {
+            spotifyPlayerInstance.getCurrentState().then((state) => {
+              if (state && !state.paused) {
+                spotifyAutoResumeOnBrainToggle = true;
+                spotifyPlayerInstance.pause?.();
+              } else {
+                spotifyAutoResumeOnBrainToggle = false;
+              }
+            });
+          }
           startRecording();
           brainToggle.setPointerCapture?.(event.pointerId);
         });
@@ -1642,6 +1713,12 @@
           isPressingBrain = false;
           setBrainPressed(false);
           stopRecording();
+          if (spotifyPlayerInstance && spotifyAutoResumeOnBrainToggle) {
+            spotifyPlayerInstance.resume?.().catch((error) => {
+              console.warn("Failed to resume Spotify after brain toggle:", error);
+            });
+            spotifyAutoResumeOnBrainToggle = false;
+          }
         });
 
         brainToggle.addEventListener("pointercancel", () => {
@@ -1650,6 +1727,12 @@
           setBrainPressed(false);
           shouldSubmitRecording = false;
           stopRecording();
+          if (spotifyPlayerInstance && spotifyAutoResumeOnBrainToggle) {
+            spotifyPlayerInstance.resume?.().catch((error) => {
+              console.warn("Failed to resume Spotify after brain cancel:", error);
+            });
+            spotifyAutoResumeOnBrainToggle = false;
+          }
         });
 
         brainToggle.addEventListener("keydown", (event) => {
@@ -1658,6 +1741,16 @@
             if (!event.repeat) {
               isPressingBrain = true;
               setBrainPressed(true);
+              if (spotifyPlayerInstance) {
+                spotifyPlayerInstance.getCurrentState().then((state) => {
+                  if (state && !state.paused) {
+                    spotifyAutoResumeOnBrainToggle = true;
+                    spotifyPlayerInstance.pause?.();
+                  } else {
+                    spotifyAutoResumeOnBrainToggle = false;
+                  }
+                });
+              }
               startRecording();
             }
           }
@@ -1669,6 +1762,12 @@
             isPressingBrain = false;
             setBrainPressed(false);
             stopRecording();
+            if (spotifyPlayerInstance && spotifyAutoResumeOnBrainToggle) {
+              spotifyPlayerInstance.resume?.().catch((error) => {
+                console.warn("Failed to resume Spotify after brain keyup:", error);
+              });
+              spotifyAutoResumeOnBrainToggle = false;
+            }
           }
         });
 
@@ -1680,6 +1779,12 @@
             stopRecording();
           }
           setBrainPressed(false);
+          if (spotifyPlayerInstance && spotifyAutoResumeOnBrainToggle) {
+            spotifyPlayerInstance.resume?.().catch((error) => {
+              console.warn("Failed to resume Spotify after brain blur:", error);
+            });
+            spotifyAutoResumeOnBrainToggle = false;
+          }
         });
       }
 
@@ -1765,6 +1870,19 @@
         revokeBrainSpeechUrl();
         brainSpeechAudio.pause();
         brainSpeechAudio.currentTime = 0;
+        let resumeAfterSpeech = false;
+        if (spotifyPlayerInstance) {
+          try {
+            const state = await spotifyPlayerInstance.getCurrentState();
+            if (state && !state.paused) {
+              resumeAfterSpeech = true;
+              spotifyAutoResumeOnSpeech = true;
+              await spotifyPlayerInstance.pause();
+            }
+          } catch (error) {
+            console.warn("Failed to pause Spotify before speech:", error);
+          }
+        }
 
         try {
           const response = await fetch("/api/speech", {
@@ -1789,9 +1907,16 @@
           brainSpeechAudio.load();
           brainSpeechAudio.play().then(() => {
             setLoaderVisible(false);
-          }).catch((error) => {
+          }).catch(async (error) => {
             console.warn("Playback failed:", error);
             setLoaderVisible(false);
+            if (resumeAfterSpeech && spotifyPlayerInstance) {
+              try {
+                await spotifyPlayerInstance.resume();
+              } catch (resumeError) {
+                console.warn("Failed to resume Spotify after speech error:", resumeError);
+              }
+            }
           });
 
           const bufferForVisualizer = arrayBuffer.slice(0);
@@ -1807,6 +1932,13 @@
           console.error("Text-to-speech failed:", error);
           setLoaderVisible(false);
           sendVisualizerMessage("brainAudioFinished");
+          if (resumeAfterSpeech && spotifyPlayerInstance) {
+            try {
+              await spotifyPlayerInstance.resume();
+            } catch (resumeError) {
+              console.warn("Failed to resume Spotify after speech failure:", resumeError);
+            }
+          }
         }
       }
 
@@ -1815,11 +1947,23 @@
           revokeBrainSpeechUrl();
           sendVisualizerMessage("brainAudioFinished");
           setLoaderVisible(false);
+          if (spotifyPlayerInstance && spotifyAutoResumeOnSpeech) {
+            spotifyPlayerInstance.resume?.().catch((error) => {
+              console.warn("Failed to resume Spotify after speech ended:", error);
+            });
+          }
+          spotifyAutoResumeOnSpeech = false;
         });
         brainSpeechAudio.addEventListener("error", () => {
           revokeBrainSpeechUrl();
           sendVisualizerMessage("brainAudioFinished");
           setLoaderVisible(false);
+          if (spotifyPlayerInstance && spotifyAutoResumeOnSpeech) {
+            spotifyPlayerInstance.resume?.().catch((error) => {
+              console.warn("Failed to resume Spotify after speech error:", error);
+            });
+          }
+          spotifyAutoResumeOnSpeech = false;
         });
       }
 
@@ -2079,6 +2223,10 @@
       const newsListSecondary = document.getElementById("news-list-secondary");
       const newsErrorElement = document.getElementById("news-error");
       const newsSecondaryContainer = document.querySelector(".news-feed--secondary");
+      const newsViewer = document.getElementById("news-viewer");
+      const newsViewerFrame = document.getElementById("news-viewer-frame");
+      const newsViewerClose = document.getElementById("news-viewer-close");
+      let newsViewerPreviousFocus = null;
       const categoryLinks = document.querySelectorAll(".corner-link[data-category]");
       const newsCategoryFiles = {
         all: "news.json",
@@ -2088,6 +2236,58 @@
         debat: "news_debat.json"
       };
       let currentNewsCategory = "all";
+
+      const closeNewsViewer = () => {
+        if (!newsViewer) return;
+        newsViewer.removeAttribute("data-active");
+        newsViewer.setAttribute("aria-hidden", "true");
+        document.body.classList.remove("news-viewer-open");
+        if (newsViewerFrame) {
+          newsViewerFrame.src = "about:blank";
+        }
+        if (newsViewerPreviousFocus) {
+          newsViewerPreviousFocus.focus?.({ preventScroll: true });
+        }
+        newsViewerPreviousFocus = null;
+      };
+
+      const openNewsViewer = (url) => {
+        if (!newsViewer || !newsViewerFrame) return;
+        if (!url) return;
+        try {
+          const targetUrl = new URL(url, window.location.href);
+          newsViewerFrame.src = `/api/news/proxy?url=${encodeURIComponent(targetUrl.toString())}`;
+        } catch (error) {
+          console.warn("Invalid news URL:", url, error);
+          newsViewerFrame.src = url;
+        }
+        newsViewerPreviousFocus = document.activeElement;
+        newsViewer.dataset.active = "true";
+        newsViewer.setAttribute("aria-hidden", "false");
+        document.body.classList.add("news-viewer-open");
+        requestAnimationFrame(() => {
+          newsViewerClose?.focus?.({ preventScroll: true });
+        });
+      };
+
+      if (newsViewer) {
+        newsViewer.addEventListener("click", (event) => {
+          const dialog = newsViewer.querySelector(".news-viewer__dialog");
+          if (event.target === newsViewer || (dialog && !dialog.contains(event.target))) {
+            closeNewsViewer();
+          }
+        });
+        window.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && newsViewer.dataset.active === "true") {
+            closeNewsViewer();
+          }
+        });
+      }
+
+      newsViewerClose?.addEventListener("click", (event) => {
+        event.stopPropagation();
+        closeNewsViewer();
+      });
 
       function updateActiveCategoryLink(category) {
         categoryLinks.forEach((link) => {
@@ -2152,9 +2352,17 @@
             if (item?.link) {
               const link = document.createElement("a");
               link.href = item.link;
-              link.target = "_blank";
-              link.rel = "noopener noreferrer";
+            link.target = "_blank";
+            link.rel = "noopener noreferrer";
               link.textContent = item?.title?.trim() || "Untitled article";
+            link.addEventListener("click", (event) => {
+              if (event.defaultPrevented) return;
+              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+              }
+              event.preventDefault();
+              openNewsViewer(item.link);
+            });
               li.appendChild(link);
             } else {
               const span = document.createElement("span");
@@ -2223,6 +2431,7 @@
         visibleRows: null,
         cells: [],
         metrics: null,
+        maxColumns: 440,
       },
       {
         key: "top",
@@ -2232,6 +2441,7 @@
         visibleRows: 3,
         cells: [],
         metrics: null,
+        maxColumns: 440,
       },
     ].filter((view) => view.canvas && view.container && view.tooltip);
 
@@ -2274,7 +2484,7 @@
         }
         if (alignedEnd > todayUtc) alignedEnd.setTime(todayUtc.getTime());
 
-        const totalColumns = 220;
+        const totalColumns = 440;
         const alignedStart = new Date(alignedEnd);
         alignedStart.setUTCDate(alignedStart.getUTCDate() - (totalColumns * 7 - 1));
         alignedStart.setUTCHours(0, 0, 0, 0);
@@ -2367,10 +2577,15 @@
       const cols = matrix[0]?.length || 0;
       if (!rows || !cols) return;
 
-      const gap = 4;
       const cornerRadius = 2;
       const dpr = window.devicePixelRatio || 1;
-      const squareSize = 16;
+
+      const maxColumns =
+        Number.isFinite(view.maxColumns) && view.maxColumns > 0
+          ? Math.min(view.maxColumns, cols)
+          : cols;
+      const startColumn = Math.max(0, cols - maxColumns);
+      const drawColumns = Math.min(maxColumns, cols);
 
       const rowStart =
         typeof view.visibleRows === "number" && view.visibleRows > 0
@@ -2381,7 +2596,9 @@
           ? Math.min(rows, view.visibleRows)
           : rows;
 
-      const canvasWidth = squareSize * cols + gap * (cols - 1);
+      const squareSize = 16;
+      const gap = 4;
+      const canvasWidth = squareSize * drawColumns + gap * (drawColumns - 1);
       const verticalGap = rowCount > 1 ? gap : 0;
       const canvasHeight =
         rowCount > 0 ? squareSize * rowCount + verticalGap * (rowCount - 1) : 0;
@@ -2394,7 +2611,6 @@
       canvas.style.transformOrigin = "top left";
       canvas.style.transform = "none";
 
-      container.style.width = "100%";
       container.style.height = `${canvasHeight}px`;
 
       const ctx = canvas.getContext("2d");
@@ -2408,7 +2624,7 @@
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
       const palette = [
-        "rgba(0, 0, 0, 0.7)",
+        "rgba(30, 45, 95, 0.32)",
         "#113264",
         "#1d4ed8",
         "#2346ff",
@@ -2416,10 +2632,11 @@
       ];
       view.cells = [];
 
-      for (let col = 0; col < cols; col++) {
+      for (let col = 0; col < drawColumns; col++) {
+        const sourceCol = startColumn + col;
         for (let r = 0; r < rowCount; r++) {
           const sourceRow = rowStart + r;
-          const cell = matrix[sourceRow][col] ?? { count: 0, level: 0, date: null };
+          const cell = matrix[sourceRow][sourceCol] ?? { count: 0, level: 0, date: null };
           const paletteIndex = Math.max(
             0,
             Math.min(Number.parseInt(cell.level ?? 0, 10), palette.length - 1)
@@ -2439,23 +2656,29 @@
             size: squareSize,
             count: cell.count ?? 0,
             date: cell.date,
+            sourceColumn: sourceCol,
+            sourceRow,
           });
         }
       }
 
       ctx.restore();
 
-      const visibleWidth = container.clientWidth || canvasWidth;
+      const visibleWidth = container.clientWidth || view.container.clientWidth || canvasWidth;
       const visibleHeight = container.clientHeight || canvasHeight;
-      const hiddenStartX = Math.max(0, canvasWidth - visibleWidth);
-
       view.metrics = {
         canvasWidth,
         canvasHeight,
         visibleWidth,
         visibleHeight,
-        hiddenStartX,
+        startColumn,
+        drawColumns,
+        totalColumns: cols,
+        squareSize,
+        gap,
       };
+
+      view.canvas.style.transform = "translateX(0)";
     }
 
     function renderContributionViews() {
@@ -2715,6 +2938,8 @@
       let spotifySdkPromise = null;
       let spotifyInitializing = false;
       let spotifyLoadingTrack = false;
+      let spotifyAutoResumeOnBrainToggle = false;
+      let spotifyAutoResumeOnSpeech = false;
 
       const spotifyConfigPromise = (() => {
         return fetch("/api/spotify/config", { cache: "no-store" })
@@ -3075,28 +3300,27 @@
         }
       }
 
+      const applySpotifyVolume = (value) => {
+        const numeric = Number.parseFloat(value);
+        if (Number.isFinite(numeric)) {
+          setSpotifyVolume(numeric);
+        }
+      };
+
       let spotifyVolumeDebounce = null;
       if (spotifyVolumeSlider) {
-        const applyVolume = (value) => {
-          const numeric = Number.parseFloat(value);
-          if (Number.isFinite(numeric)) {
-            setSpotifyVolume(numeric);
-          }
-        };
-
         spotifyVolumeSlider.addEventListener("input", (event) => {
           const { value } = event.target;
-          reflectVolumeText(value);
           if (spotifyVolumeDebounce) {
             clearTimeout(spotifyVolumeDebounce);
           }
           spotifyVolumeDebounce = setTimeout(() => {
-            applyVolume(value);
+            applySpotifyVolume(value);
           }, 120);
         });
 
         spotifyVolumeSlider.addEventListener("change", (event) => {
-          applyVolume(event.target.value);
+          applySpotifyVolume(event.target.value);
         });
       }
 
@@ -3115,7 +3339,7 @@
         setSpotifyUiConnected(true);
         await initializeSpotifyPlayer();
         if (spotifyVolumeSlider) {
-          applyVolume(spotifyVolumeSlider.value);
+          applySpotifyVolume(spotifyVolumeSlider.value);
         }
       });
 
@@ -3125,7 +3349,7 @@
           setSpotifyUiConnected(true);
           await initializeSpotifyPlayer();
           if (spotifyVolumeSlider) {
-            applyVolume(spotifyVolumeSlider.value);
+            applySpotifyVolume(spotifyVolumeSlider.value);
           }
         } else {
           setSpotifyUiConnected(false);

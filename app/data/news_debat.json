@@ -1,8 +1,33 @@
 {
   "source": "https://wallnot.dk/rss?category=debat",
   "category": "debat",
-  "fetchedAt": "2025-11-10T22:30:04.647593+00:00",
+  "fetchedAt": "2025-11-11T10:00:03.028221+00:00",
   "items": [
+    {
+      "title": "TL: Gør idrætshaller og skoler til moderne beskyttelsesrum",
+      "link": "https://avisendanmark.dk/debat/tl-goer-idraetshaller-og-skoler-til-moderne-beskyttelsesrum",
+      "pubDate": "Tue, 11 Nov 2025 10:00:00 +0100"
+    },
+    {
+      "title": "Kære unge, arbejdsmarkedet ligger åbent for jer",
+      "link": "https://avisendanmark.dk/debat/kaere-unge-arbejdsmarkedet-ligger-aabent-for-jer",
+      "pubDate": "Tue, 11 Nov 2025 06:00:00 +0100"
+    },
+    {
+      "title": "Fond giver millionbeløb til nye solcelletage",
+      "link": "https://arbejderen.dk/debat/fond-giver-millionbeloeb-til-nye-solcelletage/",
+      "pubDate": "Tue, 11 Nov 2025 05:00:00 +0100"
+    },
+    {
+      "title": "Screening for høj begavelse er en succeshistorie, men hvem tager ansvaret for at føre den videre?",
+      "link": "https://pov.international/screening-for-hoej-begavelse-hvem-tager-ansvar/",
+      "pubDate": "Tue, 11 Nov 2025 02:47:53 +0100"
+    },
+    {
+      "title": "Forsvarspolitikken skal (også) styrke sammenhængskraften i Danmark",
+      "link": "https://pov.international/forsvarspolitikken-skal-styrke-sammenhaengskraft/",
+      "pubDate": "Tue, 11 Nov 2025 02:42:15 +0100"
+    },
     {
       "title": "Mortens ækle forslag",
       "link": "https://ekstrabladet.dk/nyheder/lederen/mortens-aekle-forslag/11004766",
@@ -37,31 +62,6 @@
       "title": "Polariseringen i samfundet skyldes magthavernes svigt – ikke klimaaktivisters metoder",
       "link": "https://information.dk/debat/2025/11/polariseringen-samfundet-skyldes-magthavernes-svigt-klimaaktivisters-metoder",
       "pubDate": "Mon, 10 Nov 2025 19:02:03 +0100"
-    },
-    {
-      "title": "Joachim Boldsen indrømmer: Det var moralsk forkasteligt og idiotisk!",
-      "link": "https://www.bt.dk/debat/joachim-boldsen-indroemmer-det-var-moralsk-forkasteligt-og-idiotisk",
-      "pubDate": "Mon, 10 Nov 2025 18:44:29 +0100"
-    },
-    {
-      "title": "Hvorfor demonstrerer propalæstinenserne videre?",
-      "link": "https://avisendanmark.dk/debat/hvorfor-demonstrerer-propalaestinenserne-videre",
-      "pubDate": "Mon, 10 Nov 2025 17:30:00 +0100"
-    },
-    {
-      "title": "Kommunistisk Parti: Vi skal tage kontrollen over København tilbage",
-      "link": "https://arbejderen.dk/debat/kommunistisk-parti-vi-skal-tage-kontrollen-over-koebenhavn-tilbage/",
-      "pubDate": "Mon, 10 Nov 2025 16:33:28 +0100"
-    },
-    {
-      "title": "Forskere:Nej, der er ikke fejl i kontanthjælpsaftalen. Fattigdom er et af dens helt centrale virkemidler",
-      "link": "https://politiken.dk/debat/debatindlaeg/art10613560/Nej-der-er-ikke-fejl-i-kontanthj%C3%A6lpsaftalen.-Fattigdom-er-et-af-dens-helt-centrale-virkemidler?shareToken=IwrEQCAFXvcg&fbclid=IwVERTSAN_BThleHRuA2FlbQIxMABzcnRjBmFwcF9pZAwzNTA2ODU1MzE3MjgAAR5EF8TVlcdgneP1JnDCcSY6aEIprwHfobqV-mIdgZCFPi6G5cgjZJwg1T9DkQ_aem_Sxo6NM-I7s_O71ze7wW_hQ&sfnsn=mo",
-      "pubDate": "Mon, 10 Nov 2025 15:56:00 +0100"
-    },
-    {
-      "title": "Du stemmer også for dit drikkevand den 18. november",
-      "link": "https://avisendanmark.dk/debat/du-stemmer-ogsaa-for-dit-drikkevand-den-18-november",
-      "pubDate": "Mon, 10 Nov 2025 10:00:00 +0100"
     }
   ]
 }

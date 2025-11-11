@@ -1,8 +1,38 @@
 {
   "source": "https://wallnot.dk/rss?category=kultur",
   "category": "kultur",
-  "fetchedAt": "2025-11-10T22:30:03.129458+00:00",
+  "fetchedAt": "2025-11-11T10:00:05.061726+00:00",
   "items": [
+    {
+      "title": "Royal popfest: Saveus satser kæmpestort",
+      "link": "https://ekstrabladet.dk/musik/dkmusiknyt/royal-popfest-saveus-satser-kaempestort/11001761",
+      "pubDate": "Tue, 11 Nov 2025 07:30:02 +0100"
+    },
+    {
+      "title": "Musikstjerne viser vildt vægttab frem på rød løber",
+      "link": "https://www.bt.dk/musik/musikstjerne-viser-vildt-vaegttab-frem-paa-roed-loeber",
+      "pubDate": "Tue, 11 Nov 2025 06:28:03 +0100"
+    },
+    {
+      "title": "Katy Perry hånet af eksens nye kæreste",
+      "link": "https://www.bt.dk/musik/katy-perry-haanet-af-eksens-nye-kaereste",
+      "pubDate": "Tue, 11 Nov 2025 06:26:52 +0100"
+    },
+    {
+      "title": "Er du rigtig klog: Hvad ved du om Sofie Linde? | Berlingske",
+      "link": "https://www.berlingske.dk/kultur/er-du-rigtig-klog-hvad-ved-du-om-sofie-linde",
+      "pubDate": "Tue, 11 Nov 2025 06:02:43 +0100"
+    },
+    {
+      "title": "Mere fokus på interesser og følelser",
+      "link": "https://arbejderen.dk/teori/mere-fokus-paa-interesser-og-foelelser/",
+      "pubDate": "Tue, 11 Nov 2025 06:00:00 +0100"
+    },
+    {
+      "title": "Netflix åbner første temapark med Squid Game og Stranger Things",
+      "link": "https://www.kristeligt-dagblad.dk/kultur/netflix-aabner-foerste-temapark-med-squid-game-og-stranger-things",
+      "pubDate": "Tue, 11 Nov 2025 01:18:24 +0100"
+    },
     {
       "title": "Britisk-ungarsk forfatter vinder prestigefyldt litteraturpris",
       "link": "https://www.kristeligt-dagblad.dk/kultur/britisk-ungarsk-forfatter-vinder-prestigefyldt-litteraturpris",
@@ -32,36 +62,6 @@
       "title": "Skal du have en bid af Zirkus Nemo? Så er det nu, du skal slå til",
       "link": "https://avisendanmark.dk/kultur/skal-du-have-en-bid-af-zirkus-nemo-saa-er-det-nu-du-skal-slaa-til",
       "pubDate": "Mon, 10 Nov 2025 17:02:00 +0100"
-    },
-    {
-      "title": "Medarbejdere sender mistillidserklæring til Jyllands-Postens ledelse",
-      "link": "https://ekstrabladet.dk/underholdning/filmogtv/medarbejdere-sender-mistillidserklaering-til-jyllands-postens-ledelse/11004214",
-      "pubDate": "Mon, 10 Nov 2025 13:16:27 +0100"
-    },
-    {
-      "title": "TV 2 afslører: 24 kendte med i ny julekalender",
-      "link": "https://ekstrabladet.dk/underholdning/filmogtv/tv-2-afsloerer-24-kendte-med-i-ny-julekalender/11004320",
-      "pubDate": "Mon, 10 Nov 2025 12:01:37 +0100"
-    },
-    {
-      "title": "Unge og gamle taler om sex: »Jeg var så heldig at blive kurtiseret af en mand, der var 15 år yngre end mig«",
-      "link": "https://information.dk/moti/2025/11/unge-gamle-taler-sex-saa-heldig-kurtiseret-mand-15-aar-yngre",
-      "pubDate": "Mon, 10 Nov 2025 11:02:36 +0100"
-    },
-    {
-      "title": "Medarbejdere på Jyllands-Posten udtrykker mistillid til ledelsen | Berlingske",
-      "link": "https://www.berlingske.dk/kultur/medarbejdere-paa-jyllands-posten-udtrykker-mistillid-til-ledelsen",
-      "pubDate": "Mon, 10 Nov 2025 09:52:47 +0100"
-    },
-    {
-      "title": "Cirkusvogn og rekvisitter fra Zirkus Nemo skal under hammeren",
-      "link": "https://www.kristeligt-dagblad.dk/kultur/cirkusvogn-og-rekvisitter-fra-zirkus-nemo-skal-under-hammeren",
-      "pubDate": "Mon, 10 Nov 2025 09:28:18 +0100"
-    },
-    {
-      "title": "Det er ikke kun uslinge, der begår økonomisk kriminalitet",
-      "link": "https://arbejderen.dk/kultur/det-er-ikke-kun-uslinge-der-begaar-oekonomisk-kriminalitet/",
-      "pubDate": "Mon, 10 Nov 2025 06:04:00 +0100"
     }
   ]
 }

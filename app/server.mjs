@@ -128,6 +128,11 @@ const requestListener = async (req, res) => {
       return;
     }
 
+    if (normalizedPathname === "/api/news/proxy" && req.method === "GET") {
+      await handleNewsProxy(requestUrl, res);
+      return;
+    }
+
     if (normalizedPathname === "/api/spotify/config" && req.method === "GET") {
       handleSpotifyConfig(res);
       return;
@@ -780,6 +785,65 @@ async function handleSpotifyRefresh(req, res) {
     console.error("Spotify refresh proxy failed:", error);
     res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
     res.end(JSON.stringify({ error: "Failed to refresh Spotify token" }));
+  }
+}
+
+async function handleNewsProxy(requestUrl, res) {
+  const targetUrl = requestUrl.searchParams.get("url");
+  if (!targetUrl) {
+    res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Missing url parameter" }));
+    return;
+  }
+
+  let remote;
+  try {
+    remote = new URL(targetUrl);
+  } catch (error) {
+    res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Invalid URL" }));
+    return;
+  }
+
+  if (remote.protocol !== "http:" && remote.protocol !== "https:") {
+    res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Only http and https protocols are allowed" }));
+    return;
+  }
+
+  try {
+    const response = await fetch(remote.toString(), {
+      headers: {
+        "User-Agent": "navigation-dashboard/1.0 (+https://github.com/)",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      redirect: "follow",
+    });
+
+    const contentType = response.headers.get("content-type") || "text/html; charset=utf-8";
+    const status = response.status || 200;
+    let body = await response.text();
+
+    if (contentType.includes("text/html")) {
+      const baseHref = new URL(".", remote).toString();
+      const baseTag = `<base href="${baseHref}">`;
+      if (/<head[^>]*>/i.test(body)) {
+        body = body.replace(/<head([^>]*)>/i, `<head$1>\n${baseTag}`);
+      } else {
+        body = `${baseTag}\n${body}`;
+      }
+    }
+
+    res.writeHead(status, {
+      "Content-Type": contentType,
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": "*",
+    });
+    res.end(body);
+  } catch (error) {
+    console.error("News proxy failed:", error);
+    res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Failed to load news article" }));
   }
 }
 
