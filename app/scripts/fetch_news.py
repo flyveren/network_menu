@@ -43,7 +43,7 @@ def fetch_feed(url: str) -> list[dict[str, str]]:
     soup = BeautifulSoup(content, "xml")
     items = []
 
-    for node in soup.find_all("item", limit=12):
+    for node in soup.find_all("item", limit=24):
         title = (node.title.get_text(strip=True) if node.title else "").strip()
         link = (node.link.get_text(strip=True) if node.link else "").strip()
         pub_date = (

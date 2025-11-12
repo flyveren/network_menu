@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-# Install Python, BeautifulSoup, and utilities
+# Install Python, BeautifulSoup, Selenium dependencies, and utilities
 RUN apk add --no-cache \
     python3 \
     py3-pip \
@@ -8,7 +8,14 @@ RUN apk add --no-cache \
     py3-lxml \
     curl \
     ca-certificates \
-    openssl
+    openssl \
+    chromium \
+    chromium-chromedriver \
+    bash
+
+# Install Python packages for Facebook scraping
+# Use --break-system-packages since we're in a container and need these packages
+RUN pip3 install --no-cache-dir --break-system-packages selenium webdriver-manager
 
 WORKDIR /usr/src/app
 

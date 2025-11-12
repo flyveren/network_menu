@@ -1,11 +1,12 @@
 import { createServer as createHttpServer } from "node:http";
 import { createServer as createHttpsServer } from "node:https";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Buffer } from "node:buffer";
 import { createHash, randomBytes } from "node:crypto";
+import { spawn } from "node:child_process";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const publicRoot = __dirname;
@@ -63,7 +64,7 @@ const requestListener = async (req, res) => {
       const stripped = path.replace(/\/+$/, "");
       return stripped === "" ? "/" : stripped;
     })();
-    console.log(`[SERVER] Normalized path: ${normalizedPathname}`);
+    console.log(`[SERVER] Normalized path: ${normalizedPathname}, Raw pathname: ${requestUrl.pathname}`);
 
     if (requestUrl.pathname === "/api/contributions") {
       const username = requestUrl.searchParams.get("user") || "flyveren";
@@ -140,6 +141,25 @@ const requestListener = async (req, res) => {
 
     if (normalizedPathname === "/api/spotify/refresh" && req.method === "POST") {
       await handleSpotifyRefresh(req, res);
+      return;
+    }
+
+    // Facebook routes - check both normalized and raw pathname
+    if (
+      (requestUrl.pathname === "/api/facebook/scrape" || normalizedPathname === "/api/facebook/scrape") &&
+      req.method === "POST"
+    ) {
+      console.log("[SERVER] Handling /api/facebook/scrape");
+      await handleFacebookScrape(req, res);
+      return;
+    }
+
+    if (
+      (requestUrl.pathname === "/api/facebook/posts" || normalizedPathname === "/api/facebook/posts") &&
+      req.method === "GET"
+    ) {
+      console.log("[SERVER] Handling /api/facebook/posts");
+      await handleFacebookPosts(req, res);
       return;
     }
 
@@ -844,6 +864,427 @@ async function handleNewsProxy(requestUrl, res) {
     console.error("News proxy failed:", error);
     res.writeHead(502, { "Content-Type": "application/json; charset=utf-8" });
     res.end(JSON.stringify({ error: "Failed to load news article" }));
+  }
+}
+
+async function handleFacebookScrape(req, res) {
+  console.log("[FACEBOOK] /api/facebook/scrape request received");
+  try {
+    // Read request body to get URL if provided
+    let requestBody = "";
+    for await (const chunk of req) {
+      requestBody += chunk.toString();
+    }
+    
+    let groupUrl = process.env.FACEBOOK_GROUP_URL || "https://www.facebook.com/socialdemokratiet";
+    try {
+      const body = JSON.parse(requestBody);
+      if (body.url) {
+        groupUrl = body.url;
+        console.log(`[FACEBOOK] Using URL from request: ${groupUrl}`);
+      }
+    } catch (e) {
+      // If body parsing fails, use default URL
+      console.log(`[FACEBOOK] Could not parse request body, using default URL`);
+    }
+    
+    const email = process.env.FACEBOOK_EMAIL || null;
+    const password = process.env.FACEBOOK_PASSWORD || null;
+    const maxPosts = Number.parseInt(process.env.FACEBOOK_MAX_POSTS ?? "20", 10);
+    
+    console.log(`[FACEBOOK] Configuration:`);
+    console.log(`[FACEBOOK]   Group URL: ${groupUrl}`);
+    console.log(`[FACEBOOK]   Email: ${email ? email.substring(0, 3) + "***" : "not provided"}`);
+    console.log(`[FACEBOOK]   Password: ${password ? "***" : "not provided"}`);
+    console.log(`[FACEBOOK]   Max Posts: ${maxPosts}`);
+
+    const scriptPath = join(__dirname, "scripts", "fetch_facebook_group.py");
+    if (!existsSync(scriptPath)) {
+      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: "Facebook scraping script not found" }));
+      return;
+    }
+
+    const args = [
+      scriptPath,
+      "--group-url", groupUrl,
+      "--max-posts", String(maxPosts),
+      "--headless",
+    ];
+
+    if (email && password) {
+      args.push("--email", email);
+      args.push("--password", password);
+    }
+
+    console.log(`[FACEBOOK] Running scraper: python3 ${args.join(" ")}`);
+    console.log(`[FACEBOOK] Working directory: ${__dirname}`);
+    console.log(`[FACEBOOK] Script path: ${scriptPath}`);
+
+    const pythonProcess = spawn("python3", args, {
+      cwd: __dirname,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    pythonProcess.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    pythonProcess.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    const scrapePromise = new Promise((resolve, reject) => {
+      pythonProcess.on("close", (code) => {
+        console.log(`[FACEBOOK] Scraper exited with code ${code}`);
+        console.log(`[FACEBOOK] stdout: ${stdout}`);
+        console.log(`[FACEBOOK] stderr: ${stderr}`);
+        if (code === 0) {
+          resolve({ stdout, stderr });
+        } else {
+          const errorMsg = stderr || stdout || `Process exited with code ${code}`;
+          reject(new Error(`Scraper exited with code ${code}: ${errorMsg}`));
+        }
+      });
+
+      pythonProcess.on("error", (error) => {
+        console.error(`[FACEBOOK] Failed to start scraper:`, error);
+        reject(new Error(`Failed to start scraper: ${error.message}`));
+      });
+    });
+
+    // Set a timeout of 5 minutes for scraping
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        pythonProcess.kill("SIGTERM");
+        reject(new Error("Scraping timeout after 5 minutes"));
+      }, 5 * 60 * 1000);
+    });
+
+    try {
+      await Promise.race([scrapePromise, timeoutPromise]);
+    } catch (scrapeError) {
+      console.error(`[FACEBOOK] Scraping process failed:`, scrapeError);
+      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ 
+        error: "Scraping failed", 
+        details: scrapeError.message,
+        stdout: stdout.substring(0, 1000), // Limit output
+        stderr: stderr.substring(0, 1000)
+      }));
+      return;
+    }
+
+    // After scraping, fetch and return the posts
+    let groupId = "unknown";
+    if (groupUrl.includes("/groups/")) {
+      groupId = groupUrl.split("/groups/")[1].split("/")[0].split("?")[0];
+    } else if (groupUrl.includes("profile.php?id=")) {
+      // Extract ID from profile.php?id=XXXXX
+      const match = groupUrl.match(/profile\.php\?id=(\d+)/);
+      if (match) {
+        groupId = match[1];
+      } else {
+        const parts = groupUrl.split("facebook.com/")[1]?.split("/");
+        if (parts && parts.length > 0) {
+          groupId = parts[0].split("?")[0];
+        }
+      }
+    } else if (groupUrl.includes("facebook.com/")) {
+      // Try to extract from page URL
+      const parts = groupUrl.split("facebook.com/")[1].split("/");
+      if (parts.length > 0) {
+        groupId = parts[0].split("?")[0];
+      }
+    }
+
+    const dataPath = join(__dirname, "data", `facebook_group_${groupId}.json`);
+    console.log(`[FACEBOOK] Looking for data file at: ${dataPath}`);
+    console.log(`[FACEBOOK] Group URL: ${groupUrl}, Group ID: ${groupId}`);
+    console.log(`[FACEBOOK] __dirname: ${__dirname}`);
+
+    // Check if data directory exists
+    const dataDir = join(__dirname, "data");
+    console.log(`[FACEBOOK] Data directory path: ${dataDir}`);
+    console.log(`[FACEBOOK] Data directory exists: ${existsSync(dataDir)}`);
+    
+    if (existsSync(dataDir)) {
+      // List files in data directory for debugging
+      try {
+        const { readdirSync } = await import("node:fs");
+        const allFiles = readdirSync(dataDir);
+        const facebookFiles = allFiles.filter(f => f.includes("facebook"));
+        console.log(`[FACEBOOK] All files in data dir: ${allFiles.join(", ")}`);
+        console.log(`[FACEBOOK] Facebook-related files: ${facebookFiles.join(", ")}`);
+      } catch (e) {
+        console.error(`[FACEBOOK] Could not list data directory: ${e.message}`);
+      }
+    }
+
+    // Also try alternative group ID formats
+    const alternativePaths = [
+      dataPath,
+      join(__dirname, "data", `facebook_group_${groupId.toLowerCase()}.json`),
+      join(__dirname, "data", `facebook_group_${groupId.toUpperCase()}.json`),
+    ];
+    
+    let foundPath = null;
+    for (const altPath of alternativePaths) {
+      if (existsSync(altPath)) {
+        foundPath = altPath;
+        console.log(`[FACEBOOK] Found file at: ${foundPath}`);
+        break;
+      }
+    }
+
+    if (!foundPath) {
+      console.error(`[FACEBOOK] Data file not found. Tried paths: ${alternativePaths.join(", ")}`);
+      console.error(`[FACEBOOK] Scraper stdout: ${stdout}`);
+      console.error(`[FACEBOOK] Scraper stderr: ${stderr}`);
+      res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ 
+        error: "Scraping completed but no posts file found", 
+        posts: [],
+        details: `Expected file at: ${dataPath}. Tried: ${alternativePaths.join(", ")}`,
+        groupId: groupId,
+        groupUrl: groupUrl,
+        stdout: stdout.substring(0, 2000),
+        stderr: stderr.substring(0, 2000)
+      }));
+      return;
+    }
+    
+    const fileContent = await readFile(foundPath, "utf8");
+    const data = JSON.parse(fileContent);
+
+    // Rebuild the all posts list from all party files
+    // This ensures we don't lose posts when a party file is overwritten
+    await rebuildAllPostsList();
+
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    });
+    res.end(JSON.stringify(data));
+  } catch (error) {
+    console.error("[FACEBOOK] Scraping failed:", error);
+    console.error("[FACEBOOK] Error stack:", error.stack);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ 
+      error: "Failed to scrape Facebook group", 
+      details: error.message,
+      message: "Make sure Python dependencies are installed: pip install beautifulsoup4 selenium webdriver-manager"
+    }));
+  }
+}
+
+/**
+ * Creates a unique key for a post to detect duplicates
+ */
+function createPostKey(post) {
+  if (post.post_link) {
+    return `link:${post.post_link}`;
+  }
+  if (post.post_text) {
+    const textNormalized = post.post_text.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+    const textWords = textNormalized.split(' ').slice(0, 50).join(' ');
+    const timeKey = (post.post_time || '').toLowerCase().trim();
+    return `text:${textWords}|time:${timeKey}`;
+  }
+  return null;
+}
+
+/**
+ * Rebuilds the all posts list from all individual party files
+ * This ensures we don't lose posts when a party file is overwritten
+ */
+async function rebuildAllPostsList() {
+  const dataDir = join(__dirname, "data");
+  const allPostsPath = join(dataDir, "facebook_all_posts.json");
+  
+  try {
+    if (!existsSync(dataDir)) {
+      console.log(`[FACEBOOK] Data directory doesn't exist, skipping rebuild`);
+      return;
+    }
+    
+    const fs = await import("node:fs/promises");
+    const files = await fs.readdir(dataDir);
+    const facebookFiles = files.filter(f => 
+      f.startsWith("facebook_group_") && 
+      f.endsWith(".json") && 
+      f !== "facebook_all_posts.json"
+    );
+    
+    if (facebookFiles.length === 0) {
+      console.log(`[FACEBOOK] No party files found, skipping rebuild`);
+      return;
+    }
+    
+    console.log(`[FACEBOOK] Rebuilding all posts list from ${facebookFiles.length} party files`);
+    
+    const allPosts = [];
+    const seenPostKeys = new Set();
+    
+    // Read all posts from all party files
+    for (const file of facebookFiles) {
+      const filePath = join(dataDir, file);
+      try {
+        const fileContent = await readFile(filePath, "utf8");
+        const data = JSON.parse(fileContent);
+        
+        if (data.posts && Array.isArray(data.posts)) {
+          console.log(`[FACEBOOK] Loading ${data.posts.length} posts from ${file}`);
+          
+          for (const post of data.posts) {
+            const key = createPostKey(post);
+            
+            // Skip if we've seen this post before
+            if (key && seenPostKeys.has(key)) {
+              continue;
+            }
+            
+            if (key) {
+              seenPostKeys.add(key);
+            }
+            
+            allPosts.push(post);
+          }
+        }
+      } catch (err) {
+        console.error(`[FACEBOOK] Error reading file ${file}: ${err.message}`);
+      }
+    }
+    
+    // Sort by scraped_at date (newest first)
+    allPosts.sort((a, b) => {
+      const dateA = new Date(a.scraped_at || 0);
+      const dateB = new Date(b.scraped_at || 0);
+      return dateB - dateA;
+    });
+    
+    const allPostsData = {
+      source: "all_parties",
+      scrapedAt: new Date().toISOString(),
+      totalPosts: allPosts.length,
+      posts: allPosts,
+    };
+    
+    await writeFile(allPostsPath, JSON.stringify(allPostsData, null, 2), "utf8");
+    console.log(`[FACEBOOK] Rebuilt all posts list: ${allPosts.length} unique posts from ${facebookFiles.length} party files`);
+  } catch (error) {
+    console.error(`[FACEBOOK] Error rebuilding all posts list: ${error.message}`);
+  }
+}
+
+async function handleFacebookPosts(req, res) {
+  console.log("/api/facebook/posts request received");
+  try {
+    const dataDir = join(__dirname, "data");
+    if (!existsSync(dataDir)) {
+      res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: "No posts found. Please scrape first.", posts: [] }));
+      return;
+    }
+
+    const allPostsPath = join(dataDir, "facebook_all_posts.json");
+    let allPosts = [];
+    
+    // Try to use the all posts file first
+    if (existsSync(allPostsPath)) {
+      try {
+        const fileContent = await readFile(allPostsPath, "utf8");
+        const data = JSON.parse(fileContent);
+        if (data.posts && Array.isArray(data.posts)) {
+          allPosts = data.posts;
+          console.log(`[FACEBOOK] Loaded ${allPosts.length} posts from all posts list`);
+        }
+      } catch (err) {
+        console.error(`[FACEBOOK] Error reading all posts file: ${err.message}, falling back to individual files`);
+      }
+    }
+    
+    // If all posts file doesn't exist or is empty, combine from individual files
+    if (allPosts.length === 0) {
+      const fs = await import("node:fs/promises");
+      const files = await fs.readdir(dataDir);
+      const facebookFiles = files.filter(f => f.startsWith("facebook_group_") && f.endsWith(".json") && f !== "facebook_all_posts.json");
+      
+      console.log(`[FACEBOOK] Found ${facebookFiles.length} individual Facebook files: ${facebookFiles.join(", ")}`);
+
+      if (facebookFiles.length === 0) {
+        res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ error: "No posts found. Please scrape first.", posts: [] }));
+        return;
+      }
+
+      // Combine all posts from all files
+      const seenPostKeys = new Set(); // Track duplicates across all parties
+      
+      for (const file of facebookFiles) {
+        const filePath = join(dataDir, file);
+        try {
+          const fileContent = await readFile(filePath, "utf8");
+          const data = JSON.parse(fileContent);
+          
+          if (data.posts && Array.isArray(data.posts)) {
+            console.log(`[FACEBOOK] Loading ${data.posts.length} posts from ${file}`);
+            
+            // Add posts, checking for duplicates across parties
+            for (const post of data.posts) {
+              const postKey = createPostKey(post);
+              
+              // Skip if we've seen this post before
+              if (postKey && seenPostKeys.has(postKey)) {
+                continue;
+              }
+              
+              if (postKey) {
+                seenPostKeys.add(postKey);
+              }
+              
+              allPosts.push(post);
+            }
+          }
+        } catch (err) {
+          console.error(`[FACEBOOK] Error reading file ${file}: ${err.message}`);
+        }
+      }
+
+      console.log(`[FACEBOOK] Combined ${allPosts.length} unique posts from ${facebookFiles.length} files`);
+      
+      // Sort by scraped_at date (newest first)
+      allPosts.sort((a, b) => {
+        const dateA = new Date(a.scraped_at || 0);
+        const dateB = new Date(b.scraped_at || 0);
+        return dateB - dateA;
+      });
+      
+      // Save the combined list for future use
+      if (allPosts.length > 0) {
+        await rebuildAllPostsList();
+      }
+    }
+
+    const combinedData = {
+      source: "all_parties",
+      scrapedAt: new Date().toISOString(),
+      totalPosts: allPosts.length,
+      posts: allPosts,
+    };
+
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+    });
+    res.end(JSON.stringify(combinedData));
+  } catch (error) {
+    console.error("Failed to load Facebook posts:", error);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Failed to load Facebook posts", details: error.message }));
   }
 }
 

@@ -1,0 +1,27 @@
+{
+  "source": "https://www.facebook.com/enhedslisten",
+  "scrapedAt": "2025-11-12T10:10:33.009430+00:00",
+  "totalPosts": 2,
+  "posts": [
+    {
+      "post_id": "post_1",
+      "author_name": "Enhedslisten",
+      "post_text": "Ja det er hvad der sker med rød politik",
+      "post_time": "19h",
+      "post_link": "",
+      "video_url": "",
+      "video_thumbnail": "https://scontent-vie1-1.xx.fbcdn.net/v/t15.5256-10/580048350_1162483868766513_4207871798438960977_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=111&ccb=1-7&_nc_sid=d2b52d&_nc_ohc=o4WX160ljAkQ7kNvwHCOx7z&_nc_oc=AdmdAyJvfggPVmIqGlUAFwMBb8ieD50c7OB5IkxDIkBoRN1Vk3nDT9TInkTJs5ZPjo4&_nc_zt=23&_nc_ht=scontent-vie1-1.xx&_nc_gid=otaiwpaDhU6tnLNN8p4FkQ&oh=00_AfhSlP5DrJxl7Ilq0Vj4mUU_WaHIpj33Ay31Dud5yDBJIw&oe=691A278C",
+      "scraped_at": "2025-11-12T10:10:32.968618+00:00"
+    },
+    {
+      "post_id": "post_2",
+      "author_name": "Enhedslisten",
+      "post_text": "Vi arbejder for bedre velfærd, mere klimahandling og dre ulighed!",
+      "post_time": "",
+      "post_link": "",
+      "video_url": "",
+      "video_thumbnail": "",
+      "scraped_at": "2025-11-12T10:10:33.006288+00:00"
+    }
+  ]
+}

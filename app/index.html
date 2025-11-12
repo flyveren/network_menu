@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Circular Navigation Demo</title>
+    <title>HomeLab :: Dashboard</title>
     <link rel="preconnect" href="https://fonts.bunny.net" />
     <style>
       @import url(https://fonts.bunny.net/css?family=jura:300,500);
@@ -100,6 +100,10 @@
           height: 50px;
           display: block;
           z-index: 12;
+          background: none;
+          border: none;
+          padding: 0;
+          cursor: pointer;
         }
 
         .spotify-connect-button img {
@@ -107,6 +111,58 @@
           height: 100%;
           object-fit: contain;
           display: block;
+        }
+
+        .footer-menu {
+          position: fixed;
+          bottom: 12px;
+          z-index: 13;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          pointer-events: auto;
+        }
+
+        .footer-menu--left {
+          left: clamp(1.5rem, 4vw, 3.5rem);
+        }
+
+        .footer-menu__button {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 50px;
+          height: 50px;
+          border: 3px solid white;
+          border-radius: 50%;
+          padding: 0;
+          background: var(--button-color, #4285f4);
+          cursor: pointer;
+          transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55), filter 160ms ease-in-out;
+          transform: translateY(0);
+        }
+
+        .footer-menu__button:hover,
+        .footer-menu__button:focus-visible {
+          transform: translateY(-15px) scale(1.05);
+          filter: brightness(1.1);
+        }
+
+        .footer-menu__button:active {
+          transform: translateY(-10px) scale(0.95);
+        }
+
+        .footer-menu__button img {
+          width: 32px;
+          height: 32px;
+          object-fit: contain;
+          display: block;
+          filter: brightness(0) invert(1);
+        }
+
+        #politics-button img {
+          width: 36px;
+          height: 36px;
         }
 
         .spotify-player {
@@ -124,6 +180,7 @@
           box-shadow: none;
           z-index: 12;
           cursor: pointer;
+          pointer-events: auto;
         }
 
         .spotify-player[aria-hidden="true"] {
@@ -154,7 +211,7 @@
         .spotify-player__control svg {
           width: 32px;
           height: 32px;
-          fill: rgba(168, 198, 255, 0.85);
+          fill: #ffffff; /* White prev/next buttons */
         }
 
         .spotify-player__control:hover,
@@ -226,7 +283,7 @@
           height: 0;
           border-style: solid;
           border-width: 10px 0 10px 16px;
-          border-color: transparent transparent transparent rgba(74, 117, 255, 0.92);
+          border-color: transparent transparent transparent #1111ea; /* Theme blue play icon */
           margin-left: 3px;
         }
 
@@ -236,9 +293,9 @@
           background:
             linear-gradient(
               90deg,
-              rgba(74, 117, 255, 0.95) 0 40%,
+              #1111ea 0 40%, /* Theme blue pause icon */
               transparent 40% 60%,
-              rgba(74, 117, 255, 0.95) 60% 100%
+              #1111ea 60% 100% /* Theme blue pause icon */
             );
         }
 
@@ -284,7 +341,7 @@
           appearance: none;
           height: 4px;
           border-radius: 2px;
-          background: rgba(99, 102, 241, 0.35);
+          background: linear-gradient(to right, #1111ea 0%, #1111ea 0%, #ffffff 0%, #ffffff 100%);
           outline: none;
         }
 
@@ -293,15 +350,16 @@
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: rgba(99, 102, 241, 0.95);
+          background: #1111ea; /* Blue slider thumb - no transparency */
           cursor: pointer;
+          border: none;
         }
 
         .spotify-player__volume input[type="range"]::-moz-range-thumb {
           width: 16px;
           height: 16px;
           border-radius: 50%;
-          background: rgba(99, 102, 241, 0.95);
+          background: #1111ea; /* Blue slider thumb - no transparency */
           cursor: pointer;
           border: none;
         }
@@ -669,18 +727,142 @@
           object-fit: contain;
         }
 
-        .quote-rotator {
+        .party-buttons {
           position: fixed;
           top: calc(clamp(1rem, 3vh, 1.6rem) - 12px);
           left: 50%;
           transform: translate(-50%, 0);
-          z-index: 7;
+          z-index: 25; /* Higher z-index to ensure clickability */
+          display: none; /* Hidden by default */
+          gap: 1rem;
+          flex-wrap: wrap;
+          justify-content: center;
+          align-items: center;
+          pointer-events: auto; /* Ensure buttons are clickable */
+        }
+
+        /* Show party buttons only in politics mode */
+        body.politics-mode .party-buttons {
+          display: flex;
+        }
+
+        /* Hide animated text in politics mode */
+        body.politics-mode .quote-rotator {
+          display: none;
+        }
+
+        .party-button {
+          position: relative;
+          width: 50px;
+          height: 50px;
+          border-radius: 50%;
+          border: 3px solid white;
+          background: rgba(17, 17, 234, 0.1);
+          color: #000000; /* Dark text by default (like Æ and Ø) */
+          font-family: "JetBrains Mono", system-ui, sans-serif;
+          font-size: clamp(1.2rem, 2.5vw, 1.6rem); /* Smaller letters */
+          font-weight: normal;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          margin: 0;
+          pointer-events: auto; /* Ensure buttons are clickable */
+          z-index: 26; /* Higher than container */
+        }
+
+        /* Party colors based on election chart */
+        .party-button[data-party="A"] {
+          background: #8B1A1A; /* Dark red - Socialdemokratiet */
+        }
+
+        .party-button[data-party="B"] {
+          background: #6A1B9A; /* Purple - Radikale Venstre */
+        }
+
+        .party-button[data-party="C"] {
+          background: #9ACD32; /* Lime green - Konservative */
+        }
+
+        .party-button[data-party="F"] {
+          background: #FF69B4; /* Bright pink - Socialistisk Folkeparti */
+        }
+
+        .party-button[data-party="H"] {
+          background: #4682B4; /* Steel blue - Borgernes Parti (not in chart, using neutral) */
+        }
+
+        .party-button[data-party="I"] {
+          background: #40E0D0; /* Turquoise - Liberal Alliance */
+        }
+
+        .party-button[data-party="M"] {
+          background: #4B0082; /* Indigo - Moderaterne */
+        }
+
+        .party-button[data-party="O"] {
+          background: #FFD700; /* Yellow - Dansk Folkeparti */
+          color: #000000; /* Black text for better contrast on yellow */
+        }
+
+        .party-button[data-party="V"] {
+          background: #1E3A8A; /* Dark blue - Venstre */
+          color: #000000; /* Dark text */
+        }
+
+        .party-button[data-party="Æ"] {
+          background: #87CEEB; /* Light blue - Danmarksdemokraterne */
+          color: #000000; /* Black text for better contrast on light blue */
+        }
+
+        .party-button[data-party="Ø"] {
+          background: #FF8C00; /* Orange - Enhedslisten */
+          color: #000000; /* Dark text */
+        }
+
+        .party-button[data-party="Å"] {
+          background: #228B22; /* Forest green - Alternativet */
+        }
+
+        .party-button:hover,
+        .party-button:focus-visible {
+          border-color: #ffffff;
+          color: #ffffff !important; /* White text on hover for all buttons */
+          transform: translateY(-2px);
+          filter: brightness(1.2);
+        }
+
+        .party-button:active {
+          transform: translateY(0);
+          filter: brightness(0.9);
+        }
+
+        .party-button__tooltip {
+          position: absolute;
+          top: calc(100% + 8px);
+          left: 50%;
+          transform: translateX(-50%) translateY(-10px);
+          opacity: 0;
+          pointer-events: none;
           font-family: "Jersey 10", cursive;
+          font-size: clamp(1rem, 2vw, 1.4rem);
           color: #ffffff;
-          font-size: clamp(0.8rem, 2vw, 1.1rem);
+          background: transparent;
+          padding: 0.4rem 0.8rem;
+          border-radius: 6px;
           white-space: nowrap;
-          letter-spacing: 0.05em;
-          text-shadow: 0 0 10px rgba(17, 17, 234, 0.4);
+          transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+          z-index: 1000;
+          text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+        }
+
+
+        .party-button:hover .party-button__tooltip,
+        .party-button:focus-visible .party-button__tooltip {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
         }
 
         .music-reactive {
@@ -693,6 +875,9 @@
           border: none;
           backdrop-filter: none;
           z-index: 4;
+          opacity: 0;
+          transition: opacity 320ms ease;
+          pointer-events: none;
         }
 
         .music-reactive__frame {
@@ -727,21 +912,41 @@
           }
         }
 
-        .github-contrib {
+        .visualizer-active .music-reactive {
+          opacity: 1;
+        }
+
+        .github-contrib-container {
           position: fixed;
           left: 0;
           right: 0;
+          top: 0;
+          bottom: 0;
           width: 100%;
-          z-index: 5;
+          height: 100%;
+          z-index: 3;
+          pointer-events: none;
+          overflow: hidden;
+        }
+
+        .github-contrib {
+          position: absolute;
+          left: 0;
+          right: 0;
+          width: 100%;
           pointer-events: none;
         }
 
         .github-contrib--top {
           top: 0;
+          height: auto;
+          background: linear-gradient(to bottom, rgba(12, 10, 9, 1) 0%, rgba(12, 10, 9, 0.95) 50%, transparent 100%);
         }
 
         .github-contrib--bottom {
           bottom: 0;
+          height: auto;
+          background: linear-gradient(to top, rgba(12, 10, 9, 1) 0%, rgba(12, 10, 9, 0.95) 50%, transparent 100%);
         }
 
         .github-contrib-overlay {
@@ -760,7 +965,6 @@
         .github-contrib-overlay canvas {
           position: absolute;
           right: 0;
-          bottom: 0;
           display: block;
           width: auto;
           height: auto;
@@ -768,6 +972,15 @@
           max-height: none;
           filter: drop-shadow(0 0 18px rgba(17, 17, 234, 0.25));
           pointer-events: none;
+        }
+
+        .github-contrib-overlay--top canvas {
+          top: 0;
+        }
+
+        .github-contrib-overlay--bottom canvas {
+          bottom: 0;
+          right: 0;
         }
 
         .github-contrib-tooltip {
@@ -836,11 +1049,12 @@
         }
 
         .news-feed {
+          --news-column-width: min(16rem, 22vw);
+          --news-column-gap: calc(clamp(1.9rem, 3.4vw, 3.2rem) + 40px);
           position: fixed;
           top: 50%;
-          left: clamp(2rem, 6vw, 4rem);
           transform: translateY(-50%);
-          width: min(16rem, 22vw);
+          width: var(--news-column-width);
           max-height: calc(100svh - 6rem);
           display: flex;
           flex-direction: column;
@@ -854,6 +1068,8 @@
           scrollbar-width: thin;
           scrollbar-color: rgba(17, 17, 234, 0.4) transparent;
           z-index: 5;
+          left: auto;
+          right: auto;
         }
 
         .brain-controls {
@@ -956,6 +1172,86 @@
           opacity: 0.45;
         }
 
+        body.ai-mode nav {
+          display: none !important;
+        }
+
+        body.ai-mode .news-feed {
+          display: none !important;
+        }
+
+        body.ai-mode .brain-controls .corner-link {
+          display: none !important;
+        }
+
+        body.ai-mode .brain-center {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 20;
+          margin: 0;
+          width: auto;
+        }
+
+        body.ai-mode .brain-controls {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 0;
+        }
+
+        body.ai-mode .brain-toggle {
+          width: clamp(6.5rem, 14vw, 9.5rem);
+          height: clamp(6.5rem, 14vw, 9.5rem);
+        }
+
+        body.ai-mode .music-reactive {
+          opacity: 1 !important;
+          z-index: 1;
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          margin: 0;
+          width: 200vw;
+          height: 200vh;
+        }
+
+        body.ai-mode .music-reactive__frame {
+          width: 100%;
+          height: 100%;
+        }
+
+        body.news-mode .news-feed {
+          display: flex !important;
+        }
+
+        body.news-mode .brain-controls {
+          display: flex !important;
+        }
+
+        body.news-mode .brain-controls .corner-link {
+          display: inline-flex !important;
+        }
+
+        body.news-mode .brain-center {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: min(90vw, 420px);
+        }
+
+        body.news-mode .brain-toggle {
+          width: clamp(3.25rem, 7vw, 4.75rem);
+          height: clamp(3.25rem, 7vw, 4.75rem);
+        }
+
+        body.news-mode .music-reactive {
+          opacity: 0;
+        }
+
         .brain-input {
           width: 100%;
         }
@@ -1031,14 +1327,359 @@
           text-shadow: 0 0 8px rgba(255, 25, 25, 0.3);
         }
 
-        .news-feed--secondary {
-          left: auto;
+        .news-feed--left-primary {
+          left: clamp(2rem, 6vw, 4rem);
+        }
+
+        .news-feed--left-secondary {
+          left: calc(clamp(2rem, 6vw, 4rem) + var(--news-column-width) + var(--news-column-gap));
+        }
+
+        .news-feed--right-primary {
           right: clamp(2rem, 6vw, 4rem);
           text-align: right;
         }
 
-        .news-feed--secondary .news-meta {
+        .news-feed--right-secondary {
+          right: calc(clamp(2rem, 6vw, 4rem) + var(--news-column-width) + var(--news-column-gap));
+          text-align: right;
+        }
+
+        .news-feed--right-primary .news-meta,
+        .news-feed--right-secondary .news-meta {
           align-self: flex-end;
+        }
+
+        .facebook-posts {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: transparent;
+          z-index: 1;
+          display: flex;
+          flex-direction: column;
+          padding: 0;
+          padding-top: 0;
+          padding-bottom: 0;
+          padding-left: clamp(7.5rem, 12.5vw, 10rem);
+          padding-right: clamp(7.5rem, 12.5vw, 10rem);
+          overflow-y: auto;
+          overflow-x: hidden;
+          scrollbar-width: thin;
+          scrollbar-color: rgba(17, 17, 234, 0.4) transparent;
+          clip-path: inset(0);
+        }
+
+        .facebook-posts[hidden] {
+          display: none;
+        }
+
+
+        .facebook-posts__list {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: row;
+          gap: 2rem;
+          align-items: flex-start;
+          max-width: fit-content;
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        .facebook-posts__column {
+          display: flex;
+          flex-direction: column;
+          gap: 2rem;
+          flex: 1;
+          min-width: 0;
+        }
+
+        .facebook-posts__list li {
+          display: flex;
+          flex-direction: row;
+          gap: 1.2rem;
+          background: rgba(255, 255, 255, 0.05);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          padding: 1.5rem;
+          margin: 0;
+          margin-bottom: 0;
+          transition: all 0.2s ease;
+          align-items: flex-start;
+          height: auto;
+          width: 100%;
+        }
+
+        .facebook-posts__list li:hover {
+          opacity: 0.9;
+        }
+
+        /* Party colors for posts - dark background with colored borders */
+        .facebook-post[data-party="A"] {
+          border-color: #8B1A1A;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="B"] {
+          border-color: #6A1B9A;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="C"] {
+          border-color: #9ACD32;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="F"] {
+          border-color: #FF69B4;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="H"] {
+          border-color: #4682B4;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="I"] {
+          border-color: #40E0D0;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="M"] {
+          border-color: #4B0082;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="O"] {
+          border-color: #FFD700;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="V"] {
+          border-color: #1E3A8A;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="Æ"] {
+          border-color: #87CEEB;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="Ø"] {
+          border-color: #FF8C00;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post[data-party="Å"] {
+          border-color: #228B22;
+          background: rgba(12, 10, 9, 0.9);
+        }
+
+        .facebook-post__author {
+          font-family: "Jersey 10", cursive;
+          font-size: clamp(1rem, 2vw, 1.3rem);
+          letter-spacing: 0.08em;
+          color: #1111ea;
+          margin: 0;
+        }
+
+        /* Party colors for author names */
+        .facebook-post[data-party="A"] .facebook-post__author {
+          color: #8B1A1A;
+        }
+
+        .facebook-post[data-party="B"] .facebook-post__author {
+          color: #6A1B9A;
+        }
+
+        .facebook-post[data-party="C"] .facebook-post__author {
+          color: #9ACD32;
+        }
+
+        .facebook-post[data-party="F"] .facebook-post__author {
+          color: #FF69B4;
+        }
+
+        .facebook-post[data-party="H"] .facebook-post__author {
+          color: #4682B4;
+        }
+
+        .facebook-post[data-party="I"] .facebook-post__author {
+          color: #40E0D0;
+        }
+
+        .facebook-post[data-party="M"] .facebook-post__author {
+          color: #4B0082;
+        }
+
+        .facebook-post[data-party="O"] .facebook-post__author {
+          color: #FFD700;
+        }
+
+        .facebook-post[data-party="V"] .facebook-post__author {
+          color: #1E3A8A;
+        }
+
+        .facebook-post[data-party="Æ"] .facebook-post__author {
+          color: #87CEEB;
+        }
+
+        .facebook-post[data-party="Ø"] .facebook-post__author {
+          color: #FF8C00;
+        }
+
+        .facebook-post[data-party="Å"] .facebook-post__author {
+          color: #228B22;
+        }
+
+        .facebook-post__text {
+          font-family: "JetBrains Mono", system-ui, sans-serif;
+          font-weight: 500;
+          font-size: clamp(0.7rem, 1.4vw, 0.78rem);
+          line-height: 1.4;
+          letter-spacing: 0.03em;
+          word-break: break-word;
+          color: rgba(255, 255, 255, 1);
+          margin: 0;
+          transition: color 160ms ease-in-out, text-shadow 160ms ease-in-out;
+        }
+
+        .facebook-posts__list li:hover .facebook-post__text {
+          color: rgba(255, 255, 255, 0.75);
+          text-shadow: 0 0 12px rgba(70, 116, 255, 0.55);
+        }
+
+        .facebook-post__time {
+          font-family: "Jersey 10", cursive;
+          font-size: clamp(0.75rem, 1.6vw, 0.9rem);
+          letter-spacing: 0.08em;
+          color: #1111ea;
+          margin: 0;
+        }
+
+        .facebook-post__content {
+          display: flex;
+          flex-direction: column;
+          gap: 0.3rem;
+          flex: 1;
+        }
+
+        .facebook-post__video {
+          flex-shrink: 0;
+          width: 150px;
+          min-width: 150px;
+          border-radius: 8px 0 0 8px;
+          overflow: hidden;
+          margin: -1.5rem 0 -1.5rem -1.5rem;
+          align-self: stretch;
+        }
+
+        .facebook-post__video-link {
+          display: block;
+          position: relative;
+          width: 100%;
+          height: 100%;
+          text-decoration: none;
+          color: inherit;
+          margin: 0;
+        }
+
+        .facebook-post__video-thumbnail {
+          width: 100%;
+          height: 100%;
+          display: block;
+          object-fit: cover;
+          border-radius: 8px 0 0 8px;
+          transition: opacity 0.2s ease;
+          margin: 0;
+        }
+
+        .facebook-post__video-link:hover .facebook-post__video-thumbnail {
+          opacity: 0.8;
+        }
+
+        .facebook-post__video-link:not(:has(img)) {
+          padding: 1rem;
+          text-align: center;
+          background: rgba(17, 17, 234, 0.1);
+          border: 1px solid rgba(17, 17, 234, 0.3);
+          border-radius: 8px;
+          color: #1111ea;
+          font-family: "Jersey 10", cursive;
+        }
+
+        .facebook-posts__error,
+        .facebook-posts__loading {
+          text-align: center;
+          font-family: "Jersey 10", cursive;
+          font-size: clamp(1.2rem, 3vw, 1.8rem);
+          color: rgba(255, 255, 255, 0.9);
+          margin: 2rem 0;
+          padding: 1.5rem;
+        }
+
+        .facebook-posts__loading {
+          color: #1111ea;
+          display: block !important;
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 30;
+          background: rgba(12, 10, 9, 0.95);
+          border-radius: 12px;
+          border: 2px solid rgba(17, 17, 234, 0.6);
+          min-width: 300px;
+          box-shadow: 0 4px 20px rgba(17, 17, 234, 0.3);
+        }
+
+        .facebook-posts__loading[hidden] {
+          display: none !important;
+        }
+
+        body.politics-mode .news-feed {
+          display: none !important;
+        }
+
+        body.politics-mode .facebook-posts {
+          display: flex !important;
+        }
+
+        body.politics-mode .facebook-posts[hidden] {
+          display: flex !important;
+        }
+
+        body.politics-mode .spotify-player,
+        body.politics-mode .spotify-connect-button {
+          z-index: 20 !important;
+        }
+
+        body.politics-mode .footer-menu {
+          z-index: 20 !important;
+        }
+
+        body.politics-mode .static-clock {
+          display: none !important;
+        }
+
+        body.politics-mode .weather-widget {
+          display: none !important;
+        }
+
+        body.politics-mode .brain-center {
+          display: none !important;
+        }
+
+        body.politics-mode nav {
+          display: none !important;
+        }
+
+        body.politics-mode .github-contrib {
+          z-index: 3 !important;
         }
 
         .weather-widget {
@@ -1301,9 +1942,55 @@
       </div>
       <div class="static-clock" id="static-clock" aria-live="off">--:--</div>
     </div>
-    <div class="quote-rotator" aria-live="polite">
-      <span id="quote-text"></span>
-      <span class="caret" aria-hidden="true"></span>
+    <div class="party-buttons" aria-label="Political party buttons">
+      <button type="button" class="party-button" data-party="A" data-url="https://www.facebook.com/socialdemokratiet" aria-label="Socialdemokratiet">
+        A
+        <span class="party-button__tooltip">Socialdemokratiet</span>
+      </button>
+      <button type="button" class="party-button" data-party="B" data-url="https://www.facebook.com/radikalevenstre" aria-label="Radikale Venstre">
+        B
+        <span class="party-button__tooltip">Radikale Venstre</span>
+      </button>
+      <button type="button" class="party-button" data-party="C" data-url="https://www.facebook.com/Konservative/" aria-label="Det Konservative Folkeparti">
+        C
+        <span class="party-button__tooltip">Det Konservative Folkeparti</span>
+      </button>
+      <button type="button" class="party-button" data-party="F" data-url="https://www.facebook.com/sfparti" aria-label="Socialistisk Folkeparti">
+        F
+        <span class="party-button__tooltip">Socialistisk Folkeparti</span>
+      </button>
+      <button type="button" class="party-button" data-party="H" data-url="https://www.facebook.com/profile.php?id=61561610215954" aria-label="Borgernes Parti">
+        H
+        <span class="party-button__tooltip">Borgernes Parti</span>
+      </button>
+      <button type="button" class="party-button" data-party="I" data-url="https://www.facebook.com/LiberalAlliance" aria-label="Liberal Alliance">
+        I
+        <span class="party-button__tooltip">Liberal Alliance</span>
+      </button>
+      <button type="button" class="party-button" data-party="M" data-url="https://www.facebook.com/moderaterne" aria-label="Moderaterne">
+        M
+        <span class="party-button__tooltip">Moderaterne</span>
+      </button>
+      <button type="button" class="party-button" data-party="O" data-url="https://www.facebook.com/danskfolkeparti" aria-label="Dansk Folkeparti">
+        O
+        <span class="party-button__tooltip">Dansk Folkeparti</span>
+      </button>
+      <button type="button" class="party-button" data-party="V" data-url="https://www.facebook.com/venstre.dk" aria-label="Venstre">
+        V
+        <span class="party-button__tooltip">Venstre</span>
+      </button>
+      <button type="button" class="party-button" data-party="Æ" data-url="https://www.facebook.com/PartietDD" aria-label="Danmarksdemokraterne">
+        Æ
+        <span class="party-button__tooltip">Danmarksdemokraterne</span>
+      </button>
+      <button type="button" class="party-button" data-party="Ø" data-url="https://www.facebook.com/enhedslisten" aria-label="Enhedslisten">
+        Ø
+        <span class="party-button__tooltip">Enhedslisten</span>
+      </button>
+      <button type="button" class="party-button" data-party="Å" data-url="https://www.facebook.com/alternativet.dk" aria-label="Alternativet">
+        Å
+        <span class="party-button__tooltip">Alternativet</span>
+      </button>
     </div>
     <nav aria-label="Main navigation (collapsed)" data-expanded="false">
       <div class="nav-backdrop" aria-hidden="true"></div>
@@ -1376,18 +2063,46 @@
       ></iframe>
     </section>
 
-    <aside class="news-feed" aria-label="Latest headlines from wallnot.dk">
-      <ul id="news-list-primary" aria-live="polite"></ul>
+    <aside class="news-feed news-feed--left-primary" aria-label="Latest headlines from wallnot.dk">
+      <ul id="news-list-left-primary" aria-live="polite"></ul>
       <p class="news-error" id="news-error" hidden>
         Unable to load headlines right now.
       </p>
     </aside>
     <aside
-      class="news-feed news-feed--secondary"
-      aria-label="More headlines from wallnot.dk"
+      class="news-feed news-feed--left-secondary"
+      aria-label="Additional headlines from wallnot.dk"
       hidden
     >
-      <ul id="news-list-secondary" aria-live="polite"></ul>
+      <ul id="news-list-left-secondary" aria-live="polite"></ul>
+    </aside>
+    <aside
+      class="news-feed news-feed--right-primary"
+      aria-label="Latest headlines from wallnot.dk"
+      hidden
+    >
+      <ul id="news-list-right-primary" aria-live="polite"></ul>
+    </aside>
+    <aside
+      class="news-feed news-feed--right-secondary"
+      aria-label="Additional headlines from wallnot.dk"
+      hidden
+    >
+      <ul id="news-list-right-secondary" aria-live="polite"></ul>
+    </aside>
+    <aside
+      class="facebook-posts"
+      id="facebook-posts"
+      aria-label="Facebook group posts"
+      hidden
+    >
+      <ul class="facebook-posts__list" id="facebook-posts-list" aria-live="polite"></ul>
+      <p class="facebook-posts__error" id="facebook-posts-error" hidden>
+        Unable to load posts right now.
+      </p>
+      <p class="facebook-posts__loading" id="facebook-posts-loading" hidden>
+        Scraping Facebook group...
+      </p>
     </aside>
     <button type="button" class="spotify-connect-button" id="spotify-connect-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="spotify-auth-modal">
       <img src="./spotify_connect.png" alt="Connect Spotify" />
@@ -1428,7 +2143,7 @@
         <p class="spotify-player__artist" id="spotify-player-artist">Not connected</p>
       </div>
       <div class="spotify-player__volume">
-        <input type="range" id="spotify-player-volume" min="0" max="100" value="60" />
+        <input type="range" id="spotify-player-volume" min="0" max="100" value="15" />
       </div>
     </div>
     <div class="spotify-auth-modal" id="spotify-auth-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="spotify-auth-modal-title">
@@ -1461,17 +2176,64 @@
         ></iframe>
       </div>
     </div>
-    <div class="github-contrib github-contrib--top">
-      <div class="github-contrib-overlay github-contrib-overlay--top">
-        <canvas id="github-grid-top" aria-hidden="true"></canvas>
-        <div class="github-contrib-tooltip" id="github-tooltip-top" role="status"></div>
-      </div>
+    <div class="footer-menu footer-menu--left">
+      <a
+        href="#"
+        class="footer-menu__button"
+        id="news-mode-button"
+        aria-label="News"
+        style="--button-color: #264653;"
+      >
+        <img src="./footer_buttons/news.svg" alt="News" />
+      </a>
+      <button
+        type="button"
+        class="footer-menu__button"
+        id="politics-button"
+        aria-label="Politics"
+        style="--button-color: #2a9d8f;"
+      >
+        <img src="./footer_buttons/politics.svg" alt="Politics" />
+      </button>
+      <a
+        href="#"
+        class="footer-menu__button"
+        aria-label="Media"
+        style="--button-color: #e9c46a;"
+      >
+        <img src="./footer_buttons/media.svg" alt="Media" />
+      </a>
+      <a
+        href="#"
+        class="footer-menu__button"
+        aria-label="Network"
+        style="--button-color: #f4a261;"
+      >
+        <img src="./footer_buttons/network.svg" alt="Network" />
+      </a>
+      <a
+        href="#"
+        class="footer-menu__button"
+        id="ai-mode-button"
+        aria-label="AI"
+        style="--button-color: #e76f51;"
+      >
+        <img src="./footer_buttons/AI.svg" alt="AI" />
+      </a>
     </div>
+    <div class="github-contrib-container">
+      <div class="github-contrib github-contrib--top">
+        <div class="github-contrib-overlay github-contrib-overlay--top">
+          <canvas id="github-grid-top" aria-hidden="true"></canvas>
+          <div class="github-contrib-tooltip" id="github-tooltip-top" role="status"></div>
+        </div>
+      </div>
 
-    <div class="github-contrib github-contrib--bottom">
-      <div class="github-contrib-overlay github-contrib-overlay--bottom">
-        <canvas id="github-grid" aria-hidden="true"></canvas>
-        <div class="github-contrib-tooltip" id="github-tooltip" role="status"></div>
+      <div class="github-contrib github-contrib--bottom">
+        <div class="github-contrib-overlay github-contrib-overlay--bottom">
+          <canvas id="github-grid" aria-hidden="true"></canvas>
+          <div class="github-contrib-tooltip" id="github-tooltip" role="status"></div>
+        </div>
       </div>
     </div>
 
@@ -1488,6 +2250,443 @@
           isExpanded ? "Main navigation (collapsed)" : "Main navigation (expanded)"
         );
       });
+
+      const aiModeButton = document.getElementById("ai-mode-button");
+      if (aiModeButton) {
+        aiModeButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          const isAiMode = document.body.classList.toggle("ai-mode");
+          if (isAiMode) {
+            document.body.classList.add("visualizer-active");
+            document.body.classList.remove("news-mode");
+          } else {
+            document.body.classList.remove("visualizer-active");
+          }
+        });
+      }
+
+      const newsModeButton = document.getElementById("news-mode-button");
+      if (newsModeButton) {
+        newsModeButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          const isNewsMode = document.body.classList.toggle("news-mode");
+          if (isNewsMode) {
+            document.body.classList.remove("ai-mode");
+            document.body.classList.remove("visualizer-active");
+            document.body.classList.remove("politics-mode");
+          }
+        });
+      }
+
+      const politicsButton = document.getElementById("politics-button");
+      const facebookPosts = document.getElementById("facebook-posts");
+      const facebookPostsList = document.getElementById("facebook-posts-list");
+      const facebookPostsError = document.getElementById("facebook-posts-error");
+      const facebookPostsLoading = document.getElementById("facebook-posts-loading");
+      // Party buttons configuration
+      const partyConfig = {
+        A: { name: "Socialdemokratiet", url: "https://www.facebook.com/socialdemokratiet" },
+        B: { name: "Radikale Venstre", url: "https://www.facebook.com/radikalevenstre" },
+        C: { name: "Det Konservative Folkeparti", url: "https://www.facebook.com/Konservative/" },
+        F: { name: "Socialistisk Folkeparti", url: "https://www.facebook.com/sfparti" },
+        H: { name: "Borgernes Parti", url: "https://www.facebook.com/profile.php?id=61561610215954" },
+        I: { name: "Liberal Alliance", url: "https://www.facebook.com/LiberalAlliance" },
+        M: { name: "Moderaterne", url: "https://www.facebook.com/moderaterne" },
+        O: { name: "Dansk Folkeparti", url: "https://www.facebook.com/danskfolkeparti" },
+        V: { name: "Venstre", url: "https://www.facebook.com/venstre.dk" },
+        Æ: { name: "Danmarksdemokraterne", url: "https://www.facebook.com/PartietDD" },
+        Ø: { name: "Enhedslisten", url: "https://www.facebook.com/enhedslisten" },
+        Å: { name: "Alternativet", url: "https://www.facebook.com/alternativet.dk" }
+      };
+      
+      let currentParty = "A"; // Default to Socialdemokratiet
+      
+      // Function to determine which party a post belongs to
+      function getPartyForPost(post) {
+        const authorName = (post.author_name || "").toLowerCase().trim();
+        const source = (post.source || "").toLowerCase();
+        const postText = (post.post_text || "").toLowerCase();
+        
+        // Match by exact author name first
+        for (const [partyKey, partyInfo] of Object.entries(partyConfig)) {
+          const partyName = partyInfo.name.toLowerCase();
+          if (authorName === partyName || authorName === partyName.replace(/ /g, "")) {
+            return partyKey;
+          }
+        }
+        
+        // Match by author name containing party name
+        for (const [partyKey, partyInfo] of Object.entries(partyConfig)) {
+          const partyName = partyInfo.name.toLowerCase();
+          const partyWords = partyName.split(" ");
+          if (authorName.includes(partyName) || 
+              (partyWords.length > 0 && authorName.includes(partyWords[0]))) {
+            return partyKey;
+          }
+        }
+        
+        // Match by source URL
+        for (const [partyKey, partyInfo] of Object.entries(partyConfig)) {
+          const url = partyInfo.url.toLowerCase();
+          const urlPart = url.split("facebook.com/")[1]?.split("/")[0]?.split("?")[0];
+          if (source.includes(url) || (urlPart && source.includes(urlPart))) {
+            return partyKey;
+          }
+        }
+        
+        // Match by post text containing party name
+        for (const [partyKey, partyInfo] of Object.entries(partyConfig)) {
+          const partyName = partyInfo.name.toLowerCase();
+          if (postText.includes(partyName)) {
+            return partyKey;
+          }
+        }
+        
+        // Fallback: try to match common party name patterns and abbreviations
+        if (authorName.includes("socialdemokrat") || authorName.includes("socialdemokraterne") || authorName.includes("soc.dem")) return "A";
+        if (authorName.includes("radikal") || authorName.includes("rad. v")) return "B";
+        if (authorName.includes("konservativ") || authorName.includes("kons.")) return "C";
+        if (authorName.includes("socialistisk folkeparti") || authorName.includes("sf") || authorName.includes("socialistisk")) return "F";
+        if (authorName.includes("borgernes parti") || authorName.includes("borgerne")) return "H";
+        if (authorName.includes("liberal alliance") || authorName.includes("lib. al")) return "I";
+        if (authorName.includes("moderat") || authorName.includes("moderat.")) return "M";
+        if (authorName.includes("dansk folkeparti") || authorName.includes("df") || authorName.includes("dansk folkeparti")) return "O";
+        if (authorName.includes("venstre") && !authorName.includes("radikal")) return "V";
+        if (authorName.includes("danmarksdemokrat") || authorName.includes("dd") || authorName.includes("dan.dem")) return "Æ";
+        if (authorName.includes("enhedslist") || authorName.includes("enhedsl.")) return "Ø";
+        if (authorName.includes("alternativ") || authorName.includes("alt.")) return "Å";
+        
+        // Try matching by common politician names (if we know them)
+        // This is a fallback for individual politicians
+        
+        return null; // Unknown party
+      }
+      
+      // Set up party button event listeners
+      document.querySelectorAll(".party-button").forEach((button) => {
+        button.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const party = button.getAttribute("data-party");
+          const url = button.getAttribute("data-url");
+          currentParty = party;
+          
+          console.log(`[PARTY] Button clicked: ${party}, URL: ${url}`);
+          
+          // Open politics mode and scrape
+          openFacebookPosts();
+          scrapeAndLoadFacebookPosts(url);
+        });
+        
+        // Also add mousedown for better responsiveness
+        button.addEventListener("mousedown", (e) => {
+          e.preventDefault();
+        });
+      });
+      
+      console.log(`[PARTY] Set up ${document.querySelectorAll(".party-button").length} party buttons`);
+
+      const closeFacebookPosts = () => {
+        if (facebookPosts) {
+          facebookPosts.hidden = true;
+          document.body.classList.remove("politics-mode");
+        }
+      };
+
+      const openFacebookPosts = () => {
+        if (facebookPosts) {
+          facebookPosts.hidden = false;
+          document.body.classList.add("politics-mode");
+          document.body.classList.remove("ai-mode");
+          document.body.classList.remove("news-mode");
+          document.body.classList.remove("visualizer-active");
+          // Load existing posts from all parties
+          loadFacebookPosts();
+        }
+      };
+
+      async function loadFacebookPosts(partyUrl = null) {
+        if (!facebookPostsList || !facebookPostsError || !facebookPostsLoading) return;
+
+        facebookPostsError.hidden = true;
+        facebookPostsLoading.hidden = false;
+        facebookPostsList.innerHTML = "";
+
+        try {
+          // Load all posts from all parties (no URL parameter needed)
+          const response = await fetch(`/api/facebook/posts`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          const data = await response.json();
+
+          if (!data.posts || data.posts.length === 0) {
+            facebookPostsError.textContent = "No posts found. Please scrape first.";
+            facebookPostsError.hidden = false;
+            facebookPostsLoading.hidden = true;
+            return;
+          }
+
+          facebookPostsList.innerHTML = "";
+          
+          // Create 3 columns
+          const columns = [];
+          for (let i = 0; i < 3; i++) {
+            const column = document.createElement("div");
+            column.className = "facebook-posts__column";
+            facebookPostsList.appendChild(column);
+            columns.push(column);
+          }
+          
+          // Distribute posts evenly across columns
+          data.posts.forEach((post, index) => {
+            const columnIndex = index % 3;
+            const column = columns[columnIndex];
+            
+            const li = document.createElement("li");
+            li.className = "facebook-post";
+            
+            // Determine which party this post belongs to
+            const party = getPartyForPost(post);
+            if (party) {
+              li.setAttribute("data-party", party);
+            }
+
+            // Create content wrapper
+            const contentWrapper = document.createElement("div");
+            contentWrapper.className = "facebook-post__content";
+
+            const author = document.createElement("span");
+            author.className = "facebook-post__author";
+            author.textContent = post.author_name || "Unknown Author";
+
+            const text = document.createElement("p");
+            text.className = "facebook-post__text";
+            text.textContent = post.post_text || "";
+
+            const time = document.createElement("span");
+            time.className = "facebook-post__time";
+            time.textContent = post.post_time || "";
+
+            contentWrapper.appendChild(author);
+            if (post.post_text) {
+              contentWrapper.appendChild(text);
+            }
+            if (post.post_time) {
+              contentWrapper.appendChild(time);
+            }
+
+            // Add video thumbnail to the left if available
+            if (post.video_url || post.video_thumbnail) {
+              const videoContainer = document.createElement("div");
+              videoContainer.className = "facebook-post__video";
+              
+              if (post.video_url) {
+                // Try to create a video element or link
+                if (post.video_url.startsWith("http")) {
+                  const videoLink = document.createElement("a");
+                  videoLink.href = post.video_url;
+                  videoLink.target = "_blank";
+                  videoLink.rel = "noopener noreferrer";
+                  videoLink.className = "facebook-post__video-link";
+                  
+                  if (post.video_thumbnail) {
+                    const thumbnail = document.createElement("img");
+                    thumbnail.src = post.video_thumbnail;
+                    thumbnail.alt = "Video thumbnail";
+                    thumbnail.className = "facebook-post__video-thumbnail";
+                    videoLink.appendChild(thumbnail);
+                  } else {
+                    videoLink.textContent = "▶ Se video";
+                  }
+                  
+                  videoContainer.appendChild(videoLink);
+                }
+              } else if (post.video_thumbnail) {
+                const thumbnail = document.createElement("img");
+                thumbnail.src = post.video_thumbnail;
+                thumbnail.alt = "Video thumbnail";
+                thumbnail.className = "facebook-post__video-thumbnail";
+                videoContainer.appendChild(thumbnail);
+              }
+              
+              // Add video first (left side)
+              li.appendChild(videoContainer);
+            }
+            
+            // Add content wrapper (right side)
+            li.appendChild(contentWrapper);
+
+            column.appendChild(li);
+          });
+
+          facebookPostsLoading.hidden = true;
+        } catch (error) {
+          console.error("Failed to load Facebook posts:", error);
+          facebookPostsError.textContent = `Unable to load posts: ${error.message}`;
+          facebookPostsError.hidden = false;
+          facebookPostsLoading.hidden = true;
+        }
+      }
+
+      async function scrapeAndLoadFacebookPosts(partyUrl = null) {
+        if (!facebookPostsList || !facebookPostsError || !facebookPostsLoading) return;
+
+        facebookPostsError.hidden = true;
+        facebookPostsLoading.hidden = false;
+        facebookPostsList.innerHTML = "";
+        openFacebookPosts();
+
+        try {
+          const urlToScrape = partyUrl || partyConfig[currentParty].url;
+          console.log("[FACEBOOK] Starting scrape request for:", urlToScrape);
+          const response = await fetch("/api/facebook/scrape", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ url: urlToScrape }),
+          });
+
+          console.log("[FACEBOOK] Scrape response received:", response.status);
+
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMsg = errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+            const details = errorData.details || errorData.message || "";
+            const stdout = errorData.stdout || "";
+            const stderr = errorData.stderr || "";
+            
+            let fullError = errorMsg;
+            if (details) fullError += `\n${details}`;
+            if (stdout) fullError += `\n\nOutput: ${stdout}`;
+            if (stderr) fullError += `\n\nErrors: ${stderr}`;
+            
+            throw new Error(fullError);
+          }
+
+          // The scrape endpoint returns posts directly
+          const data = await response.json();
+          console.log("[FACEBOOK] Scraped data received:", data.posts?.length || 0, "posts");
+
+          if (!data.posts || data.posts.length === 0) {
+            facebookPostsError.textContent = "No posts were scraped. The group may be private or the scraper needs updating.";
+            facebookPostsError.hidden = false;
+            facebookPostsLoading.hidden = true;
+            return;
+          }
+
+          facebookPostsList.innerHTML = "";
+          data.posts.forEach((post) => {
+            const li = document.createElement("li");
+            li.className = "facebook-post";
+            
+            // Determine which party this post belongs to
+            const party = getPartyForPost(post);
+            if (party) {
+              li.setAttribute("data-party", party);
+            }
+
+            // Create content wrapper
+            const contentWrapper = document.createElement("div");
+            contentWrapper.className = "facebook-post__content";
+
+            const author = document.createElement("span");
+            author.className = "facebook-post__author";
+            author.textContent = post.author_name || "Unknown Author";
+
+            const text = document.createElement("p");
+            text.className = "facebook-post__text";
+            text.textContent = post.post_text || "";
+
+            const time = document.createElement("span");
+            time.className = "facebook-post__time";
+            time.textContent = post.post_time || "";
+
+            contentWrapper.appendChild(author);
+            if (post.post_text) {
+              contentWrapper.appendChild(text);
+            }
+            if (post.post_time) {
+              contentWrapper.appendChild(time);
+            }
+
+            // Add video thumbnail to the left if available
+            if (post.video_url || post.video_thumbnail) {
+              const videoContainer = document.createElement("div");
+              videoContainer.className = "facebook-post__video";
+              
+              if (post.video_url) {
+                // Try to create a video element or link
+                if (post.video_url.startsWith("http")) {
+                  const videoLink = document.createElement("a");
+                  videoLink.href = post.video_url;
+                  videoLink.target = "_blank";
+                  videoLink.rel = "noopener noreferrer";
+                  videoLink.className = "facebook-post__video-link";
+                  
+                  if (post.video_thumbnail) {
+                    const thumbnail = document.createElement("img");
+                    thumbnail.src = post.video_thumbnail;
+                    thumbnail.alt = "Video thumbnail";
+                    thumbnail.className = "facebook-post__video-thumbnail";
+                    videoLink.appendChild(thumbnail);
+                  } else {
+                    videoLink.textContent = "▶ Se video";
+                  }
+                  
+                  videoContainer.appendChild(videoLink);
+                }
+              } else if (post.video_thumbnail) {
+                const thumbnail = document.createElement("img");
+                thumbnail.src = post.video_thumbnail;
+                thumbnail.alt = "Video thumbnail";
+                thumbnail.className = "facebook-post__video-thumbnail";
+                videoContainer.appendChild(thumbnail);
+              }
+              
+              // Add video first (left side)
+              li.appendChild(videoContainer);
+            }
+            
+            // Add content wrapper (right side)
+            li.appendChild(contentWrapper);
+
+            facebookPostsList.appendChild(li);
+          });
+
+          console.log("[FACEBOOK] Posts rendered, hiding loading indicator");
+          facebookPostsLoading.hidden = true;
+        } catch (error) {
+          console.error("Failed to scrape Facebook posts:", error);
+          // Show full error message including details from server
+          let errorText = `Failed to scrape posts: ${error.message}`;
+          // If error has additional details, show them
+          if (error.message.includes("stdout") || error.message.includes("stderr")) {
+            errorText = error.message; // Already includes details
+          }
+          facebookPostsError.textContent = errorText;
+          facebookPostsError.style.whiteSpace = "pre-wrap"; // Allow line breaks
+          facebookPostsError.style.fontSize = "0.9rem";
+          facebookPostsError.hidden = false;
+          facebookPostsLoading.hidden = true;
+        }
+      }
+
+      if (politicsButton) {
+        politicsButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          const isPoliticsMode = document.body.classList.toggle("politics-mode");
+          if (isPoliticsMode) {
+            document.body.classList.remove("ai-mode");
+            document.body.classList.remove("news-mode");
+            document.body.classList.remove("visualizer-active");
+            openFacebookPosts();
+          } else {
+            closeFacebookPosts();
+          }
+        });
+      }
 
       const brainToggle = document.getElementById("brain-toggle");
 
@@ -1870,6 +3069,7 @@
         revokeBrainSpeechUrl();
         brainSpeechAudio.pause();
         brainSpeechAudio.currentTime = 0;
+        setVisualizerActive(true);
         let resumeAfterSpeech = false;
         if (spotifyPlayerInstance) {
           try {
@@ -1910,6 +3110,7 @@
           }).catch(async (error) => {
             console.warn("Playback failed:", error);
             setLoaderVisible(false);
+            setVisualizerActive(false);
             if (resumeAfterSpeech && spotifyPlayerInstance) {
               try {
                 await spotifyPlayerInstance.resume();
@@ -1931,6 +3132,7 @@
         } catch (error) {
           console.error("Text-to-speech failed:", error);
           setLoaderVisible(false);
+          setVisualizerActive(false);
           sendVisualizerMessage("brainAudioFinished");
           if (resumeAfterSpeech && spotifyPlayerInstance) {
             try {
@@ -1947,6 +3149,7 @@
           revokeBrainSpeechUrl();
           sendVisualizerMessage("brainAudioFinished");
           setLoaderVisible(false);
+          setVisualizerActive(false);
           if (spotifyPlayerInstance && spotifyAutoResumeOnSpeech) {
             spotifyPlayerInstance.resume?.().catch((error) => {
               console.warn("Failed to resume Spotify after speech ended:", error);
@@ -1958,6 +3161,7 @@
           revokeBrainSpeechUrl();
           sendVisualizerMessage("brainAudioFinished");
           setLoaderVisible(false);
+          setVisualizerActive(false);
           if (spotifyPlayerInstance && spotifyAutoResumeOnSpeech) {
             spotifyPlayerInstance.resume?.().catch((error) => {
               console.warn("Failed to resume Spotify after speech error:", error);
@@ -2062,6 +3266,9 @@
       const pauseAfterDelete = 600;
 
       function typeQuote() {
+        // Check if quote element exists (it's hidden in politics mode)
+        if (!quoteElement) return;
+        
         const currentQuote = quotes[quoteIndex];
 
         if (!deleting) {
@@ -2089,7 +3296,10 @@
         setTimeout(typeQuote, nextDelay);
       }
 
-      setTimeout(typeQuote, 1500);
+      // Start animated quote text (hidden in politics mode)
+      if (quoteElement) {
+        setTimeout(typeQuote, 1500);
+      }
 
       const backgroundVideo = document.getElementById("background-video");
       const totalBackgroundVideos = 10;
@@ -2219,10 +3429,32 @@
       loadWeather();
       setInterval(loadWeather, 15 * 60 * 1000);
 
-      const newsListPrimary = document.getElementById("news-list-primary");
-      const newsListSecondary = document.getElementById("news-list-secondary");
       const newsErrorElement = document.getElementById("news-error");
-      const newsSecondaryContainer = document.querySelector(".news-feed--secondary");
+      const rawNewsColumns = [
+        {
+          key: "leftPrimary",
+          list: document.getElementById("news-list-left-primary"),
+          container: document.querySelector(".news-feed--left-primary")
+        },
+        {
+          key: "leftSecondary",
+          list: document.getElementById("news-list-left-secondary"),
+          container: document.querySelector(".news-feed--left-secondary")
+        },
+        {
+          key: "rightPrimary",
+          list: document.getElementById("news-list-right-primary"),
+          container: document.querySelector(".news-feed--right-primary")
+        },
+        {
+          key: "rightSecondary",
+          list: document.getElementById("news-list-right-secondary"),
+          container: document.querySelector(".news-feed--right-secondary")
+        }
+      ];
+      const newsColumns = rawNewsColumns.filter(
+        (column) => column.list instanceof HTMLElement && column.container instanceof HTMLElement
+      );
       const newsViewer = document.getElementById("news-viewer");
       const newsViewerFrame = document.getElementById("news-viewer-frame");
       const newsViewerClose = document.getElementById("news-viewer-close");
@@ -2300,39 +3532,48 @@
       }
 
       async function loadNewsFeed(category = currentNewsCategory) {
-        if (!newsListPrimary || !newsErrorElement) return;
+        if (!newsErrorElement || newsColumns.length === 0) return;
+        const primaryColumn =
+          newsColumns.find((column) => column.key === "leftPrimary") ?? newsColumns[0];
+
+        const resetColumns = () => {
+          newsColumns.forEach((column) => {
+            column.list.innerHTML = "";
+            if (column.key === primaryColumn.key) {
+              column.container.hidden = false;
+            } else {
+              column.container.hidden = true;
+            }
+          });
+        };
+
+        resetColumns();
+
         try {
-          const normalizedCategory = newsCategoryFiles[category]
-            ? category
-            : "all";
+          const normalizedCategory = newsCategoryFiles[category] ? category : "all";
           currentNewsCategory = normalizedCategory;
           updateActiveCategoryLink(normalizedCategory);
 
           newsErrorElement.hidden = true;
           const fileName = newsCategoryFiles[normalizedCategory] ?? newsCategoryFiles.all;
-          const response = await fetch(
-            `data/${fileName}?ts=${Date.now()}`,
-            {
-              cache: "no-store"
-            }
-          );
+          const response = await fetch(`data/${fileName}?ts=${Date.now()}`, {
+            cache: "no-store"
+          });
           if (!response.ok) {
             throw new Error(`News request returned ${response.status}`);
           }
           const payload = await response.json();
           const items = Array.isArray(payload?.items) ? payload.items : [];
 
-          newsListPrimary.innerHTML = "";
-          if (newsListSecondary) {
-            newsListSecondary.innerHTML = "";
-          }
-
           if (!items.length) {
-            newsErrorElement.textContent = "No headlines available in this category right now.";
+            newsErrorElement.textContent =
+              "No headlines available in this category right now.";
             newsErrorElement.hidden = false;
-            if (newsSecondaryContainer) {
-              newsSecondaryContainer.hidden = true;
-            }
+            newsColumns
+              .filter((column) => column.key !== primaryColumn.key)
+              .forEach((column) => {
+                column.container.hidden = true;
+              });
             return;
           }
 
@@ -2343,8 +3584,24 @@
             month: "short"
           });
 
-          const primaryItems = items.slice(0, 6);
-          const secondaryItems = items.slice(6, 12);
+          const maxItemsPerColumn = 6;
+          const columnCount = newsColumns.length;
+          const trimmedItems = items.slice(0, columnCount * maxItemsPerColumn);
+          const perColumn = trimmedItems.length
+            ? Math.min(maxItemsPerColumn, Math.ceil(trimmedItems.length / columnCount))
+            : 0;
+
+          if (!perColumn) {
+            newsErrorElement.textContent =
+              "No headlines available in this category right now.";
+            newsErrorElement.hidden = false;
+            newsColumns
+              .filter((column) => column.key !== primaryColumn.key)
+              .forEach((column) => {
+                column.container.hidden = true;
+              });
+            return;
+          }
 
           const createListItem = (item) => {
             const li = document.createElement("li");
@@ -2352,17 +3609,23 @@
             if (item?.link) {
               const link = document.createElement("a");
               link.href = item.link;
-            link.target = "_blank";
-            link.rel = "noopener noreferrer";
+              link.target = "_blank";
+              link.rel = "noopener noreferrer";
               link.textContent = item?.title?.trim() || "Untitled article";
-            link.addEventListener("click", (event) => {
-              if (event.defaultPrevented) return;
-              if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-                return;
-              }
-              event.preventDefault();
-              openNewsViewer(item.link);
-            });
+              link.addEventListener("click", (event) => {
+                if (event.defaultPrevented) return;
+                if (
+                  event.button !== 0 ||
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                openNewsViewer(item.link);
+              });
               li.appendChild(link);
             } else {
               const span = document.createElement("span");
@@ -2383,31 +3646,36 @@
             return li;
           };
 
-          primaryItems.forEach((item) => {
-            newsListPrimary.appendChild(createListItem(item));
-          });
+          newsColumns.forEach((column, index) => {
+            const sliceStart = index * perColumn;
+            const sliceEnd = sliceStart + perColumn;
+            const columnItems = trimmedItems.slice(sliceStart, sliceEnd);
 
-          if (secondaryItems.length && newsListSecondary && newsSecondaryContainer) {
-            newsListSecondary.innerHTML = "";
-            secondaryItems.forEach((item) => {
-              newsListSecondary.appendChild(createListItem(item));
+            if (!columnItems.length) {
+              if (column.key !== primaryColumn.key) {
+                column.container.hidden = true;
+              }
+              return;
+            }
+
+            columnItems.forEach((item) => {
+              column.list.appendChild(createListItem(item));
             });
-            newsSecondaryContainer.hidden = false;
-          } else if (newsSecondaryContainer) {
-            newsSecondaryContainer.hidden = true;
-          }
+            column.container.hidden = false;
+          });
         } catch (error) {
           console.error("Failed to load news feed:", error);
-          newsListPrimary.innerHTML = "";
-          if (newsListSecondary) {
-            newsListSecondary.innerHTML = "";
-          }
           newsErrorElement.textContent =
             "Unable to load headlines for this category right now.";
           newsErrorElement.hidden = false;
-          if (newsSecondaryContainer) {
-            newsSecondaryContainer.hidden = true;
-          }
+          newsColumns.forEach((column) => {
+            column.list.innerHTML = "";
+            if (column.key !== primaryColumn.key) {
+              column.container.hidden = true;
+            } else {
+              column.container.hidden = false;
+            }
+          });
         }
       }
 
@@ -2681,6 +3949,21 @@
       view.canvas.style.transform = "translateX(0)";
     }
 
+    function updateFacebookPostsPadding() {
+      const topGrid = document.querySelector(".github-contrib-overlay--top");
+      const bottomGrid = document.querySelector(".github-contrib-overlay--bottom");
+      const facebookPosts = document.querySelector(".facebook-posts");
+      
+      if (!facebookPosts) return;
+      
+      const topHeight = topGrid ? topGrid.offsetHeight : 56;
+      const bottomHeight = bottomGrid ? bottomGrid.offsetHeight : 56;
+      
+      facebookPosts.style.paddingTop = `${topHeight}px`;
+      facebookPosts.style.paddingBottom = `${bottomHeight}px`;
+      facebookPosts.style.clipPath = `inset(${topHeight}px 0 ${bottomHeight}px 0)`;
+    }
+
     function renderContributionViews() {
       if (!contributionMatrix || contributionViews.length === 0) return;
       contributionViews.forEach((view) => {
@@ -2689,6 +3972,8 @@
           view.canvas.style.display = "block";
         }
       });
+      // Update padding after grids are rendered
+      setTimeout(updateFacebookPostsPadding, 100);
     }
 
     fetchContributionData("flyveren").then((matrix) => {
@@ -2828,7 +4113,7 @@
       view.container.addEventListener("mouseleave", () => hideContributionTooltip(view));
     });
 
-      const spotifyButton = document.getElementById("spotify-connect-button");
+      const spotifyConnectButton = document.getElementById("spotify-connect-button");
       const spotifyModal = document.getElementById("spotify-auth-modal");
       const spotifyConfirm = document.getElementById("spotify-auth-confirm");
       const spotifyDismissButtons = document.querySelectorAll("[data-spotify-auth-dismiss]");
@@ -2839,7 +4124,7 @@
         if (!spotifyModal) return;
         spotifyModalPreviouslyFocused = document.activeElement;
         spotifyModal.setAttribute("aria-hidden", "false");
-        spotifyButton?.setAttribute("aria-expanded", "true");
+        spotifyConnectButton?.setAttribute("aria-expanded", "true");
         const focusTarget =
           spotifyConfirm ||
           spotifyModal.querySelector(".spotify-auth-modal__close") ||
@@ -2850,7 +4135,7 @@
       const closeSpotifyModal = () => {
         if (!spotifyModal) return;
         spotifyModal.setAttribute("aria-hidden", "true");
-        spotifyButton?.setAttribute("aria-expanded", "false");
+        spotifyConnectButton?.setAttribute("aria-expanded", "false");
         spotifyModalPreviouslyFocused?.focus?.({ preventScroll: true });
         spotifyModalPreviouslyFocused = null;
       };
@@ -2894,8 +4179,8 @@
         window.dispatchEvent(new CustomEvent("spotify-auth-complete", { detail }));
       };
 
-      if (spotifyButton && spotifyModal && spotifyConfirm) {
-        spotifyButton.addEventListener("click", (event) => {
+      if (spotifyConnectButton && spotifyModal && spotifyConfirm) {
+        spotifyConnectButton.addEventListener("click", (event) => {
           event.preventDefault();
           openSpotifyModal();
         });
@@ -2912,7 +4197,8 @@
         });
 
         spotifyModal.addEventListener("click", (event) => {
-          if (event.target === spotifyModal) {
+          const dialog = spotifyModal.querySelector(".spotify-auth-modal__dialog");
+          if (event.target === spotifyModal || (dialog && !dialog.contains(event.target))) {
             closeSpotifyModal();
           }
         });
@@ -3003,12 +4289,15 @@
       }
 
       function setSpotifyUiConnected(isConnected) {
-        if (spotifyButton) {
-          spotifyButton.style.display = isConnected ? "none" : "block";
+        if (spotifyConnectButton) {
+          spotifyConnectButton.style.display = isConnected ? "none" : "block";
+          spotifyConnectButton.disabled = isConnected;
         }
         if (spotifyPlayerContainer) {
           spotifyPlayerContainer.setAttribute("aria-hidden", isConnected ? "false" : "true");
           spotifyPlayerContainer.classList.toggle("spotify-player--inactive", !isConnected);
+          spotifyPlayerContainer.style.display = isConnected ? "flex" : "none";
+          spotifyPlayerContainer.style.pointerEvents = isConnected ? "auto" : "none";
         }
       }
 
@@ -3180,13 +4469,14 @@
           const Spotify = window.Spotify;
           const player = new Spotify.Player({
             name: "HomeLab Dashboard",
-            volume: 0.6,
+            volume: 0.15,
             getOAuthToken: async (cb) => {
               try {
                 const token = await getValidSpotifyAccessToken();
                 cb(token);
               } catch (error) {
                 console.error("Unable to refresh Spotify token:", error);
+                setSpotifyUiConnected(false);
               }
             },
           });
@@ -3224,12 +4514,14 @@
           const connected = await player.connect();
           if (!connected) {
             console.warn("Spotify player failed to connect.");
+            setSpotifyUiConnected(false);
           } else {
             spotifyPlayerInstance = player;
             setSpotifyUiConnected(true);
           }
         } catch (error) {
           console.error("Failed to initialize Spotify player:", error);
+          setSpotifyUiConnected(false);
         } finally {
           spotifyInitializing = false;
         }
@@ -3287,6 +4579,15 @@
       }
 
       const spotifyVolumeSlider = document.getElementById("spotify-player-volume");
+      
+      // Update slider background to show blue filled portion
+      function updateSliderBackground(slider) {
+        if (!slider) return;
+        const value = parseFloat(slider.value) || 0;
+        const percentage = value;
+        slider.style.background = `linear-gradient(to right, #1111ea 0%, #1111ea ${percentage}%, #ffffff ${percentage}%, #ffffff 100%)`;
+      }
+      
       async function setSpotifyVolume(percent, suppressUi = false) {
         if (!spotifyPlayerInstance) return;
         const volume = Math.max(0, Math.min(1, percent / 100));
@@ -3294,6 +4595,7 @@
           await spotifyPlayerInstance.setVolume(volume);
           if (!suppressUi && spotifyVolumeSlider) {
             spotifyVolumeSlider.value = String(Math.round(percent));
+            updateSliderBackground(spotifyVolumeSlider);
           }
         } catch (error) {
           console.warn("Failed to set Spotify volume:", error);
@@ -3309,8 +4611,13 @@
 
       let spotifyVolumeDebounce = null;
       if (spotifyVolumeSlider) {
+        // Initialize slider background
+        updateSliderBackground(spotifyVolumeSlider);
+
         spotifyVolumeSlider.addEventListener("input", (event) => {
           const { value } = event.target;
+          // Update background immediately for visual feedback
+          updateSliderBackground(event.target);
           if (spotifyVolumeDebounce) {
             clearTimeout(spotifyVolumeDebounce);
           }
@@ -3320,6 +4627,7 @@
         });
 
         spotifyVolumeSlider.addEventListener("change", (event) => {
+          updateSliderBackground(event.target);
           applySpotifyVolume(event.target.value);
         });
       }
@@ -3328,31 +4636,32 @@
         const detail = event?.detail;
         if (!detail?.success || !detail.payload?.tokens) {
           console.warn("Spotify authentication failed:", detail?.payload?.error);
+          setSpotifyUiConnected(false);
           return;
         }
         const tokens = detail.payload.tokens;
         if (!tokens?.access_token || !tokens?.refresh_token) {
           console.warn("Spotify token payload incomplete:", tokens);
+          setSpotifyUiConnected(false);
           return;
         }
         storeSpotifyAuth(tokens);
-        setSpotifyUiConnected(true);
         await initializeSpotifyPlayer();
-        if (spotifyVolumeSlider) {
-          applySpotifyVolume(spotifyVolumeSlider.value);
-        }
       });
 
       (async () => {
+        setSpotifyUiConnected(false);
         const stored = loadStoredSpotifyAuth();
         if (stored?.accessToken && stored?.refreshToken) {
-          setSpotifyUiConnected(true);
           await initializeSpotifyPlayer();
-          if (spotifyVolumeSlider) {
-            applySpotifyVolume(spotifyVolumeSlider.value);
+          if (spotifyPlayerInstance) {
+            if (spotifyVolumeSlider) {
+              updateSliderBackground(spotifyVolumeSlider);
+              applySpotifyVolume(spotifyVolumeSlider.value);
+            }
+          } else {
+            setSpotifyUiConnected(false);
           }
-        } else {
-          setSpotifyUiConnected(false);
         }
       })();
 
@@ -3390,6 +4699,10 @@
           brainDebugPanel.style.display = "none";
           brainDebugPanel.textContent = "";
         }
+      };
+
+      const setVisualizerActive = (active) => {
+        document.body.classList.toggle("visualizer-active", Boolean(active));
       };
     </script>
   </body>
