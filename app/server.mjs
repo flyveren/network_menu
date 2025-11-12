@@ -163,6 +163,15 @@ const requestListener = async (req, res) => {
       return;
     }
 
+    if (
+      (requestUrl.pathname === "/api/voxmeter/polls" || normalizedPathname === "/api/voxmeter/polls") &&
+      req.method === "GET"
+    ) {
+      console.log("[SERVER] Handling /api/voxmeter/polls");
+      await handleVoxmeterPolls(req, res);
+      return;
+    }
+
     if (requestUrl.pathname === "/favicon.ico") {
       res.writeHead(204);
       res.end();
@@ -1285,6 +1294,108 @@ async function handleFacebookPosts(req, res) {
     console.error("Failed to load Facebook posts:", error);
     res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
     res.end(JSON.stringify({ error: "Failed to load Facebook posts", details: error.message }));
+  }
+}
+
+async function handleVoxmeterPolls(req, res) {
+  console.log("[VOXMETER] /api/voxmeter/polls request received");
+  
+  const scriptPath = join(__dirname, "scripts", "fetch_voxmeter.py");
+  if (!existsSync(scriptPath)) {
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Voxmeter scraping script not found" }));
+    return;
+  }
+
+  const args = [scriptPath];
+
+  console.log(`[VOXMETER] Running scraper: python3 ${args.join(" ")}`);
+
+  const pythonProcess = spawn("python3", args, {
+    cwd: __dirname,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  let stdout = "";
+  let stderr = "";
+
+  pythonProcess.stdout.on("data", (data) => {
+    stdout += data.toString();
+  });
+
+  pythonProcess.stderr.on("data", (data) => {
+    stderr += data.toString();
+  });
+
+  const scrapePromise = new Promise((resolve, reject) => {
+    pythonProcess.on("close", (code) => {
+      console.log(`[VOXMETER] Scraper exited with code ${code}`);
+      if (code === 0) {
+        resolve({ stdout, stderr });
+      } else {
+        const errorMsg = stderr || stdout || `Process exited with code ${code}`;
+        reject(new Error(`Scraper exited with code ${code}: ${errorMsg}`));
+      }
+    });
+
+    pythonProcess.on("error", (error) => {
+      console.error(`[VOXMETER] Failed to start scraper:`, error);
+      reject(new Error(`Failed to start scraper: ${error.message}`));
+    });
+  });
+
+  // Set a timeout of 2 minutes for scraping
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => {
+      pythonProcess.kill("SIGTERM");
+      reject(new Error("Scraping timeout after 2 minutes"));
+    }, 2 * 60 * 1000);
+  });
+
+  try {
+    await Promise.race([scrapePromise, timeoutPromise]);
+  } catch (scrapeError) {
+    console.error(`[VOXMETER] Scraping process failed:`, scrapeError);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ 
+      error: "Scraping failed", 
+      details: scrapeError.message,
+      stdout: stdout.substring(0, 1000),
+      stderr: stderr.substring(0, 1000)
+    }));
+    return;
+  }
+
+  // Try to read the output file
+  const dataPath = join(__dirname, "data", "voxmeter_polls.json");
+  console.log(`[VOXMETER] Looking for data file at: ${dataPath}`);
+
+  try {
+    if (existsSync(dataPath)) {
+      const fileContent = await readFile(dataPath, "utf-8");
+      const data = JSON.parse(fileContent);
+      
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-cache",
+      });
+      res.end(JSON.stringify(data));
+      console.log(`[VOXMETER] Successfully returned polling data`);
+    } else {
+      res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ 
+        error: "Polling data file not found",
+        stdout: stdout.substring(0, 1000),
+        stderr: stderr.substring(0, 1000)
+      }));
+    }
+  } catch (error) {
+    console.error(`[VOXMETER] Error reading data file:`, error);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ 
+      error: "Failed to read polling data", 
+      details: error.message 
+    }));
   }
 }
 

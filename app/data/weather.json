@@ -1,6 +1,6 @@
 {
   "source": "https://vejr.tv2.dk/vejr/maribo-2617072",
-  "fetchedAt": "2025-11-12T11:15:02.777047+00:00",
+  "fetchedAt": "2025-11-12T12:25:24.444572+00:00",
   "temperature_c": 10.0,
   "temperature_text": "10°",
   "feels_like_c": null,
@@ -9,7 +9,7 @@
   "symbol_description": "Skyet",
   "precipitation_mm": 0.0,
   "precipitation_text": "0",
-  "wind_speed_ms": 8.0,
-  "wind_text": "8",
+  "wind_speed_ms": 7.0,
+  "wind_text": "7",
   "wind_direction": "Jævn vind fra syd"
 }

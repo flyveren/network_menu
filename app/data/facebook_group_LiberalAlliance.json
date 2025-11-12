@@ -1,17 +1,27 @@
 {
   "source": "https://www.facebook.com/LiberalAlliance",
-  "scrapedAt": "2025-11-12T01:19:08.082592+00:00",
-  "totalPosts": 1,
+  "scrapedAt": "2025-11-12T11:30:51.299971+00:00",
+  "totalPosts": 2,
   "posts": [
     {
       "post_id": "post_1",
       "author_name": "Liberalalliance",
-      "post_text": "Den vigtigste budskabsplakat, du kommer til at se i dag.",
-      "post_time": "til at se i dag",
+      "post_text": "Flere kriminelle indvandrere skal udvises! Det skylder vi alle, som føler sig forpligtet på vores danske fællesskab.Enig?Flere kriminelle indvandrere skal udvises! Det skylder vi alle, som føler sig forpligtet på vores danske fællesskab.Enig?",
+      "post_time": "2h",
+      "post_link": "https://www.facebook.com/LiberalAlliance/posts/pfbid02QGqxrMwTPgUDurcd9WoMrq4jB1wPasrMLe8xteM7kUoQ8vD8DuDv8y6VxALTvbVYl?__cft__[0]=AZU_CVCH1ui5TLfRM2FcKyYq8RJ71V3rCXXDuVlRaRXuIVHqYwa_okPuEgVb18D7K4US3ntxltETGDD_siMHoMd7dDMdXyY2ZQvhGas3xU_PjLmNgHXdX9hgjQ56fclZvpyhEimptdMJuNj4En7wX5nEDoEm0JLv4DHCRd_lCU3omO638TGONpW0chr5BHt5xgs&__tn__=%2CO%2CP-R",
+      "video_url": "",
+      "video_thumbnail": "",
+      "scraped_at": "2025-11-12T11:30:51.254997+00:00"
+    },
+    {
+      "post_id": "post_2",
+      "author_name": "Liberalalliance",
+      "post_text": "Flere krielle indvandrere skal udvises! Det skylder vi alle, som føler sig forpligtet på vores danske fællesskab. Enig? Flere krielle indvandrere skal udvises! Det skylder vi alle, som føler sig forpligtet på vores danske fællesskab. Enig?",
+      "post_time": "",
       "post_link": "",
       "video_url": "",
       "video_thumbnail": "",
-      "scraped_at": "2025-11-12T01:19:08.078361+00:00"
+      "scraped_at": "2025-11-12T11:30:51.295985+00:00"
     }
   ]
 }

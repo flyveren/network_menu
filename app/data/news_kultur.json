@@ -1,8 +1,23 @@
 {
   "source": "https://wallnot.dk/rss?category=kultur",
   "category": "kultur",
-  "fetchedAt": "2025-11-12T11:15:03.981866+00:00",
+  "fetchedAt": "2025-11-12T12:25:30.191693+00:00",
   "items": [
+    {
+      "title": "Sangeren Mø aflyser alle koncerter resten af året",
+      "link": "https://www.kristeligt-dagblad.dk/kultur/sangeren-moe-aflyser-alle-koncerter-resten-af-aaret",
+      "pubDate": "Wed, 12 Nov 2025 12:39:12 +0100"
+    },
+    {
+      "title": "Dansk Netflix-film topper verdensliste med 5,8 millioner visninger",
+      "link": "https://www.kristeligt-dagblad.dk/kultur/dansk-netflix-film-topper-verdensliste-med-58-millioner-visninger",
+      "pubDate": "Wed, 12 Nov 2025 12:33:16 +0100"
+    },
+    {
+      "title": "Dansk film topper: Mest sete på Netflix",
+      "link": "https://ekstrabladet.dk/underholdning/filmogtv/dansk-film-topper-mest-sete-paa-netflix/11006490",
+      "pubDate": "Wed, 12 Nov 2025 12:29:51 +0100"
+    },
     {
       "title": "Rundetaarns kobberkuppel til reparation: Kendt vartegn skifter midlertidigt udseende",
       "link": "https://ekstrabladet.dk/underholdning/kultur/rundetaarns-kobberkuppel-til-reparation-kendt-vartegn-skifter-midlertidigt-udseende/11006198",
@@ -87,21 +102,6 @@
       "title": "Musikstjerne viser vildt vægttab frem på rød løber",
       "link": "https://www.bt.dk/musik/musikstjerne-viser-vildt-vaegttab-frem-paa-roed-loeber",
       "pubDate": "Tue, 11 Nov 2025 06:28:03 +0100"
-    },
-    {
-      "title": "Katy Perry hånet af eksens nye kæreste",
-      "link": "https://www.bt.dk/musik/katy-perry-haanet-af-eksens-nye-kaereste",
-      "pubDate": "Tue, 11 Nov 2025 06:26:52 +0100"
-    },
-    {
-      "title": "Er du rigtig klog: Hvad ved du om Sofie Linde? | Berlingske",
-      "link": "https://www.berlingske.dk/kultur/er-du-rigtig-klog-hvad-ved-du-om-sofie-linde",
-      "pubDate": "Tue, 11 Nov 2025 06:02:43 +0100"
-    },
-    {
-      "title": "Mere fokus på interesser og følelser",
-      "link": "https://arbejderen.dk/teori/mere-fokus-paa-interesser-og-foelelser/",
-      "pubDate": "Tue, 11 Nov 2025 06:00:00 +0100"
     }
   ]
 }

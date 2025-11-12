@@ -128,6 +128,7 @@
         }
 
         .footer-menu__button {
+          position: relative;
           display: inline-flex;
           align-items: center;
           justify-content: center;
@@ -158,6 +159,36 @@
           object-fit: contain;
           display: block;
           filter: brightness(0) invert(1);
+        }
+
+        .footer-menu__tooltip {
+          position: absolute;
+          top: calc(100% + 4px); /* Below button */
+          left: 50%;
+          transform: translateX(-50%) translateY(-10px);
+          opacity: 0;
+          pointer-events: none;
+          font-family: "JetBrains Mono", system-ui, sans-serif; /* Same as post text */
+          font-weight: 500; /* Same as post text */
+          font-size: clamp(0.7rem, 1.4vw, 0.78rem); /* Same as post text */
+          line-height: 1.4;
+          letter-spacing: 0.03em;
+          color: rgba(255, 255, 255, 1); /* Same as post text */
+          background: transparent;
+          padding: 0.4rem 0.8rem;
+          border-radius: 6px;
+          white-space: nowrap;
+          transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 160ms ease-in-out, text-shadow 160ms ease-in-out;
+          z-index: 1000;
+          text-shadow: none;
+        }
+
+        .footer-menu__button:hover .footer-menu__tooltip,
+        .footer-menu__button:focus-visible .footer-menu__tooltip {
+          opacity: 1;
+          transform: translateX(-50%) translateY(0);
+          color: #ffffff; /* White text on hover, not transparent */
+          text-shadow: 0 0 12px rgba(70, 116, 255, 0.55); /* Same hover effect as post text */
         }
 
         #politics-button img {
@@ -729,7 +760,7 @@
 
         .party-buttons {
           position: fixed;
-          top: calc(clamp(1rem, 3vh, 1.6rem) - 12px);
+          top: 7px; /* Inside the git grid (moved up 5px more from 12px) */
           left: 50%;
           transform: translate(-50%, 0);
           z-index: 25; /* Higher z-index to ensure clickability */
@@ -746,6 +777,59 @@
           display: flex;
         }
 
+        /* Color divider container - positioned right after git grid */
+        .politics-divider {
+          position: fixed;
+          top: 56px; /* Right after top git grid (3 rows * 16px + 2 gaps * 4px = 56px) */
+          left: 0;
+          right: 0;
+          width: 100%;
+          height: 10px; /* Thin line */
+          /* Default gradient - will be updated by JavaScript based on Voxmeter data */
+          background: linear-gradient(to right, #ff0000 0%, #ff0000 47.5%, #808080 47.5%, #808080 52.5%, #1111ea 52.5%, #1111ea 100%);
+          z-index: 24;
+          display: none; /* Hidden by default */
+          overflow: visible; /* Allow labels to be visible */
+        }
+        
+        body.politics-mode .politics-divider {
+          display: block;
+        }
+
+        .politics-divider__label {
+          position: absolute;
+          top: 50%;
+          transform: translateY(-50%);
+          font-family: "JetBrains Mono", system-ui, sans-serif;
+          font-size: clamp(0.7rem, 1.3vw, 0.85rem);
+          font-weight: 500;
+          color: #ffffff !important;
+          text-shadow: none; /* No text effects */
+          white-space: nowrap;
+          pointer-events: none;
+          z-index: 26;
+          line-height: 1;
+          display: block !important;
+          visibility: visible !important;
+          opacity: 1 !important;
+        }
+
+        .politics-divider__label--red {
+          left: 0.75rem;
+          text-align: left;
+        }
+
+        .politics-divider__label--gray {
+          left: 50%;
+          transform: translate(-50%, -50%);
+          text-align: center;
+        }
+
+        .politics-divider__label--blue {
+          right: 0.75rem;
+          text-align: right;
+        }
+
         /* Hide animated text in politics mode */
         body.politics-mode .quote-rotator {
           display: none;
@@ -753,14 +837,14 @@
 
         .party-button {
           position: relative;
-          width: 50px;
-          height: 50px;
+          width: 46px; /* 4px smaller (was 50px) */
+          height: 46px; /* 4px smaller (was 50px) */
           border-radius: 50%;
           border: 3px solid white;
           background: rgba(17, 17, 234, 0.1);
-          color: #000000; /* Dark text by default (like Æ and Ø) */
+          color: #ffffff; /* White text by default */
           font-family: "JetBrains Mono", system-ui, sans-serif;
-          font-size: clamp(1.2rem, 2.5vw, 1.6rem); /* Smaller letters */
+          font-size: clamp(1.1rem, 2.3vw, 1.5rem); /* Slightly smaller letters */
           font-weight: normal;
           cursor: pointer;
           transition: all 0.2s ease;
@@ -804,22 +888,22 @@
 
         .party-button[data-party="O"] {
           background: #FFD700; /* Yellow - Dansk Folkeparti */
-          color: #000000; /* Black text for better contrast on yellow */
+          color: #ffffff; /* White text by default */
         }
 
         .party-button[data-party="V"] {
           background: #1E3A8A; /* Dark blue - Venstre */
-          color: #000000; /* Dark text */
+          color: #ffffff; /* White text by default */
         }
 
         .party-button[data-party="Æ"] {
           background: #87CEEB; /* Light blue - Danmarksdemokraterne */
-          color: #000000; /* Black text for better contrast on light blue */
+          color: #ffffff; /* White text by default */
         }
 
         .party-button[data-party="Ø"] {
           background: #FF8C00; /* Orange - Enhedslisten */
-          color: #000000; /* Dark text */
+          color: #ffffff; /* White text by default */
         }
 
         .party-button[data-party="Å"] {
@@ -829,7 +913,7 @@
         .party-button:hover,
         .party-button:focus-visible {
           border-color: #ffffff;
-          color: #ffffff !important; /* White text on hover for all buttons */
+          color: #000000 !important; /* Dark text on hover */
           transform: translateY(-2px);
           filter: brightness(1.2);
         }
@@ -841,28 +925,32 @@
 
         .party-button__tooltip {
           position: absolute;
-          top: calc(100% + 8px);
+          top: calc(100% + 4px); /* Moved up (was 8px) */
           left: 50%;
           transform: translateX(-50%) translateY(-10px);
           opacity: 0;
           pointer-events: none;
-          font-family: "Jersey 10", cursive;
-          font-size: clamp(1rem, 2vw, 1.4rem);
-          color: #ffffff;
+          font-family: "JetBrains Mono", system-ui, sans-serif; /* Same as post text */
+          font-weight: 500; /* Same as post text */
+          font-size: clamp(0.7rem, 1.4vw, 0.78rem); /* Same as post text */
+          line-height: 1.4;
+          letter-spacing: 0.03em;
+          color: rgba(255, 255, 255, 1); /* Same as post text */
           background: transparent;
           padding: 0.4rem 0.8rem;
           border-radius: 6px;
           white-space: nowrap;
-          transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 160ms ease-in-out, text-shadow 160ms ease-in-out;
           z-index: 1000;
-          text-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+          text-shadow: none;
         }
-
 
         .party-button:hover .party-button__tooltip,
         .party-button:focus-visible .party-button__tooltip {
           opacity: 1;
           transform: translateX(-50%) translateY(0);
+          color: #ffffff; /* White text on hover, not transparent */
+          text-shadow: 0 0 12px rgba(70, 116, 255, 0.55); /* Same hover effect as post text */
         }
 
         .music-reactive {
@@ -1647,6 +1735,7 @@
 
         body.politics-mode .facebook-posts {
           display: flex !important;
+          margin-top: 30px; /* Top margin for posts on politics page */
         }
 
         body.politics-mode .facebook-posts[hidden] {
@@ -1992,6 +2081,11 @@
         <span class="party-button__tooltip">Alternativet</span>
       </button>
     </div>
+    <div class="politics-divider" aria-hidden="true">
+      <span class="politics-divider__label politics-divider__label--red">47.5%</span>
+      <span class="politics-divider__label politics-divider__label--gray">4.1%</span>
+      <span class="politics-divider__label politics-divider__label--blue">48.4%</span>
+    </div>
     <nav aria-label="Main navigation (collapsed)" data-expanded="false">
       <div class="nav-backdrop" aria-hidden="true"></div>
       <button
@@ -2185,6 +2279,7 @@
         style="--button-color: #264653;"
       >
         <img src="./footer_buttons/news.svg" alt="News" />
+        <span class="footer-menu__tooltip">News</span>
       </a>
       <button
         type="button"
@@ -2194,6 +2289,7 @@
         style="--button-color: #2a9d8f;"
       >
         <img src="./footer_buttons/politics.svg" alt="Politics" />
+        <span class="footer-menu__tooltip">Politics</span>
       </button>
       <a
         href="#"
@@ -2202,6 +2298,7 @@
         style="--button-color: #e9c46a;"
       >
         <img src="./footer_buttons/media.svg" alt="Media" />
+        <span class="footer-menu__tooltip">Media</span>
       </a>
       <a
         href="#"
@@ -2210,6 +2307,7 @@
         style="--button-color: #f4a261;"
       >
         <img src="./footer_buttons/network.svg" alt="Network" />
+        <span class="footer-menu__tooltip">Network</span>
       </a>
       <a
         href="#"
@@ -2219,6 +2317,7 @@
         style="--button-color: #e76f51;"
       >
         <img src="./footer_buttons/AI.svg" alt="AI" />
+        <span class="footer-menu__tooltip">AI</span>
       </a>
     </div>
     <div class="github-contrib-container">
@@ -2402,6 +2501,11 @@
           document.body.classList.remove("visualizer-active");
           // Load existing posts from all parties
           loadFacebookPosts();
+          // Update divider with Voxmeter data
+          setTimeout(() => {
+            updatePoliticsDivider();
+            updateFacebookPostsPadding();
+          }, 100);
         }
       };
 
@@ -3949,10 +4053,145 @@
       view.canvas.style.transform = "translateX(0)";
     }
 
+    async function updatePoliticsDivider() {
+      const politicsDivider = document.querySelector(".politics-divider");
+      if (!politicsDivider || !document.body.classList.contains("politics-mode")) {
+        console.log("[VOXMETER] Divider not found or not in politics mode");
+        return;
+      }
+
+      console.log("[VOXMETER] Updating divider...");
+
+      try {
+        const response = await fetch("/api/voxmeter/polls");
+        if (!response.ok) {
+          console.warn("[VOXMETER] Failed to fetch polling data:", response.status);
+          // Set default values for testing
+          const redLabel = politicsDivider.querySelector(".politics-divider__label--red");
+          const blueLabel = politicsDivider.querySelector(".politics-divider__label--blue");
+          if (redLabel) redLabel.textContent = "47.5%";
+          if (blueLabel) blueLabel.textContent = "48.4%";
+          return;
+        }
+
+        const data = await response.json();
+        console.log("[VOXMETER] Received data:", data);
+        const pollData = data?.data;
+        
+        if (!pollData || pollData.red_bloc === null || pollData.blue_bloc === null) {
+          console.warn("[VOXMETER] No polling data available, using defaults");
+          // Set default values for testing
+          const redLabel = politicsDivider.querySelector(".politics-divider__label--red");
+          const blueLabel = politicsDivider.querySelector(".politics-divider__label--blue");
+          if (redLabel) redLabel.textContent = "47.5%";
+          if (blueLabel) blueLabel.textContent = "48.4%";
+          return;
+        }
+
+        const redBloc = pollData.red_bloc || 0;
+        const blueBloc = pollData.blue_bloc || 0;
+        const total = redBloc + blueBloc;
+        
+        console.log(`[VOXMETER] Raw data - Red: ${redBloc}, Blue: ${blueBloc}, Total: ${total}`);
+        
+        // Calculate percentages (normalize to 100% if needed)
+        let redPercent = redBloc;
+        let bluePercent = blueBloc;
+        let grayPercent = 0;
+        
+        if (total < 100) {
+          // Add gray section for the missing percentage
+          grayPercent = 100 - total;
+        } else if (total > 100) {
+          // Normalize if over 100%
+          redPercent = (redBloc / total) * 100;
+          bluePercent = (blueBloc / total) * 100;
+        }
+        
+        // Calculate gradient stops
+        const redEnd = redPercent;
+        const grayStart = redEnd;
+        const grayEnd = redEnd + grayPercent;
+        const blueStart = grayEnd;
+        
+        // Update background gradient
+        if (grayPercent > 0) {
+          // Has gray section: red -> gray -> blue
+          politicsDivider.style.background = `linear-gradient(to right, 
+            #ff0000 0%, 
+            #ff0000 ${redEnd}%, 
+            #808080 ${grayStart}%, 
+            #808080 ${grayEnd}%, 
+            #1111ea ${blueStart}%, 
+            #1111ea 100%)`;
+        } else {
+          // No gray section: red -> blue
+          politicsDivider.style.background = `linear-gradient(to right, 
+            #ff0000 0%, 
+            #ff0000 ${redEnd}%, 
+            #1111ea ${redEnd}%, 
+            #1111ea 100%)`;
+        }
+        
+        // Update labels with percentages
+        const redLabel = politicsDivider.querySelector(".politics-divider__label--red");
+        const grayLabel = politicsDivider.querySelector(".politics-divider__label--gray");
+        const blueLabel = politicsDivider.querySelector(".politics-divider__label--blue");
+        
+        console.log(`[VOXMETER] Found labels - Red: ${!!redLabel}, Gray: ${!!grayLabel}, Blue: ${!!blueLabel}`);
+        
+        if (redLabel) {
+          redLabel.textContent = `${redPercent.toFixed(1)}%`;
+          redLabel.style.display = "block";
+          redLabel.style.visibility = "visible";
+          redLabel.style.opacity = "1";
+          redLabel.style.color = "#ffffff";
+          console.log(`[VOXMETER] Set red label to: ${redLabel.textContent}`);
+        } else {
+          console.error("[VOXMETER] Red label not found!");
+        }
+        
+        if (grayLabel) {
+          if (grayPercent > 0.1) {
+            grayLabel.textContent = `${grayPercent.toFixed(1)}%`;
+            grayLabel.style.display = "block";
+            grayLabel.style.visibility = "visible";
+            grayLabel.style.opacity = "1";
+            grayLabel.style.color = "#ffffff";
+            console.log(`[VOXMETER] Set gray label to: ${grayLabel.textContent}`);
+          } else {
+            grayLabel.style.display = "none";
+          }
+        }
+        
+        if (blueLabel) {
+          blueLabel.textContent = `${bluePercent.toFixed(1)}%`;
+          blueLabel.style.display = "block";
+          blueLabel.style.visibility = "visible";
+          blueLabel.style.opacity = "1";
+          blueLabel.style.color = "#ffffff";
+          console.log(`[VOXMETER] Set blue label to: ${blueLabel.textContent}`);
+        } else {
+          console.error("[VOXMETER] Blue label not found!");
+        }
+        
+        console.log(`[VOXMETER] Final labels - Red: "${redLabel?.textContent}", Gray: "${grayLabel?.textContent}", Blue: "${blueLabel?.textContent}"`);
+        console.log(`[VOXMETER] Updated divider: Rød ${redPercent.toFixed(1)}%, Grå ${grayPercent.toFixed(1)}%, Blå ${bluePercent.toFixed(1)}%`);
+      } catch (error) {
+        console.error("[VOXMETER] Error updating divider:", error);
+        // Set default values even on error
+        const redLabel = politicsDivider.querySelector(".politics-divider__label--red");
+        const blueLabel = politicsDivider.querySelector(".politics-divider__label--blue");
+        if (redLabel) redLabel.textContent = "47.5%";
+        if (blueLabel) blueLabel.textContent = "48.4%";
+      }
+    }
+
     function updateFacebookPostsPadding() {
       const topGrid = document.querySelector(".github-contrib-overlay--top");
       const bottomGrid = document.querySelector(".github-contrib-overlay--bottom");
       const facebookPosts = document.querySelector(".facebook-posts");
+      const politicsDivider = document.querySelector(".politics-divider");
       
       if (!facebookPosts) return;
       
@@ -3962,6 +4201,13 @@
       facebookPosts.style.paddingTop = `${topHeight}px`;
       facebookPosts.style.paddingBottom = `${bottomHeight}px`;
       facebookPosts.style.clipPath = `inset(${topHeight}px 0 ${bottomHeight}px 0)`;
+      
+      // Update divider position to be right after the top grid
+      if (politicsDivider && document.body.classList.contains("politics-mode")) {
+        politicsDivider.style.top = `${topHeight}px`;
+        // Update divider colors based on Voxmeter data
+        updatePoliticsDivider();
+      }
     }
 
     function renderContributionViews() {
@@ -3973,7 +4219,13 @@
         }
       });
       // Update padding after grids are rendered
-      setTimeout(updateFacebookPostsPadding, 100);
+      setTimeout(() => {
+        updateFacebookPostsPadding();
+        // Also update divider if in politics mode (in case it wasn't updated yet)
+        if (document.body.classList.contains("politics-mode")) {
+          updatePoliticsDivider();
+        }
+      }, 100);
     }
 
     fetchContributionData("flyveren").then((matrix) => {

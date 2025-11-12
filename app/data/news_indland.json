@@ -1,8 +1,18 @@
 {
   "source": "https://wallnot.dk/rss?category=indland",
   "category": "indland",
-  "fetchedAt": "2025-11-12T11:15:02.333240+00:00",
+  "fetchedAt": "2025-11-12T12:25:27.234042+00:00",
   "items": [
+    {
+      "title": "Laura Lindahl smider bombe i podcast: - Han hamrede på min dør",
+      "link": "https://ekstrabladet.dk/nyheder/politik/danskpolitik/laura-lindahl-smider-bombe-i-podcast-han-hamrede-paa-min-doer/11006384",
+      "pubDate": "Wed, 12 Nov 2025 12:55:39 +0100"
+    },
+    {
+      "title": "Mø aflyser alle koncerter resten af året",
+      "link": "https://ekstrabladet.dk/underholdning/dkkendte/moe-aflyser-alle-koncerter-resten-af-aaret/11006513",
+      "pubDate": "Wed, 12 Nov 2025 12:41:24 +0100"
+    },
     {
       "title": "Politiet efterforsker konkursramt bosted fra 'Operation X'",
       "link": "https://nyheder.tv2.dk/samfund/2025-11-06-politiet-efterforsker-konkursramt-bosted-fra-operation-x",
@@ -27,6 +37,11 @@
       "title": "Knap 4,8 millioner kan stemme ved kommunal- og regionalvalg",
       "link": "https://www.kristeligt-dagblad.dk/danmark/knap-48-millioner-kan-stemme-ved-kommunal-og-regionalvalg",
       "pubDate": "Wed, 12 Nov 2025 11:48:56 +0100"
+    },
+    {
+      "title": "Ung kvinde udsat for umotiveret overfald på station",
+      "link": "https://www.bt.dk/krimi/ung-kvinde-udsat-for-umotiveret-overfald-paa-station",
+      "pubDate": "Wed, 12 Nov 2025 11:48:28 +0100"
     },
     {
       "title": "Mail-skandale fortsætter: Whistleblower politianmelder topchefer i Rudersdal",
@@ -87,21 +102,6 @@
       "title": "Fængslet for voldtægt af barn",
       "link": "https://www.bt.dk/krimi/faengslet-for-voldtaegt-af-barn",
       "pubDate": "Wed, 12 Nov 2025 09:57:35 +0100"
-    },
-    {
-      "title": "Katjas søn kommer ikke i skole – i mere end et år har hun ventet på en afgørelse fra kommunen",
-      "link": "https://dr.dk/nyheder/indland/katjas-soen-kommer-ikke-i-skole-i-mere-end-et-aar-har-hun-ventet-paa-en-afgoerelse-fra-kommunen",
-      "pubDate": "Wed, 12 Nov 2025 09:49:00 +0100"
-    },
-    {
-      "title": "Klimaaktivister pifter elbiler på Frederiksberg",
-      "link": "https://nyheder.tv2.dk/samfund/2025-11-12-klimaaktivister-pifter-elbiler-paa-frederiksberg",
-      "pubDate": "Wed, 12 Nov 2025 09:42:52 +0100"
-    },
-    {
-      "title": "Kvinde overfaldet i tog: Gav hende flere lussinger",
-      "link": "https://www.bt.dk/krimi/kvinde-overfaldet-i-tog-gav-hende-flere-lussinger",
-      "pubDate": "Wed, 12 Nov 2025 09:39:03 +0100"
     }
   ]
 }

@@ -1,8 +1,33 @@
 {
   "source": "https://wallnot.dk/rss?category=udland",
   "category": "udland",
-  "fetchedAt": "2025-11-12T11:15:03.423310+00:00",
+  "fetchedAt": "2025-11-12T12:25:28.416469+00:00",
   "items": [
+    {
+      "title": "Casanova taber retsstrid om billeder med kong Frederik i Madrid",
+      "link": "https://www.kristeligt-dagblad.dk/udland/casanova-taber-retsstrid-om-billeder-med-kong-frederik-i-madrid",
+      "pubDate": "Wed, 12 Nov 2025 13:17:08 +0100"
+    },
+    {
+      "title": "Forlag indrømmer flere fejl i ny bog om Marius Høiby",
+      "link": "https://www.kristeligt-dagblad.dk/udland/forlag-indroemmer-flere-fejl-i-ny-bog-om-marius-hoeiby",
+      "pubDate": "Wed, 12 Nov 2025 12:30:02 +0100"
+    },
+    {
+      "title": "Casanova taber retsstrid om billeder med kong Frederik | Berlingske",
+      "link": "https://www.berlingske.dk/internationalt/casanova-taber-retsstrid-om-billeder-med-kong-frederik",
+      "pubDate": "Wed, 12 Nov 2025 12:04:46 +0100"
+    },
+    {
+      "title": "Casanova taber retsstrid om billeder med kong Frederik",
+      "link": "https://www.bt.dk/udland/casanova-taber-retsstrid-om-billeder-med-kong-frederik",
+      "pubDate": "Wed, 12 Nov 2025 12:04:46 +0100"
+    },
+    {
+      "title": "Ingen overlevende i tyrkisk militærflystyrt i Georgien | Video | Berlingske",
+      "link": "https://www.berlingske.dk/internationalt/ingen-overlevende-i-tyrkisk-militaerflystyrt-i-georgien",
+      "pubDate": "Wed, 12 Nov 2025 11:17:15 +0100"
+    },
     {
       "title": "Oprindelige folk stormer klimatopmøde",
       "link": "https://dr.dk/nyheder/udland/oprindelige-folk-stormer-klimatopmoede",
@@ -77,31 +102,6 @@
       "title": "Oprindelige folk trængte ind på COP30 - netop dem, topmødet skulle give en stemme",
       "link": "https://dr.dk/nyheder/udland/oprindelige-folk-traengte-ind-paa-cop30-netop-dem-topmoedet-skulle-give-en-stemme",
       "pubDate": "Wed, 12 Nov 2025 04:57:00 +0100"
-    },
-    {
-      "title": "18-årige Anna døde på krydstogtskib: Nu kommer hendes familie med hjerteskærende udtalelse",
-      "link": "https://www.bt.dk/udland/18-aarige-anna-doede-paa-krydstogtskib-nu-kommer-hendes-familie-med-hjerteskaerende-udtalelse",
-      "pubDate": "Wed, 12 Nov 2025 04:21:09 +0100"
-    },
-    {
-      "title": "Eksleders hustru og søn får 20 års fængsel for underslæb i Gabon",
-      "link": "https://www.kristeligt-dagblad.dk/udland/eksleders-hustru-og-soen-faar-20-aars-faengsel-underslaeb-i-gabon",
-      "pubDate": "Wed, 12 Nov 2025 03:41:14 +0100"
-    },
-    {
-      "title": "Colombia dræber 19 formodede bandemedlemmer i luftangreb",
-      "link": "https://www.kristeligt-dagblad.dk/udland/colombia-draeber-19-formodede-bandemedlemmer-i-luftangreb",
-      "pubDate": "Wed, 12 Nov 2025 02:33:50 +0100"
-    },
-    {
-      "title": "Colombia stopper deling af efterretninger med USA efter bådangreb",
-      "link": "https://www.kristeligt-dagblad.dk/udland/colombia-stopper-deling-af-efterretninger-med-usa-efter-baadangreb",
-      "pubDate": "Wed, 12 Nov 2025 01:23:16 +0100"
-    },
-    {
-      "title": "Højesteret udsætter igen krav til Trump om fødevarehjælp",
-      "link": "https://www.kristeligt-dagblad.dk/udland/hoejesteret-udsaetter-igen-krav-til-trump-om-foedevarehjaelp",
-      "pubDate": "Wed, 12 Nov 2025 00:28:25 +0100"
     }
   ]
 }
