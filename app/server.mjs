@@ -163,12 +163,41 @@ const requestListener = async (req, res) => {
       return;
     }
 
+    // Server-Sent Events endpoint for real-time updates
+    if (
+      (requestUrl.pathname === "/api/facebook/posts/stream" || normalizedPathname === "/api/facebook/posts/stream") &&
+      req.method === "GET"
+    ) {
+      console.log("[SERVER] Handling /api/facebook/posts/stream (SSE)");
+      await handleFacebookPostsStream(req, res);
+      return;
+    }
+
+    // Delete post endpoint
+    if (
+      (requestUrl.pathname === "/api/facebook/posts" || normalizedPathname === "/api/facebook/posts") &&
+      req.method === "DELETE"
+    ) {
+      console.log("[SERVER] Handling DELETE /api/facebook/posts");
+      await handleDeleteFacebookPost(req, res);
+      return;
+    }
+
     if (
       (requestUrl.pathname === "/api/voxmeter/polls" || normalizedPathname === "/api/voxmeter/polls") &&
       req.method === "GET"
     ) {
       console.log("[SERVER] Handling /api/voxmeter/polls");
       await handleVoxmeterPolls(req, res);
+      return;
+    }
+
+    if (
+      (requestUrl.pathname === "/api/voxmeter/parties" || normalizedPathname === "/api/voxmeter/parties") &&
+      req.method === "GET"
+    ) {
+      console.log("[SERVER] Handling /api/voxmeter/parties");
+      await handleVoxmeterParties(req, res);
       return;
     }
 
@@ -899,7 +928,7 @@ async function handleFacebookScrape(req, res) {
     
     const email = process.env.FACEBOOK_EMAIL || null;
     const password = process.env.FACEBOOK_PASSWORD || null;
-    const maxPosts = Number.parseInt(process.env.FACEBOOK_MAX_POSTS ?? "20", 10);
+    const maxPosts = Number.parseInt(process.env.FACEBOOK_MAX_POSTS ?? "1", 10);
     
     console.log(`[FACEBOOK] Configuration:`);
     console.log(`[FACEBOOK]   Group URL: ${groupUrl}`);
@@ -907,23 +936,39 @@ async function handleFacebookScrape(req, res) {
     console.log(`[FACEBOOK]   Password: ${password ? "***" : "not provided"}`);
     console.log(`[FACEBOOK]   Max Posts: ${maxPosts}`);
 
-    const scriptPath = join(__dirname, "scripts", "fetch_facebook_group.py");
-    if (!existsSync(scriptPath)) {
-      res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ error: "Facebook scraping script not found" }));
-      return;
-    }
+    // Prefer fast mbasic scraper if available (default), fallback to Selenium script
+    const fastScriptPath = join(__dirname, "scripts", "fetch_facebook_latest_mbasic.py");
+    const slowScriptPath = join(__dirname, "scripts", "fetch_facebook_group.py");
+    const preferFast = (process.env.FACEBOOK_FAST ?? "1") !== "0";
 
-    const args = [
-      scriptPath,
-      "--group-url", groupUrl,
-      "--max-posts", String(maxPosts),
-      "--headless",
-    ];
+    let scriptPath = slowScriptPath;
+    let args = [];
 
-    if (email && password) {
-      args.push("--email", email);
-      args.push("--password", password);
+    if (preferFast && existsSync(fastScriptPath)) {
+      scriptPath = fastScriptPath;
+      args = [scriptPath, "--page-url", groupUrl];
+      if (email && password) {
+        args.push("--email", email);
+        args.push("--password", password);
+      }
+      console.log(`[FACEBOOK] Using FAST mbasic scraper`);
+    } else {
+      if (!existsSync(slowScriptPath)) {
+        res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ error: "Facebook scraping script not found" }));
+        return;
+      }
+      args = [
+        slowScriptPath,
+        "--group-url", groupUrl,
+        "--max-posts", String(maxPosts),
+        "--headless",
+      ];
+      if (email && password) {
+        args.push("--email", email);
+        args.push("--password", password);
+      }
+      console.log(`[FACEBOOK] Using Selenium scraper (fallback)`);
     }
 
     console.log(`[FACEBOOK] Running scraper: python3 ${args.join(" ")}`);
@@ -965,12 +1010,12 @@ async function handleFacebookScrape(req, res) {
       });
     });
 
-    // Set a timeout of 5 minutes for scraping
+    // Set a timeout of 90 seconds for scraping
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => {
         pythonProcess.kill("SIGTERM");
-        reject(new Error("Scraping timeout after 5 minutes"));
-      }, 5 * 60 * 1000);
+        reject(new Error("Scraping timeout after 90 seconds"));
+      }, 90 * 1000);
     });
 
     try {
@@ -1066,8 +1111,49 @@ async function handleFacebookScrape(req, res) {
       return;
     }
     
-    const fileContent = await readFile(foundPath, "utf8");
-    const data = JSON.parse(fileContent);
+    let fileContent = await readFile(foundPath, "utf8");
+    let data = JSON.parse(fileContent);
+
+    // If fast scraper yielded 0 posts, attempt slow fallback once
+    if (preferFast && (!data.posts || data.posts.length === 0) && existsSync(slowScriptPath)) {
+      console.log("[FACEBOOK] Fast scraper returned 0 posts, retrying with Selenium fallback...");
+      const slowArgs = [
+        slowScriptPath,
+        "--group-url", groupUrl,
+        "--max-posts", String(maxPosts),
+        "--headless",
+      ];
+      if (email && password) {
+        slowArgs.push("--email", email);
+        slowArgs.push("--password", password);
+      }
+      // Add a 90s timeout to fallback too
+      await Promise.race([
+        new Promise((resolve, reject) => {
+          const p = spawn("python3", slowArgs, { cwd: __dirname, stdio: ["ignore","pipe","pipe"] });
+          let out = "", err = "";
+          p.stdout.on("data", (d) => (out += d.toString()));
+          p.stderr.on("data", (d) => (err += d.toString()));
+          p.on("close", (code) => {
+            console.log(`[FACEBOOK] Selenium fallback exited code ${code}`);
+            if (code === 0) resolve(null);
+            else reject(new Error(err || out || `code ${code}`));
+          });
+          p.on("error", (e) => reject(e));
+          // kill on timeout
+          setTimeout(() => { try { p.kill("SIGTERM"); } catch {} }, 90 * 1000);
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("Fallback timeout after 90 seconds")), 90 * 1000)),
+      ]).catch((e) => {
+        console.error("[FACEBOOK] Selenium fallback failed:", e.message);
+      });
+
+      // Reload file after fallback attempt
+      try {
+        fileContent = await readFile(foundPath, "utf8");
+        data = JSON.parse(fileContent);
+      } catch {}
+    }
 
     // Rebuild the all posts list from all party files
     // This ensures we don't lose posts when a party file is overwritten
@@ -1111,189 +1197,148 @@ function createPostKey(post) {
  * This ensures we don't lose posts when a party file is overwritten
  */
 async function rebuildAllPostsList() {
-  const dataDir = join(__dirname, "data");
-  const allPostsPath = join(dataDir, "facebook_all_posts.json");
-  
-  try {
-    if (!existsSync(dataDir)) {
-      console.log(`[FACEBOOK] Data directory doesn't exist, skipping rebuild`);
-      return;
-    }
-    
-    const fs = await import("node:fs/promises");
-    const files = await fs.readdir(dataDir);
-    const facebookFiles = files.filter(f => 
-      f.startsWith("facebook_group_") && 
-      f.endsWith(".json") && 
-      f !== "facebook_all_posts.json"
-    );
-    
-    if (facebookFiles.length === 0) {
-      console.log(`[FACEBOOK] No party files found, skipping rebuild`);
-      return;
-    }
-    
-    console.log(`[FACEBOOK] Rebuilding all posts list from ${facebookFiles.length} party files`);
-    
-    const allPosts = [];
-    const seenPostKeys = new Set();
-    
-    // Read all posts from all party files
-    for (const file of facebookFiles) {
-      const filePath = join(dataDir, file);
-      try {
-        const fileContent = await readFile(filePath, "utf8");
-        const data = JSON.parse(fileContent);
-        
-        if (data.posts && Array.isArray(data.posts)) {
-          console.log(`[FACEBOOK] Loading ${data.posts.length} posts from ${file}`);
-          
-          for (const post of data.posts) {
-            const key = createPostKey(post);
-            
-            // Skip if we've seen this post before
-            if (key && seenPostKeys.has(key)) {
-              continue;
-            }
-            
-            if (key) {
-              seenPostKeys.add(key);
-            }
-            
-            allPosts.push(post);
-          }
-        }
-      } catch (err) {
-        console.error(`[FACEBOOK] Error reading file ${file}: ${err.message}`);
-      }
-    }
-    
-    // Sort by scraped_at date (newest first)
-    allPosts.sort((a, b) => {
-      const dateA = new Date(a.scraped_at || 0);
-      const dateB = new Date(b.scraped_at || 0);
-      return dateB - dateA;
-    });
-    
-    const allPostsData = {
-      source: "all_parties",
-      scrapedAt: new Date().toISOString(),
-      totalPosts: allPosts.length,
-      posts: allPosts,
-    };
-    
-    await writeFile(allPostsPath, JSON.stringify(allPostsData, null, 2), "utf8");
-    console.log(`[FACEBOOK] Rebuilt all posts list: ${allPosts.length} unique posts from ${facebookFiles.length} party files`);
-  } catch (error) {
-    console.error(`[FACEBOOK] Error rebuilding all posts list: ${error.message}`);
-  }
+  // SQLite version - no need to rebuild, database is always up-to-date
+  // This function is kept for backward compatibility but does nothing
+  console.log(`[FACEBOOK] Using SQLite database - no rebuild needed`);
 }
 
 async function handleFacebookPosts(req, res) {
   console.log("/api/facebook/posts request received");
   try {
-    const dataDir = join(__dirname, "data");
-    if (!existsSync(dataDir)) {
-      res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ error: "No posts found. Please scrape first.", posts: [] }));
-      return;
-    }
-
-    const allPostsPath = join(dataDir, "facebook_all_posts.json");
-    let allPosts = [];
+    // Import database module
+    const { getAllPosts, getLatestScrapedAt } = await import("./db.js");
     
-    // Try to use the all posts file first
-    if (existsSync(allPostsPath)) {
-      try {
-        const fileContent = await readFile(allPostsPath, "utf8");
-        const data = JSON.parse(fileContent);
-        if (data.posts && Array.isArray(data.posts)) {
-          allPosts = data.posts;
-          console.log(`[FACEBOOK] Loaded ${allPosts.length} posts from all posts list`);
-        }
-      } catch (err) {
-        console.error(`[FACEBOOK] Error reading all posts file: ${err.message}, falling back to individual files`);
-      }
-    }
-    
-    // If all posts file doesn't exist or is empty, combine from individual files
-    if (allPosts.length === 0) {
-      const fs = await import("node:fs/promises");
-      const files = await fs.readdir(dataDir);
-      const facebookFiles = files.filter(f => f.startsWith("facebook_group_") && f.endsWith(".json") && f !== "facebook_all_posts.json");
-      
-      console.log(`[FACEBOOK] Found ${facebookFiles.length} individual Facebook files: ${facebookFiles.join(", ")}`);
-
-      if (facebookFiles.length === 0) {
-        res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
-        res.end(JSON.stringify({ error: "No posts found. Please scrape first.", posts: [] }));
-        return;
-      }
-
-      // Combine all posts from all files
-      const seenPostKeys = new Set(); // Track duplicates across all parties
-      
-      for (const file of facebookFiles) {
-        const filePath = join(dataDir, file);
-        try {
-          const fileContent = await readFile(filePath, "utf8");
-          const data = JSON.parse(fileContent);
-          
-          if (data.posts && Array.isArray(data.posts)) {
-            console.log(`[FACEBOOK] Loading ${data.posts.length} posts from ${file}`);
-            
-            // Add posts, checking for duplicates across parties
-            for (const post of data.posts) {
-              const postKey = createPostKey(post);
-              
-              // Skip if we've seen this post before
-              if (postKey && seenPostKeys.has(postKey)) {
-                continue;
-              }
-              
-              if (postKey) {
-                seenPostKeys.add(postKey);
-              }
-              
-              allPosts.push(post);
-            }
-          }
-        } catch (err) {
-          console.error(`[FACEBOOK] Error reading file ${file}: ${err.message}`);
-        }
-      }
-
-      console.log(`[FACEBOOK] Combined ${allPosts.length} unique posts from ${facebookFiles.length} files`);
-      
-      // Sort by scraped_at date (newest first)
-      allPosts.sort((a, b) => {
-        const dateA = new Date(a.scraped_at || 0);
-        const dateB = new Date(b.scraped_at || 0);
-        return dateB - dateA;
-      });
-      
-      // Save the combined list for future use
-      if (allPosts.length > 0) {
-        await rebuildAllPostsList();
-      }
-    }
-
-    const combinedData = {
-      source: "all_parties",
-      scrapedAt: new Date().toISOString(),
-      totalPosts: allPosts.length,
-      posts: allPosts,
-    };
+    // Get all posts from SQLite database
+    const posts = getAllPosts(1000); // Limit to 1000 most recent posts
+    const latestScrapedAt = getLatestScrapedAt();
 
     res.writeHead(200, {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-store",
     });
-    res.end(JSON.stringify(combinedData));
+    res.end(JSON.stringify({
+      source: "sqlite_database",
+      scrapedAt: latestScrapedAt || new Date().toISOString(),
+      totalPosts: posts.length,
+      posts,
+    }));
   } catch (error) {
     console.error("Failed to load Facebook posts:", error);
     res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
     res.end(JSON.stringify({ error: "Failed to load Facebook posts", details: error.message }));
+  }
+}
+
+async function handleDeleteFacebookPost(req, res) {
+  console.log("/api/facebook/posts DELETE request received");
+  try {
+    // Get post_id from query string or request body
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const postId = url.searchParams.get("post_id");
+    const partyCode = url.searchParams.get("party_code");
+    
+    if (!postId || !partyCode) {
+      res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: "post_id and party_code parameters are required" }));
+      return;
+    }
+    
+    // Import database module
+    const { deletePost } = await import("./db.js");
+    
+    // Delete the post
+    const deleted = deletePost(postId, partyCode);
+    
+    if (deleted) {
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+      });
+      res.end(JSON.stringify({ success: true, message: "Post deleted" }));
+    } else {
+      res.writeHead(404, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: "Post not found" }));
+    }
+  } catch (error) {
+    console.error("Failed to delete Facebook post:", error);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Failed to delete post", details: error.message }));
+  }
+}
+
+// Server-Sent Events handler for real-time updates
+const activeSSEClients = new Set();
+
+async function handleFacebookPostsStream(req, res) {
+  console.log("[SSE] New client connected");
+  
+  // Set up SSE headers
+  res.writeHead(200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive",
+    "Access-Control-Allow-Origin": "*",
+  });
+  
+  // Send initial connection message
+  res.write(`data: ${JSON.stringify({ type: "connected", message: "Connected to Facebook posts stream" })}\n\n`);
+  
+  // Store client
+  activeSSEClients.add(res);
+  
+  // Send initial posts
+  try {
+    const { getAllPosts, getLatestScrapedAt } = await import("./db.js");
+    const posts = getAllPosts(1000);
+    const latestScrapedAt = getLatestScrapedAt();
+    
+    res.write(`data: ${JSON.stringify({
+      type: "posts",
+      source: "sqlite_database",
+      scrapedAt: latestScrapedAt || new Date().toISOString(),
+      totalPosts: posts.length,
+      posts,
+    })}\n\n`);
+  } catch (error) {
+    console.error("[SSE] Error sending initial posts:", error);
+  }
+  
+  // Handle client disconnect
+  req.on("close", () => {
+    console.log("[SSE] Client disconnected");
+    activeSSEClients.delete(res);
+    res.end();
+  });
+}
+
+// Function to broadcast new posts to all connected SSE clients
+async function broadcastNewPosts() {
+  if (activeSSEClients.size === 0) return;
+  
+  try {
+    const { getAllPosts, getLatestScrapedAt } = await import("./db.js");
+    const posts = getAllPosts(1000);
+    const latestScrapedAt = getLatestScrapedAt();
+    
+    const data = JSON.stringify({
+      type: "update",
+      source: "sqlite_database",
+      scrapedAt: latestScrapedAt || new Date().toISOString(),
+      totalPosts: posts.length,
+      posts,
+    });
+    
+    activeSSEClients.forEach((client) => {
+      try {
+        client.write(`data: ${data}\n\n`);
+      } catch (error) {
+        // Client disconnected, remove it
+        activeSSEClients.delete(client);
+      }
+    });
+    
+    console.log(`[SSE] Broadcasted update to ${activeSSEClients.size} clients`);
+  } catch (error) {
+    console.error("[SSE] Error broadcasting:", error);
   }
 }
 
@@ -1397,6 +1442,129 @@ async function handleVoxmeterPolls(req, res) {
       details: error.message 
     }));
   }
+}
+
+async function handleVoxmeterParties(req, res) {
+  console.log("[VOXMETER-PARTIES] /api/voxmeter/parties request received");
+  
+  // First, try to return cached data immediately
+  const dataPath = join(__dirname, "data", "voxmeter_parties.json");
+  
+  try {
+    if (existsSync(dataPath)) {
+      const fileContent = await readFile(dataPath, "utf-8");
+      const data = JSON.parse(fileContent);
+      
+      // Check if data is recent (less than 1 hour old)
+      const scrapedAt = new Date(data.scraped_at);
+      const now = new Date();
+      const ageHours = (now - scrapedAt) / (1000 * 60 * 60);
+      
+      if (ageHours < 1 && data.data && Object.keys(data.data).length > 0) {
+        // Return cached data immediately
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-cache",
+        });
+        res.end(JSON.stringify(data));
+        console.log(`[VOXMETER-PARTIES] Returned cached data (age: ${ageHours.toFixed(2)} hours)`);
+        return;
+      }
+    }
+  } catch (error) {
+    console.log(`[VOXMETER-PARTIES] Could not read cached data, will scrape: ${error.message}`);
+  }
+  
+  // If no cached data or data is old, run scraper in background and return existing data
+  const scriptPath = join(__dirname, "scripts", "fetch_voxmeter_parties.py");
+  if (!existsSync(scriptPath)) {
+    // Try to return existing data even if scraper is missing
+    try {
+      if (existsSync(dataPath)) {
+        const fileContent = await readFile(dataPath, "utf-8");
+        const data = JSON.parse(fileContent);
+        res.writeHead(200, {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-cache",
+        });
+        res.end(JSON.stringify(data));
+        return;
+      }
+    } catch (e) {
+      // Fall through to error
+    }
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Voxmeter parties scraping script not found" }));
+    return;
+  }
+
+  // Return existing data immediately (even if old), and update in background
+  try {
+    if (existsSync(dataPath)) {
+      const fileContent = await readFile(dataPath, "utf-8");
+      const data = JSON.parse(fileContent);
+      
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-cache",
+      });
+      res.end(JSON.stringify(data));
+      console.log(`[VOXMETER-PARTIES] Returned existing data, updating in background`);
+    } else {
+      // No data at all, return empty structure
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-cache",
+      });
+      res.end(JSON.stringify({ 
+        scraped_at: new Date().toISOString(),
+        data: {},
+        format: {
+          description: "6 values per party: [Valget 2022, Uge 41/2025, Uge 42/2025, Uge 43/2025, Uge 44/2025, Uge 45/2025]"
+        }
+      }));
+      console.log(`[VOXMETER-PARTIES] No data file found, returned empty structure`);
+    }
+  } catch (error) {
+    console.error(`[VOXMETER-PARTIES] Error reading data file:`, error);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ 
+      error: "Failed to read party polling data", 
+      details: error.message 
+    }));
+    return;
+  }
+
+  // Run scraper in background (don't wait for it)
+  const args = [scriptPath];
+  console.log(`[VOXMETER-PARTIES] Running scraper in background: python3 ${args.join(" ")}`);
+
+  const pythonProcess = spawn("python3", args, {
+    cwd: __dirname,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  let stdout = "";
+  let stderr = "";
+
+  pythonProcess.stdout.on("data", (data) => {
+    stdout += data.toString();
+  });
+
+  pythonProcess.stderr.on("data", (data) => {
+    stderr += data.toString();
+  });
+
+  pythonProcess.on("close", (code) => {
+    console.log(`[VOXMETER-PARTIES] Background scraper exited with code ${code}`);
+    if (code !== 0) {
+      console.error(`[VOXMETER-PARTIES] Scraper error: ${stderr || stdout}`);
+    }
+  });
+
+  pythonProcess.on("error", (error) => {
+    console.error(`[VOXMETER-PARTIES] Failed to start background scraper:`, error);
+  });
 }
 
 function respondWithSpotifyResult(res, origin, data, status = 200) {

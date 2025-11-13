@@ -9,28 +9,438 @@ import random
 import re
 import sys
 import time
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
+from typing import Optional
 
 try:
     from bs4 import BeautifulSoup
-    from selenium import webdriver
-    from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.chrome.service import Service
+    from selenium import webdriver  # Fallback if selenium-wire not present
+    from selenium.webdriver.chrome.options import Options as ChromeOptions
+    from selenium.webdriver.chrome.service import Service as ChromeService
+    from selenium.webdriver.firefox.options import Options as FirefoxOptions
+    from selenium.webdriver.firefox.service import Service as FirefoxService
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support import expected_conditions as EC
     from selenium.webdriver.support.ui import WebDriverWait
     from webdriver_manager.chrome import ChromeDriverManager
+    from webdriver_manager.firefox import GeckoDriverManager
 except ImportError as e:
     print(f"[ERROR] Missing required dependency: {e}", file=sys.stderr)
     print("[INFO] Install with: pip install beautifulsoup4 selenium webdriver-manager", file=sys.stderr)
     sys.exit(1)
 
+# Try to enable Selenium Wire for network interception
+WIRE_AVAILABLE = False
+try:
+    from seleniumwire import webdriver as wire_webdriver  # type: ignore
+    WIRE_AVAILABLE = True
+except Exception:
+    wire_webdriver = None  # type: ignore
+    WIRE_AVAILABLE = False
+
+# Optional: requests for HTTP fallback (will gracefully degrade if missing)
+try:
+    import requests  # type: ignore
+except Exception:
+    requests = None  # type: ignore
+
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DEFAULT_SCROLL_PAUSE = 2
 DEFAULT_MAX_POSTS = 50
+PARTY_POSTS_FILE = DATA_DIR / "facebook_party_posts.json"
+
+# Best-effort: load FACEBOOK_EMAIL and FACEBOOK_PASSWORD from app/.env if not set
+def _load_env_from_dotenv() -> None:
+    try:
+        app_dir = Path(__file__).resolve().parent.parent
+        env_path = app_dir / ".env"
+        if not env_path.exists():
+            return
+        text = env_path.read_text(encoding="utf-8")
+        for raw_line in text.splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if key in ("FACEBOOK_EMAIL", "FACEBOOK_PASSWORD") and not os.environ.get(key):
+                os.environ[key] = value
+    except Exception:
+        pass
+
+_load_env_from_dotenv()
+
+# Minimal mapping from Facebook page slug to Danish party letter code
+PARTY_NAME_TO_CODE = {
+    "socialdemokratiet": "A",
+    "radikalevenstre": "B",
+    "detkonservativefolkeparti": "C",
+    "socialistiskfolkeparti": "F",
+    "borgernesparti": "H",
+    "liberalalliance": "I",
+    "moderaterne": "M",
+    "danskfolkeparti": "O",
+    "venstre": "V",
+    "danmarksdemokraterne": "Æ",
+    "enhedslisten": "Ø",
+    "alternativet": "Å",
+}
+
+def _get_page_slug(group_url: str) -> str:
+    try:
+        import re as _re
+        from urllib.parse import urlparse as _urlparse, parse_qs as _parse_qs
+        parsed = _urlparse(group_url)
+        path = (parsed.path or "").strip("/")
+        if path.startswith("profile.php"):
+            q = _parse_qs(parsed.query or "")
+            if "id" in q and q["id"]:
+                return q["id"][0]
+            return "profile"
+        if path.startswith("groups/"):
+            parts = path.split("/", 1)
+            return parts[1] if len(parts) > 1 else "group"
+        if path:
+            return path.split("/")[0]
+    except Exception:
+        pass
+    return "page"
+
+def _ascend_to_article(element):
+    """Walk up a few levels to reach the containing article-like node."""
+    node = element
+    for _ in range(8):
+        try:
+            role = node.get_attribute("role") or ""
+        except Exception:
+            role = ""
+        if role == "article":
+            return node
+        try:
+            node = node.find_element(By.XPATH, "./..")
+        except Exception:
+            break
+    return element
+
+def _extract_text_from_container(container) -> str:
+    try:
+        raw = container.text or ""
+    except Exception:
+        raw = ""
+    raw = re.sub(r"(Like|Comment|Share|See more|Vis mere)", "", raw, flags=re.I)
+    raw = re.sub(r"\s+", " ", raw).strip()
+    return raw[:1500]
+
+def _extract_time_from_container(container) -> str:
+    # abbr, time, or small
+    for tag in ["abbr", "time", "small"]:
+        try:
+            els = container.find_elements(By.TAG_NAME, tag)
+            if els:
+                t = (els[0].text or "").strip()
+                if t:
+                    return t[:50]
+        except Exception:
+            continue
+    return ""
+
+def _extract_thumb_from_container(container) -> str:
+    try:
+        imgs = container.find_elements(By.TAG_NAME, "img")
+        if imgs:
+            src = imgs[0].get_attribute("src") or ""
+            return src
+    except Exception:
+        pass
+    return ""
+
+def quick_scrape_first_post(driver, group_url: str, page_name_from_url: str | None) -> list[dict]:
+    """
+    Minimal, no-scroll attempt against m.facebook.com to fetch the very first post.
+    Returns a list with at most one post dict on success, or empty list on failure.
+    """
+    try:
+        slug = _get_page_slug(group_url)
+        # Try desktop first (user sees a dismissible modal there), then mobile/mbasic
+        candidates = [
+            f"https://www.facebook.com/{slug}",
+            f"https://www.facebook.com/{slug}/posts",
+            f"https://www.facebook.com/{slug}?sk=posts",
+            f"https://m.facebook.com/{slug}?v=timeline",
+            f"https://m.facebook.com/{slug}/posts",
+            f"https://m.facebook.com/{slug}",
+            f"https://mbasic.facebook.com/{slug}?v=timeline",
+            f"https://mbasic.facebook.com/{slug}",
+        ]
+        for url in candidates:
+            try:
+                driver.get(url)
+            except Exception:
+                continue
+            # Try to close login/signup modal if it appears
+            try:
+                # Close buttons or Not now/Luk
+                for by, sel in [
+                    (By.CSS_SELECTOR, "[aria-label='Close'][role='button']"),
+                    (By.CSS_SELECTOR, "div[role='dialog'] [aria-label='Close']"),
+                    (By.XPATH, "//div[@role='dialog']//div[@aria-label='Close']"),
+                    (By.XPATH, "//button[contains(., 'Not now') or contains(., 'Ikke nu') or contains(., 'Luk')]"),
+                    (By.XPATH, "//span[text()='Close' or text()='Luk']/ancestor::div[@role='button']"),
+                ]:
+                    try:
+                        el = WebDriverWait(driver, 2).until(EC.element_to_be_clickable((by, sel)))
+                        driver.execute_script("arguments[0].click();", el)
+                        sleep(0.4)
+                        break
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            # Try to accept cookie banner on mobile/mbasic
+            try:
+                mobile_cookie_selectors = [
+                    (By.XPATH, '//button[contains(.,"Allow essential and optional cookies")]'),
+                    (By.XPATH, '//button[contains(.,"Allow All")]'),
+                    (By.XPATH, '//button[contains(.,"Accept All")]'),
+                    (By.XPATH, '//button[contains(.,"Accept")]'),
+                    (By.XPATH, '//a[contains(.,"Allow All Cookies")]'),
+                ]
+                for by, selector in mobile_cookie_selectors:
+                    try:
+                        el = WebDriverWait(driver, 4).until(EC.element_to_be_clickable((by, selector)))
+                        el.click()
+                        sleep(1)
+                        break
+                    except Exception:
+                        continue
+                # Also attempt to click common mbasic cookie links
+                try:
+                    el2 = driver.find_element(By.PARTIAL_LINK_TEXT, "Allow All")
+                    driver.execute_script("arguments[0].click();", el2)
+                    sleep(0.6)
+                except Exception:
+                    pass
+            except Exception:
+                pass
+            # Wait for DOM settle briefly
+            try:
+                WebDriverWait(driver, 10).until(
+                    lambda d: d.execute_script("return document.readyState") == "complete"
+                )
+            except Exception:
+                pass
+            sleep(2)
+            # Find first story link
+            try:
+                anchors = driver.find_elements(By.CSS_SELECTOR, "a[href*='story.php'], a[href*='/posts/']")
+            except Exception:
+                anchors = []
+            if not anchors:
+                # Try finding any article
+                try:
+                    articles = driver.find_elements(By.CSS_SELECTOR, "article, div[role='article']")
+                    anchors = articles[:1]
+                except Exception:
+                    anchors = []
+            if not anchors:
+                continue
+            target = anchors[0]
+            container = _ascend_to_article(target)
+            text = _extract_text_from_container(container)
+            if not text or len(text) < 10:
+                # Try second candidate if available
+                if len(anchors) > 1:
+                    container = _ascend_to_article(anchors[1])
+                    text = _extract_text_from_container(container)
+            if not text or len(text) < 10:
+                continue
+            # Link and time
+            try:
+                post_link = target.get_attribute("href") or ""
+            except Exception:
+                post_link = ""
+            post_time = _extract_time_from_container(container)
+            thumb = _extract_thumb_from_container(container)
+            author = page_name_from_url or slug
+            post = {
+                "post_id": "post_1",
+                "author_name": author,
+                "post_text": text,
+                "post_time": post_time,
+                "post_link": post_link,
+                "video_url": "",
+                "video_thumbnail": thumb,
+                "scraped_at": datetime.now(timezone.utc).isoformat(),
+            }
+            return [post]
+    except Exception as e:
+        print(f"[WARNING] quick_scrape_first_post failed: {e}", flush=True)
+    return []
+
+def _requests_session_from_driver(driver):
+    try:
+        import requests as _requests  # type: ignore
+    except Exception:
+        return None
+    try:
+        sess = _requests.Session()
+        # Copy selenium cookies into requests session
+        for c in driver.get_cookies():
+            try:
+                cookie_args = {k: c.get(k) for k in ["name", "value", "domain", "path"]}
+                if not cookie_args.get("name"):
+                    continue
+                sess.cookies.set(cookie_args["name"], cookie_args["value"], domain=cookie_args.get("domain") or ".facebook.com", path=cookie_args.get("path") or "/")
+            except Exception:
+                continue
+        # Headers for mbasic
+        sess.headers.update({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+            "Accept-Language": "en-US,en;q=0.9,da;q=0.8",
+        })
+        return sess
+    except Exception:
+        return None
+
+def http_mbasic_first_post_with_cookies(driver, group_url: str, page_name_from_url: str | None) -> list[dict]:
+    if requests is None:
+        return []
+    try:
+        from bs4 import BeautifulSoup  # type: ignore
+    except Exception:
+        return []
+    try:
+        slug = _get_page_slug(group_url)
+        # Try without cookies first (guest), then with selenium cookies
+        bases = [f"https://mbasic.facebook.com/{slug}?v=timeline", f"https://mbasic.facebook.com/{slug}", f"https://mbasic.facebook.com/{slug}/posts"]
+        html = ""
+        # Guest fetch
+        try:
+            import requests as _requests  # type: ignore
+            guest = _requests.Session()
+            guest.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+                "Accept-Language": "en-US,en;q=0.9,da;q=0.8",
+            })
+            for url in bases:
+                try:
+                    r = guest.get(url, timeout=15)
+                    if r.status_code == 200 and r.text and "login" not in r.url.lower():
+                        html = r.text
+                        break
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        # Cookie fetch if guest failed
+        if not html:
+            sess = _requests_session_from_driver(driver)
+            if sess:
+                for url in bases:
+                    try:
+                        r = sess.get(url, timeout=20)
+                        if r.status_code == 200 and r.text:
+                            html = r.text
+                            break
+                    except Exception:
+                        continue
+        if not html:
+            return []
+        soup = BeautifulSoup(html, "html.parser")
+        # pick first story link
+        a = soup.select_one("a[href*='story.php'], a[href*='/posts/']")
+        if not a:
+            return []
+        # climb up few parents
+        container = a
+        for _ in range(6):
+            if container.parent:
+                container = container.parent
+        def clean(s): 
+            import re as _re
+            s = _re.sub(r"\\s+", " ", (s or "").strip())
+            s = _re.sub(r"(Like|Comment|Share|See more|Vis mere)", "", s, flags=_re.I)
+            return s.strip()
+        text = clean(container.get_text(" ", strip=True))[:1500]
+        if not text or len(text) < 10:
+            return []
+        time_str = ""
+        ab = container.find("abbr")
+        if ab and ab.get_text(strip=True):
+            time_str = ab.get_text(strip=True)[:50]
+        else:
+            sm = container.find("small")
+            if sm:
+                time_str = sm.get_text(" ", strip=True)[:50]
+        img = container.find("img")
+        thumb = img.get("src") if img and img.get("src") else ""
+        href = a.get("href") or ""
+        link = href if href.startswith("http") else f"https://mbasic.facebook.com{href}"
+        link = link.replace("https://mbasic.facebook.com", "https://www.facebook.com")
+        author = page_name_from_url or slug
+        post = {
+            "post_id": "post_1",
+            "author_name": author,
+            "post_text": text,
+            "post_time": time_str,
+            "post_link": link,
+            "video_url": "",
+            "video_thumbnail": thumb,
+            "scraped_at": datetime.now(timezone.utc).isoformat(),
+        }
+        return [post]
+    except Exception as e:
+        print(f"[WARNING] http mbasic cookie fetch failed: {e}", flush=True)
+        return []
+
+def setup_firefox_driver(headless: bool = False) -> webdriver.Firefox:
+    """Set up and return a Firefox WebDriver instance."""
+    from pathlib import Path
+    
+    firefox_options = FirefoxOptions()
+    if headless:
+        firefox_options.add_argument("--headless")
+    
+    firefox_options.set_preference("general.useragent.override", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0")
+    
+    # Use system geckodriver if available
+    geckodriver_path = None
+    firefox_binary_path = None
+    
+    # Check for system geckodriver
+    for path in ["/usr/bin/geckodriver", "/usr/local/bin/geckodriver"]:
+        if Path(path).exists():
+            geckodriver_path = path
+            break
+    
+    # Check for system firefox binary
+    for path in ["/usr/bin/firefox", "/usr/bin/firefox-esr", "/usr/local/bin/firefox"]:
+        if Path(path).exists():
+            firefox_binary_path = path
+            firefox_options.binary_location = path
+            break
+    
+    if geckodriver_path:
+        service = FirefoxService(geckodriver_path)
+    else:
+        # Fallback to GeckoDriverManager
+        service = FirefoxService(GeckoDriverManager().install())
+    
+    if WIRE_AVAILABLE and wire_webdriver is not None:
+        seleniumwire_options = {
+            "verify_ssl": True,
+            "disable_encoding": True,  # Let Selenium Wire decode bodies
+        }
+        driver = wire_webdriver.Firefox(service=service, options=firefox_options, seleniumwire_options=seleniumwire_options)  # type: ignore
+    else:
+        driver = webdriver.Firefox(service=service, options=firefox_options)
+    driver.maximize_window()
+    return driver
 
 
 def setup_chrome_driver(headless: bool = False) -> webdriver.Chrome:
@@ -38,9 +448,9 @@ def setup_chrome_driver(headless: bool = False) -> webdriver.Chrome:
     import os
     from pathlib import Path
     
-    chrome_options = Options()
+    chrome_options = ChromeOptions()
     if headless:
-        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--headless=new")  # Use new headless mode
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
@@ -66,14 +476,37 @@ def setup_chrome_driver(headless: bool = False) -> webdriver.Chrome:
             break
     
     if chromedriver_path:
-        service = Service(chromedriver_path)
+        service = ChromeService(chromedriver_path)
     else:
         # Fallback to ChromeDriverManager
-        service = Service(ChromeDriverManager().install())
+        service = ChromeService(ChromeDriverManager().install())
     
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    if WIRE_AVAILABLE and wire_webdriver is not None:
+        seleniumwire_options = {
+            "verify_ssl": True,
+            "disable_encoding": True,  # Let Selenium Wire decode bodies
+        }
+        driver = wire_webdriver.Chrome(service=service, options=chrome_options, seleniumwire_options=seleniumwire_options)  # type: ignore
+    else:
+        driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.maximize_window()
     return driver
+
+
+def setup_driver(browser: str = "firefox", headless: bool = False):
+    """Set up and return a WebDriver instance for the specified browser."""
+    browser_lower = browser.lower()
+    
+    if browser_lower == "firefox":
+        try:
+            print(f"[INFO] Attempting to use Firefox...", flush=True)
+            return setup_firefox_driver(headless=headless)
+        except Exception as e:
+            print(f"[WARNING] Failed to setup Firefox: {e}, falling back to Chrome", flush=True)
+            return setup_chrome_driver(headless=headless)
+    else:
+        # Default to Chrome/Chromium
+        return setup_chrome_driver(headless=headless)
 
 
 def simulate_human_typing(element, text: str) -> None:
@@ -97,34 +530,90 @@ def login_to_facebook(
         return False
 
     try:
-        driver.get("https://www.facebook.com/login")
+        # Prefer mobile login which is usually simpler and more reliable in headless
+        login_urls = [
+            "https://m.facebook.com/login",
+            "https://www.facebook.com/login",
+        ]
+        driver.get(login_urls[0])
         sleep(2)
 
         # Accept cookies if present
         try:
-            cookies_button = WebDriverWait(driver, 10).until(
-                EC.element_to_be_clickable(
-                    (By.XPATH, '//button[contains(@class, "_42ft") and contains(text(), "Accept")]')
-                )
-            )
-            cookies_button.click()
-            sleep(1)
+            # Try various common cookie consent buttons/selectors
+            possible_cookie_selectors = [
+                (By.XPATH, '//button[contains(.,"Allow essential and optional cookies")]'),
+                (By.XPATH, '//button[contains(.,"Allow all cookies")]'),
+                (By.XPATH, '//button[contains(.,"Accept")]'),
+                (By.XPATH, '//button[contains(.,"Tillad")]'),
+                (By.XPATH, '//*[@data-cookiebanner="accept_button"]'),
+            ]
+            for by, selector in possible_cookie_selectors:
+                try:
+                    el = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((by, selector)))
+                    el.click()
+                    sleep(1)
+                    break
+                except Exception:
+                    continue
         except Exception:
             pass  # Cookies button might not be present
 
         # Fill in login form with human-like typing
-        email_field = WebDriverWait(driver, wait_timeout).until(
-            EC.presence_of_element_located((By.NAME, "email"))
-        )
+        email_field = None
+        try:
+            email_field = WebDriverWait(driver, wait_timeout).until(
+                EC.presence_of_element_located((By.NAME, "email"))
+            )
+        except Exception:
+            # Fallback to typical mobile selector
+            try:
+                email_field = WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.ID, "m_login_email"))
+                )
+            except Exception:
+                pass
+        if not email_field:
+            # Retry with desktop login page
+            driver.get(login_urls[1])
+            sleep(2)
+            email_field = WebDriverWait(driver, wait_timeout).until(
+                EC.presence_of_element_located((By.NAME, "email"))
+            )
         simulate_human_typing(email_field, email)
 
-        password_field = driver.find_element(By.NAME, "pass")
+        # Try multiple possible password fields
+        password_field = None
+        for by, selector in [
+            (By.NAME, "pass"),
+            (By.ID, "m_login_password"),
+        ]:
+            try:
+                password_field = driver.find_element(by, selector)
+                break
+            except Exception:
+                continue
+        if not password_field:
+            password_field = driver.find_element(By.NAME, "pass")
         simulate_human_typing(password_field, password)
 
         sleep(random.uniform(0.5, 1.5))
 
         # Click login button with mouse movement simulation
-        login_button = driver.find_element(By.XPATH, "//button[@type='submit']")
+        # Try multiple possible login buttons
+        login_button = None
+        for by, selector in [
+            (By.XPATH, "//button[@type='submit']"),
+            (By.NAME, "login"),
+            (By.ID, "loginbutton"),
+        ]:
+            try:
+                login_button = driver.find_element(by, selector)
+                break
+            except Exception:
+                continue
+        if not login_button:
+            login_button = driver.find_element(By.XPATH, "//button[@type='submit']")
         from selenium.webdriver.common.action_chains import ActionChains
         ActionChains(driver)\
             .move_to_element(login_button)\
@@ -132,7 +621,14 @@ def login_to_facebook(
             .click()\
             .perform()
 
-        sleep(15)  # Wait for page to load
+        # Wait longer, then try to navigate to a lightweight page to verify login
+        sleep(8)
+        try:
+            # Navigate to a lightweight endpoint that redirects if logged in
+            driver.get("https://m.facebook.com/home.php")
+            sleep(5)
+        except Exception:
+            pass
 
         # Check if login was successful (not on login page anymore)
         current_url = driver.current_url.lower()
@@ -141,7 +637,7 @@ def login_to_facebook(
             try:
                 # Look for feed or home page indicators
                 page_source = driver.page_source.lower()
-                if any(indicator in page_source for indicator in ["feed", "home", "watch", "marketplace"]):
+                if any(indicator in page_source for indicator in ["feed", "home", "watch", "marketplace", "menu_bookmarks"]):
                     print("[SUCCESS] Logged in to Facebook - detected feed/home page")
                     return True
                 elif "login" not in current_url:
@@ -192,28 +688,172 @@ def create_post_key(post: dict) -> str:
     return f"fallback:{hash(str(post))}"
 
 
+def author_matches_page(author_name: str | None, page_name_from_url: str | None) -> bool:
+    """Return True if the post author matches the current page/group name."""
+    if not author_name or not page_name_from_url:
+        return False
+    try:
+        import re
+        # Normalize: remove non-letters/digits and lower
+        an = re.sub(r"\W+", "", str(author_name).lower())
+        pn = re.sub(r"\W+", "", str(page_name_from_url).lower())
+        if not pn:
+            return False
+        # Direct containment or equality
+        if pn in an or an == pn:
+            return True
+        # Also check title-cased display name containment
+        display = page_name_from_url.replace("-", " ").replace("_", " ").title()
+        dn = re.sub(r"\W+", "", display.lower())
+        return dn in an or an == dn
+    except Exception:
+        return False
+
+
 def scrape_facebook_group_posts(
     driver: webdriver.Chrome,
     group_url: str,
     max_posts: int = DEFAULT_MAX_POSTS,
     scroll_pause: float = DEFAULT_SCROLL_PAUSE,
+    search_query: str | None = None,
 ) -> list[dict[str, str]]:
     """Scrape posts from a Facebook group."""
-    print(f"[INFO] Navigating to group: {group_url}", flush=True)
+    print(f"[INFO] Navigating directly to page: {group_url}", flush=True)
     driver.get(group_url)
-    sleep(5)  # Wait longer for initial load
+    sleep(3)  # Wait for initial load
     
     # Wait for content to load
     try:
-        WebDriverWait(driver, 20).until(
+        WebDriverWait(driver, 15).until(
             lambda d: d.execute_script("return document.readyState") == "complete"
         )
     except:
         pass
     
     print(f"[INFO] Page loaded, current URL: {driver.current_url}", flush=True)
+    
+    # STEP 1: Accept cookies FIRST (required before posts become visible) - FAST with timeout
+    print("[INFO] Step 1: Accepting cookies...", flush=True)
+    sleep(0.5)  # Minimal wait
+    try:
+        # Quick attempt to find and click cookie button
+        cookie_accepted = False
+        quick_selectors = [
+            (By.XPATH, '//button[contains(.,"Tillad alle cookies")]'),
+            (By.XPATH, '//button[contains(.,"Allow all cookies")]'),
+            (By.XPATH, '//button[contains(.,"Tillad")]'),
+            (By.XPATH, '//button[contains(.,"Accept")]'),
+        ]
+        for by, selector in quick_selectors:
+            try:
+                el = WebDriverWait(driver, 2).until(EC.element_to_be_clickable((by, selector)))
+                el.click()
+                print("[INFO] Accepted cookies", flush=True)
+                cookie_accepted = True
+                sleep(0.5)
+                break
+            except:
+                continue
+        if not cookie_accepted:
+            print("[INFO] No cookie button found (may already be accepted) - continuing", flush=True)
+    except Exception as e:
+        print(f"[INFO] Cookie step skipped: {e}", flush=True)
+    
+    # STEP 2: If login modal appears, log in with credentials from .env
+    print("[INFO] Step 2: Checking for login modal...", flush=True)
+    sleep(2)  # Wait for modal to appear
+    
+    # Check if login modal/dialog is present
+    login_modal_present = False
+    try:
+        login_modal = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, '[role="dialog"], [data-testid*="dialog"], [aria-modal="true"]'))
+        )
+        login_modal_present = True
+        print("[INFO] Login modal detected, attempting to log in...", flush=True)
+    except:
+        print("[INFO] No login modal detected, continuing...", flush=True)
+    
+    # If login modal is present, log in
+    if login_modal_present:
+        try:
+            # Get credentials from environment
+            email = os.getenv("FACEBOOK_EMAIL")
+            password = os.getenv("FACEBOOK_PASSWORD")
+            
+            if email and password:
+                print("[INFO] Found credentials in .env, logging in...", flush=True)
+                
+                # Find email/phone input
+                try:
+                    email_input = WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, 'input[type="text"][name="email"], input[type="email"], input[placeholder*="email" i], input[placeholder*="phone" i], input[aria-label*="email" i], input[aria-label*="phone" i]'))
+                    )
+                    email_input.clear()
+                    email_input.send_keys(email)
+                    print("[INFO] Entered email", flush=True)
+                    sleep(0.5)
+                except Exception as e:
+                    print(f"[WARNING] Could not find email input: {e}", flush=True)
+                
+                # Find password input
+                try:
+                    password_input = driver.find_element(By.CSS_SELECTOR, 'input[type="password"], input[name="pass"]')
+                    password_input.clear()
+                    password_input.send_keys(password)
+                    print("[INFO] Entered password", flush=True)
+                    sleep(0.5)
+                except Exception as e:
+                    print(f"[WARNING] Could not find password input: {e}", flush=True)
+                
+                # Find and click login button
+                try:
+                    # Try multiple selectors for login button
+                    login_selectors = [
+                        (By.CSS_SELECTOR, 'button[type="submit"]'),
+                        (By.CSS_SELECTOR, 'button[name="login"]'),
+                        (By.XPATH, '//button[contains(., "Log")]'),
+                        (By.XPATH, '//button[contains(@aria-label, "Log")]'),
+                        (By.XPATH, '//button[contains(text(), "Log")]'),
+                    ]
+                    login_btn = None
+                    for by, selector in login_selectors:
+                        try:
+                            login_btn = driver.find_element(by, selector)
+                            break
+                        except:
+                            continue
+                    
+                    if login_btn:
+                        # Use JavaScript click to avoid interception
+                        try:
+                            driver.execute_script("arguments[0].click();", login_btn)
+                            print("[INFO] Clicked login button (JavaScript)", flush=True)
+                        except:
+                            login_btn.click()
+                            print("[INFO] Clicked login button (regular)", flush=True)
+                        sleep(5)  # Wait for login to complete
+                        print("[INFO] Login completed", flush=True)
+                    else:
+                        print("[WARNING] Could not find login button", flush=True)
+                except Exception as e:
+                    print(f"[WARNING] Could not click login button: {e}", flush=True)
+            else:
+                print("[WARNING] No credentials found in .env (FACEBOOK_EMAIL and FACEBOOK_PASSWORD)", flush=True)
+        except Exception as e:
+            print(f"[WARNING] Login attempt failed: {e}", flush=True)
+    
+    # Wait 5 seconds after login (or if no login was needed)
+    print("[INFO] Waiting 5 seconds before scraping...", flush=True)
+    sleep(5)
+    
+    # Ensure we're on the correct page (not login redirect)
+    if "/login" in driver.current_url.lower():
+        print("[INFO] Still on login page, navigating directly...", flush=True)
+        driver.get(group_url)
+        sleep(3)
 
-    # Extract page/group name from URL first (needed for filtering)
+    # Extract page/group name from URL first (needed for filtering and login page parsing)
     page_name_from_url = None
     if group_url:
         if "/groups/" in group_url:
@@ -231,72 +871,858 @@ def scrape_facebook_group_posts(
                 if "/people/" in current_url:
                     page_name_from_url = current_url.split("/people/")[-1].split("/")[0].split("?")[0].lower()
     
+    # STEP 3: Extract first post from page (after login and 5 second wait)
+    try:
+        print("[INFO] Step 3: Extracting first post...", flush=True)
+        print(f"[DEBUG] Current URL: {driver.current_url}", flush=True)
+        
+        # Wait for posts container (x19h7ccj class) or articles to appear
+        posts_container = None
+        try:
+            # First try to find the posts container with class x19h7ccj
+            posts_container = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, ".x19h7ccj, div.x19h7ccj"))
+            )
+            print("[DEBUG] Found posts container with class x19h7ccj", flush=True)
+        except:
+            print("[DEBUG] Posts container x19h7ccj not found, trying articles directly...", flush=True)
+        
+        # Wait for articles to appear
+        try:
+            if posts_container:
+                # Look for articles within the posts container
+                WebDriverWait(posts_container, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "article, div[role='article']"))
+                )
+            else:
+                WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, "article, div[role='article']")))
+            print("[DEBUG] Articles detected on page", flush=True)
+        except:
+            print("[DEBUG] No articles detected yet, continuing anyway", flush=True)
+        sleep(2)  # Additional wait for content to stabilize
+        
+        # Look for article elements - prioritize within posts container
+        if posts_container:
+            articles = posts_container.find_elements(By.CSS_SELECTOR, "article")
+            print(f"[DEBUG] Found {len(articles)} article elements in posts container", flush=True)
+            if not articles:
+                articles = posts_container.find_elements(By.XPATH, ".//div[@role='article']")
+                print(f"[DEBUG] Found {len(articles)} div[@role='article'] elements in posts container", flush=True)
+            # Wait a bit more for content to load within articles
+            # Also do a small scroll to trigger lazy loading
+            if articles:
+                try:
+                    driver.execute_script("window.scrollTo(0, 300);")
+                    sleep(1)
+                    driver.execute_script("window.scrollTo(0, 0);")
+                    sleep(1)
+                except:
+                    pass
+                sleep(2)
+        else:
+            # Fallback: search entire page
+            articles = driver.find_elements(By.CSS_SELECTOR, "article")
+            print(f"[DEBUG] Found {len(articles)} article elements", flush=True)
+            if not articles:
+                articles = driver.find_elements(By.XPATH, "//div[@role='article']")
+                print(f"[DEBUG] Found {len(articles)} div[@role='article'] elements", flush=True)
+            if not articles:
+                articles = driver.find_elements(By.CSS_SELECTOR, "[data-pagelet*='FeedUnit']")
+                print(f"[DEBUG] Found {len(articles)} FeedUnit elements", flush=True)
+        
+        print(f"[DEBUG] Checking {len(articles)} articles for posts with both text and video...", flush=True)
+        
+        # First pass: prioritize articles with video/reel links
+        articles_with_video = []
+        articles_without_video = []
+        for article in articles[:10]:
+            try:
+                video_links = article.find_elements(By.XPATH, ".//a[contains(@href, '/reel/')] | .//a[contains(@href, '/video/')] | .//a[contains(@href, '/watch/')] | .//video")
+                if video_links:
+                    articles_with_video.append(article)
+                else:
+                    articles_without_video.append(article)
+            except:
+                articles_without_video.append(article)
+        
+        # Check video articles first, then non-video articles
+        articles_to_check = articles_with_video + articles_without_video
+        if not articles_to_check:
+            articles_to_check = articles[:10]
+        
+        print(f"[DEBUG] Found {len(articles_with_video)} articles with video, {len(articles_without_video)} without video", flush=True)
+        
+        for idx, article in enumerate(articles_to_check[:10]):  # Check up to 10 articles to find one with both text and video
+            print(f"[DEBUG] Checking article {idx+1}/{min(len(articles_to_check), 10)}...", flush=True)
+            try:
+                # FIRST: Extract reel/video URL and post link (needed for text extraction logic)
+                time_elem = article.find_elements(By.XPATH, ".//a[contains(@href, '/reel/')] | .//a[contains(@href, '/posts/')] | .//abbr")
+                post_time = ""
+                post_link = ""
+                reel_url_found = ""
+                if time_elem:
+                    try:
+                        for elem in time_elem:
+                            href = elem.get_attribute("href") or ""
+                            text = elem.text.strip()[:50]
+                            # Check if this is a reel link
+                            if "/reel/" in href:
+                                if not reel_url_found:
+                                    reel_url_found = href
+                                    if not reel_url_found.startswith("http"):
+                                        reel_url_found = "https://www.facebook.com" + reel_url_found
+                                    # Extract clean reel ID
+                                    if "/reel/" in reel_url_found:
+                                        reel_id = reel_url_found.split("/reel/")[-1].split("/")[0].split("?")[0]
+                                        reel_url_found = f"https://www.facebook.com/reel/{reel_id}"
+                                if not post_time and text:
+                                    post_time = text
+                            elif "/posts/" in href or not post_link:
+                                if not post_link:
+                                    post_link = href
+                                    if post_link and not post_link.startswith("http"):
+                                        post_link = "https://www.facebook.com" + post_link
+                                if not post_time and text:
+                                    post_time = text
+                    except Exception as e:
+                        print(f"[DEBUG] Error extracting time/link: {e}", flush=True)
+                        pass
+                
+                # SECOND: Extract text - try multiple strategies to get the actual post content
+                text = ""
+                time_patterns = ["m", "h", "d", "min", "hour", "day", "minute", "minutter", "timer", "dage"]
+                
+                # Strategy 1: Try to get text from main post content containers first
+                main_text_selectors = [
+                    ".//div[contains(@class, 'userContent')]",
+                    ".//div[contains(@data-testid, 'post_message')]",
+                    ".//div[@data-ad-preview='message']",
+                    ".//div[contains(@class, 'text')]",
+                    ".//div[@role='article']//div[contains(@class, 'x1y1aw1k')]//span[@dir='auto']",
+                    ".//div[contains(@class, 'x1y1aw1k')]//span[@dir='auto']",
+                    ".//div[contains(@class, 'x19h7ccj')]//span[@dir='auto']",  # Within posts container
+                    ".//div[contains(@data-pagelet, 'FeedUnit')]//span[@dir='auto']",
+                    ".//p[@dir='auto']",
+                    ".//div[@dir='auto' and string-length(text()) > 20]",  # Direct text content > 20 chars
+                ]
+                for selector in main_text_selectors:
+                    try:
+                        main_text_elems = article.find_elements(By.XPATH, selector)
+                        for elem in main_text_elems[:3]:
+                            content = elem.text.strip()
+                            # Skip if it's just a time or UI element
+                            if content and len(content) > 10 and not any(pattern in content.lower() for pattern in ["synes godt om", "kommenter", "alle reaktioner", "all reactions", "0:00"]):
+                                # Check if it's not just a time pattern (like "1m", "2h", etc.)
+                                if not (len(content) <= 5 and (any(p in content.lower() for p in time_patterns) or re.match(r'^\d+[mhd]$', content.lower()))):
+                                    if len(content) > len(text):
+                                        text = content[:1000]
+                                    break
+                        if text and len(text) > 20:
+                            break
+                    except:
+                        continue
+                
+                # Strategy 1.5: Use JavaScript to extract all text nodes (in case Selenium text is empty)
+                if not text or len(text) < 20:
+                    try:
+                        js_text = driver.execute_script("""
+                            var article = arguments[0];
+                            var textNodes = [];
+                            var walker = document.createTreeWalker(
+                                article,
+                                NodeFilter.SHOW_TEXT,
+                                null,
+                                false
+                            );
+                            var node;
+                            while (node = walker.nextNode()) {
+                                var text = node.textContent.trim();
+                                if (text && text.length > 20) {
+                                    // Skip if it's just UI elements
+                                    if (!text.match(/^(Synes godt om|Kommenter|Del|Like|Comment|Share|Alle reaktioner|All reactions)/i)) {
+                                        textNodes.push(text);
+                                    }
+                                }
+                            }
+                            // Return the longest text node (likely the post content)
+                            if (textNodes.length > 0) {
+                                return textNodes.sort((a, b) => b.length - a.length)[0];
+                            }
+                            return '';
+                        """, article)
+                        if js_text and len(js_text) > len(text):
+                            text = js_text[:1000]
+                            print(f"[DEBUG] JavaScript extracted text: {text[:100]}...", flush=True)
+                    except Exception as e:
+                        print(f"[DEBUG] JavaScript text extraction failed: {e}", flush=True)
+                
+                # Strategy 2: If no good text found, collect from all text elements and filter
+                if not text or len(text) < 20:
+                    text_elems = article.find_elements(By.XPATH, ".//span[@dir='auto'] | .//div[@dir='auto'] | .//p | .//div[contains(@class, 'x1y1aw1k')]")
+                    text_parts = []
+                    seen_texts = set()
+                    
+                    for te in text_elems[:50]:
+                        t = te.text.strip()
+                        # Skip if it's just a time (like "1m", "2h", "18m", "3m")
+                        # Check for patterns like "1m", "2h", "18m", "3m" etc.
+                        if t and (len(t) <= 5 and (any(pattern in t.lower() for pattern in time_patterns) or re.match(r'^\d+[mhd]$', t.lower()))):
+                            continue
+                        # Skip single characters or very short text that looks like time
+                        if t and len(t) <= 3:
+                            continue
+                        # Skip UI elements and time patterns
+                        if t and len(t) > 5 and not t.startswith(("Synes godt om", "Kommenter", "Del", "Like", "Comment", "Share", "Alle reaktioner", "All reactions", "All reactions:", "0:00", "/", "·")):
+                            # Deduplicate: skip if we've seen this exact text
+                            t_normalized = t.lower().strip()
+                            # Skip if it's just a number + time unit
+                            if not re.match(r'^\d+[mhd]$', t_normalized) and t_normalized not in seen_texts and len(t_normalized) > 2:
+                                # Prefer longer text chunks (at least 10 chars)
+                                if len(t) > 10:
+                                    text_parts.append(t)
+                                    seen_texts.add(t_normalized)
+                    
+                    combined_text = " ".join(text_parts).strip()[:1000]
+                    # Only use combined text if it's longer than what we have
+                    if len(combined_text) > len(text) and len(combined_text) > 20:
+                        text = combined_text
+                        print(f"[DEBUG] Strategy 2 found text: {text[:100]}...", flush=True)
+                
+                # Strategy 3: Get all text from article and extract the longest meaningful chunk
+                if not text or len(text) < 20:
+                    try:
+                        # Try JavaScript to get text content (in case article.text is empty due to shadow DOM)
+                        try:
+                            full_text_js = driver.execute_script("""
+                                var article = arguments[0];
+                                return article.innerText || article.textContent || '';
+                            """, article)
+                            if full_text_js and len(full_text_js) > len(article.text):
+                                full_text = full_text_js
+                            else:
+                                full_text = article.text
+                        except:
+                            full_text = article.text
+                        print(f"[DEBUG] Full article text length: {len(full_text)}, preview: {full_text[:300]}...", flush=True)
+                        # Split by common separators and find the longest meaningful part
+                        parts = full_text.split("\n")
+                        for part in parts:
+                            part = part.strip()
+                            # Skip time patterns like "1m", "2h", "18m"
+                            if part and re.match(r'^\d+[mhd]$', part.lower()):
+                                continue
+                            # Skip very short parts
+                            if part and len(part) <= 10:
+                                continue
+                            # Skip UI elements but allow post content
+                            skip_patterns = ["synes godt om", "kommenter", "alle reaktioner", "log in", "followers", "following", "verified account", "is with"]
+                            if any(skip in part.lower() for skip in skip_patterns):
+                                # But if it's long and contains actual content, keep it
+                                if len(part) < 50:
+                                    continue
+                            # Look for actual post content - prefer parts with punctuation, emojis, or keywords
+                            has_content_indicators = any(char in part for char in [".", ",", "!", "?", ":", "👇", "👆", "Mette", "familie", "Holbæk", "besøgte", "hverdagen", "travlhed", "udfordringer"])
+                            if has_content_indicators or len(part) > 40:
+                                if len(part) > len(text):
+                                    text = part[:1000]
+                                    print(f"[DEBUG] Found text candidate: {text[:100]}...", flush=True)
+                    except Exception as e:
+                        print(f"[DEBUG] Strategy 3 error: {e}", flush=True)
+                        pass
+                
+                # Filter out author names (typically 2-3 words, capitalized, no punctuation)
+                if text:
+                    text_clean = text.strip()
+                    # Check if text looks like just an author name (2-3 words, all capitalized or title case, no punctuation)
+                    words = text_clean.split()
+                    if len(words) <= 3 and all(word[0].isupper() if word else False for word in words) and not any(c in text_clean for c in [".", ",", "!", "?", ":", "👇", "👆"]):
+                        print(f"[DEBUG] Text '{text_clean}' looks like author name, clearing...", flush=True)
+                        text = ""
+                
+                # Debug output
+                if text:
+                    print(f"[DEBUG] Extracted text length: {len(text)}, preview: {text[:100]}...", flush=True)
+                
+                # Extract author name
+                author_xpath = ".//h2//a | .//strong//a"
+                if page_name_from_url:
+                    author_xpath += f" | .//a[contains(@href, '{page_name_from_url}')]"
+                author_elem = article.find_elements(By.XPATH, author_xpath)
+                author = page_name_from_url.replace("-", " ").title() if page_name_from_url else "Unknown"
+                if author_elem:
+                    try:
+                        author_text = author_elem[0].text.strip()
+                        if author_text and len(author_text) > 2:
+                            author = author_text
+                    except:
+                        pass
+                
+                # Extract image/video thumbnail - skip emoji/small images, look for actual media
+                img_elem = article.find_elements(By.CSS_SELECTOR, "img")
+                thumb = ""
+                video_url = reel_url_found  # Start with reel URL if we found one
+                for img in img_elem:
+                    try:
+                        src = img.get_attribute("src") or ""
+                        # Skip emoji URLs, small icons, and profile pics
+                        if src and "fbcdn.net" in src and len(src) > 100:
+                            # Skip emoji and small icon URLs
+                            if "emoji" not in src.lower() and "icon" not in src.lower() and "profile" not in src.lower():
+                                # Prefer images that look like media (scontent, video thumbnails)
+                                if "scontent" in src or "video" in src.lower() or "thumb" in src.lower():
+                                    thumb = src
+                                    break
+                                elif not thumb:  # Fallback to any large image
+                                    thumb = src
+                    except:
+                        pass
+                
+                # Check for video/reel link - try multiple strategies
+                video_link = None
+                # Strategy 1: Look for links with /reel/ in href
+                video_links = article.find_elements(By.XPATH, ".//a[contains(@href, '/reel/')] | .//a[contains(@href, '/video/')] | .//a[contains(@href, '/watch/')]")
+                print(f"[DEBUG] Found {len(video_links)} video links in article", flush=True)
+                if video_links:
+                    for link in video_links:
+                        try:
+                            href = link.get_attribute("href") or ""
+                            print(f"[DEBUG] Video link href: {href[:100] if href else 'empty'}...", flush=True)
+                            # Skip blob URLs, look for actual Facebook URLs
+                            if href and not href.startswith("blob:") and ("/reel/" in href or "/video/" in href or "/watch/" in href):
+                                if href.startswith("http"):
+                                    video_url = href.split("?")[0]  # Remove query params for cleaner URL
+                                elif href.startswith("/"):
+                                    video_url = "https://www.facebook.com" + href.split("?")[0]
+                                else:
+                                    continue
+                                # Extract reel ID if it's a reel URL
+                                if "/reel/" in video_url:
+                                    reel_id = video_url.split("/reel/")[-1].split("/")[0].split("?")[0]
+                                    video_url = f"https://www.facebook.com/reel/{reel_id}"
+                                video_link = link
+                                break
+                        except:
+                            continue
+                
+                # Strategy 2: If we found a link but got blob URL, try to get URL from data attributes or parent
+                if video_link and not video_url:
+                    try:
+                        # Check parent elements for data attributes
+                        parent = video_link.find_element(By.XPATH, "./..")
+                        data_url = parent.get_attribute("data-href") or parent.get_attribute("href") or ""
+                        if data_url and "/reel/" in data_url:
+                            if data_url.startswith("http"):
+                                video_url = data_url.split("?")[0]
+                            elif data_url.startswith("/"):
+                                video_url = "https://www.facebook.com" + data_url.split("?")[0]
+                    except:
+                        pass
+                
+                # Strategy 3: Extract from post_link if it contains /reel/ (fallback)
+                if not video_url and post_link and "/reel/" in post_link:
+                    video_url = post_link.split("?")[0]
+                    reel_id = video_url.split("/reel/")[-1].split("/")[0].split("?")[0]
+                    video_url = f"https://www.facebook.com/reel/{reel_id}"
+                
+                # Strategy 4: If we have reel_url_found but video_url is still empty, use it
+                if not video_url and reel_url_found:
+                    video_url = reel_url_found
+                
+                # Quick check: if we have both text and video, return immediately
+                if text and len(text) > 20 and video_url:
+                    # Final validation: ensure text is not a time pattern
+                    if not (re.match(r'^\d+[mhd]$', text.strip().lower()) or len(text.strip()) <= 5):
+                        print(f"[DEBUG] Found both text and video in same article, returning immediately", flush=True)
+                        # Extract author name quickly
+                        author_xpath = ".//h2//a | .//strong//a"
+                        if page_name_from_url:
+                            author_xpath += f" | .//a[contains(@href, '{page_name_from_url}')]"
+                        author_elem = article.find_elements(By.XPATH, author_xpath)
+                        author = page_name_from_url.replace("-", " ").title() if page_name_from_url else "Unknown"
+                        if author_elem:
+                            try:
+                                author_text = author_elem[0].text.strip()
+                                if author_text and len(author_text) > 2:
+                                    author = author_text
+                            except:
+                                pass
+                        post = {
+                            "post_id": "post_1",
+                            "author_name": author,
+                            "post_text": text,
+                            "post_time": post_time,
+                            "post_link": post_link or f"https://www.facebook.com/{page_name_from_url}",
+                            "video_url": video_url,
+                            "video_thumbnail": thumb,
+                            "scraped_at": datetime.now(timezone.utc).isoformat(),
+                        }
+                        print(f"[SUCCESS] Extracted first post with BOTH text and video: author='{author}', text='{text[:80]}...', text_length={len(text)}, video={video_url[:50]}...", flush=True)
+                        return [post]
+                
+                # Final check: if text looks like a time pattern, try to get better text from article
+                if text and (re.match(r'^\d+[mhd]$', text.lower()) or len(text) <= 5):
+                    print(f"[DEBUG] Text '{text}' looks like time, trying to get better text...", flush=True)
+                    # Try one more time with article.text and find longest meaningful part
+                    try:
+                        all_text = article.text
+                        lines = [l.strip() for l in all_text.split("\n") if l.strip()]
+                        for line in lines:
+                            line = line.strip()
+                            # Skip time patterns and UI
+                            if line and len(line) > 20 and not re.match(r'^\d+[mhd]$', line.lower()):
+                                skip_ui = ["synes godt om", "kommenter", "alle reaktioner", "log in", "followers"]
+                                if not any(skip in line.lower() for skip in skip_ui):
+                                    # Check if it contains actual content (has punctuation, emojis, or is long)
+                                    if any(c in line for c in [".", ",", "!", "?", ":", "👇", "👆", "Mette", "familie", "Holbæk"]) or len(line) > 40:
+                                        text = line[:1000]
+                                        print(f"[DEBUG] Found better text: {text[:80]}...", flush=True)
+                                        break
+                    except:
+                        pass
+                
+                # Final check: ensure we have BOTH text AND video before creating post
+                # Also ensure text is not a time pattern
+                print(f"[DEBUG] Final check: text_length={len(text) if text else 0}, video_url={video_url[:50] if video_url else 'None'}...", flush=True)
+                if not text or len(text) < 20:
+                    print(f"[DEBUG] Final check: Text too short ({len(text) if text else 0} chars), skipping...", flush=True)
+                    continue
+                if text and (re.match(r'^\d+[mhd]$', text.strip().lower()) or len(text.strip()) <= 5):
+                    print(f"[DEBUG] Final check: Text '{text}' is time pattern, skipping...", flush=True)
+                    continue
+                if not video_url:
+                    print(f"[DEBUG] Final check: No video URL, skipping...", flush=True)
+                    continue
+                
+                # Create post only if we have BOTH text and video
+                post = {
+                    "post_id": "post_1",
+                    "author_name": author,
+                    "post_text": text,
+                    "post_time": post_time,
+                    "post_link": post_link or f"https://www.facebook.com/{page_name_from_url}",
+                    "video_url": video_url,
+                    "video_thumbnail": thumb,
+                    "scraped_at": datetime.now(timezone.utc).isoformat(),
+                }
+                print(f"[SUCCESS] Extracted first post with BOTH text and video: author='{author}', text='{text[:80]}...', text_length={len(text)}, video={video_url[:50]}...", flush=True)
+                return [post]
+            except Exception as e:
+                print(f"[DEBUG] Article extraction error: {e}", flush=True)
+                continue
+    except Exception as e:
+        print(f"[WARNING] First post extraction failed: {e}", flush=True)
+    
+    # Limit scraping to a single solid post
+    max_posts = 1
     print(f"[INFO] Extracted page name from URL: '{page_name_from_url}'", flush=True)
     
-    # Scroll to load more posts - scroll aggressively to get at least max_posts
-    # Use incremental scrolling like the article suggests
-    last_height = driver.execute_script("return document.body.scrollHeight")
+    # Fast path: if only first post needed, try mobile no-scroll quick scrape first
+    try:
+        if (max_posts or 0) <= 1:
+            quick = quick_scrape_first_post(driver, group_url, page_name_from_url)
+            if quick:
+                print(f"[INFO] Quick path (selenium mobile) succeeded with 1 post", flush=True)
+                return quick[:1]
+            # Fallback: HTTP mbasic using Selenium cookies
+            http_quick = http_mbasic_first_post_with_cookies(driver, group_url, page_name_from_url)
+            if http_quick:
+                print(f"[INFO] Quick path (http mbasic) succeeded with 1 post", flush=True)
+                return http_quick[:1]
+    except Exception as e:
+        print(f"[WARNING] Quick path failed: {e}", flush=True)
+    
+    # If a search query is provided, navigate to the group's/page's internal search first
+    if search_query:
+        try:
+            from urllib.parse import quote
+            base_url = driver.current_url.split("?")[0].rstrip("/")
+            candidate_search_urls = [
+                f"{base_url}/search/?q={quote(search_query)}",
+                f"https://www.facebook.com/search/posts/?q={quote(search_query)}",
+                f"https://m.facebook.com/search/posts/?q={quote(search_query)}",
+            ]
+            for su in candidate_search_urls:
+                try:
+                    driver.get(su)
+                    sleep(4)
+                    print(f"[INFO] Navigated to search URL: {driver.current_url}", flush=True)
+                    # If we see some results, keep this page
+                    _articles = driver.find_elements(By.XPATH, "//div[@role='article']")
+                    if _articles is not None:
+                        break
+                except Exception:
+                    continue
+        except Exception as e:
+            print(f"[WARNING] Could not navigate to search page: {e}", flush=True)
+    
+    # Try to navigate explicitly to the Posts tab to ensure feed is visible
+    try:
+        posts_selectors = [
+            (By.XPATH, "//a[contains(., 'Posts') and not(contains(., 'About'))]"),
+            (By.XPATH, "//a[contains(., 'Opslag')]"),
+            (By.XPATH, "//a[contains(@href, '/posts')]"),
+            (By.XPATH, "//a[@role='tab' and (contains(., 'Posts') or contains(., 'Opslag'))]"),
+        ]
+        clicked_posts = False
+        for by, selector in posts_selectors:
+            try:
+                el = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((by, selector)))
+                driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", el)
+                sleep(0.5)
+                el.click()
+                clicked_posts = True
+                print("[INFO] Clicked Posts tab", flush=True)
+                break
+            except Exception:
+                continue
+        if not clicked_posts and page_name_from_url:
+            # Try direct navigation to posts route
+            candidate_urls = [
+                f"https://www.facebook.com/{page_name_from_url}/posts",
+                f"https://m.facebook.com/{page_name_from_url}/posts",
+                f"https://www.facebook.com/{page_name_from_url}",
+            ]
+            for url in candidate_urls:
+                try:
+                    driver.get(url)
+                    sleep(3)
+                    if "/posts" in driver.current_url or page_name_from_url in driver.current_url:
+                        print(f"[INFO] Navigated directly to: {driver.current_url}", flush=True)
+                        break
+                except Exception:
+                    continue
+        # Wait a bit for the feed to stabilize
+        sleep(3)
+    except Exception:
+        pass
+    
+    # Scroll to load more posts - use more aggressive scrolling strategy
+    # Facebook uses lazy loading, so we need to scroll slowly and wait for content
+    last_height = driver.execute_script("return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight)")
     scrolls = 0
-    max_scrolls = 100  # Increased from 50 to scroll more (up to 100 times)
+    max_scrolls = 100
+    # If we only need the first post, skip scrolling entirely
+    try:
+        if (max_posts or 0) <= 1 or os.environ.get("FACEBOOK_NO_SCROLL") == "1":
+            max_scrolls = 0
+            print("[INFO] Skipping scroll (first-post mode)", flush=True)
+    except Exception:
+        pass
     consecutive_no_change = 0
+    last_post_count = 0
 
     print(f"[INFO] Starting to scroll (initial height: {last_height}, max scrolls: {max_scrolls})", flush=True)
     
-    while scrolls < max_scrolls:
-        
-        # Scroll incrementally (like article method - 500px at a time)
-        driver.execute_script("window.scrollBy(0, 500);")
-        sleep(2)  # Wait for content to load
-        
-        # Also scroll to bottom occasionally to trigger lazy loading
-        if scrolls % 3 == 0:  # Every 3rd scroll
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            sleep(3)
-        
-        # Also try scrolling back up a bit and down again to trigger loading
-        if scrolls % 7 == 0 and scrolls > 0:
-            driver.execute_script("window.scrollBy(0, -200);")
-            sleep(1)
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            sleep(3)
-        
-        # Check if page height changed
-        new_height = driver.execute_script("return document.body.scrollHeight")
-        
-        if new_height == last_height:
-            consecutive_no_change += 1
-            # Try scrolling a bit more to trigger loading
-            driver.execute_script("window.scrollBy(0, 1000);")
-            sleep(2)
-            new_height = driver.execute_script("return document.body.scrollHeight")
-            
-            # Only break if we've had no change for many consecutive scrolls
-            # But be more patient - Facebook sometimes takes time to load
-            if consecutive_no_change >= 20:  # Increased from 15 to 20
-                print(f"[INFO] No more content loading after {consecutive_no_change} consecutive scrolls", flush=True)
+    # First, wait a bit for initial content to load
+    sleep(3)
+    
+    # Try to capture a reference to the feed container if present
+    feed_container = None
+    try:
+        for by, selector in [
+            (By.XPATH, "//*[@role='feed']"),
+            (By.XPATH, "//*[@aria-label='Timeline']"),
+            (By.XPATH, "//*[@data-pagelet='ProfileTimeline']"),
+        ]:
+            try:
+                feed_container = driver.find_element(by, selector)
+                print("[INFO] Found feed container", flush=True)
                 break
+            except Exception:
+                continue
+    except Exception:
+        pass
+    
+    while scrolls < max_scrolls:
+        # Strategy 1: Get current scroll position using multiple methods
+        current_scroll = driver.execute_script("""
+            return Math.max(
+                window.pageYOffset || 0,
+                window.scrollY || 0,
+                document.documentElement.scrollTop || 0,
+                document.body.scrollTop || 0,
+                document.documentElement.scrollTop || 0
+            );
+        """)
+        
+        viewport_height = driver.execute_script("return window.innerHeight || document.documentElement.clientHeight || 800;")
+        scroll_amount = viewport_height * 0.8  # Scroll 80% of viewport
+        
+        # Strategy 2: Try multiple scrolling methods to ensure it works
+        # Method 1: window.scrollBy
+        driver.execute_script(f"window.scrollBy(0, {scroll_amount});")
+        sleep(0.5)
+        
+        # Method 2: window.scrollTo with calculated position
+        target_scroll = current_scroll + scroll_amount
+        driver.execute_script(f"window.scrollTo(0, {target_scroll});")
+        sleep(0.5)
+        
+        # Method 3: document.documentElement.scrollTop
+        driver.execute_script(f"document.documentElement.scrollTop = {target_scroll};")
+        sleep(0.5)
+        
+        # Method 4: document.body.scrollTop
+        driver.execute_script(f"document.body.scrollTop = {target_scroll};")
+        sleep(0.5)
+        
+        # Method 5: Try scrolling the main content container (Facebook often uses a specific div)
+        driver.execute_script("""
+            // Try to find and scroll the main content container
+            var containers = document.querySelectorAll('[role="main"], [data-pagelet="FeedUnit"], .x1n2onr6');
+            for (var i = 0; i < containers.length; i++) {
+                if (containers[i].scrollHeight > containers[i].clientHeight) {
+                    containers[i].scrollTop += arguments[0];
+                }
+            }
+        """, scroll_amount)
+        sleep(0.5)
+        
+        # Method 5b: Explicitly scroll the feed container if we captured it
+        if feed_container:
+            try:
+                driver.execute_script("arguments[0].scrollTop = arguments[0].scrollTop + arguments[1];", feed_container, scroll_amount)
+                sleep(0.5)
+            except Exception:
+                pass
+        
+        # Method 6: Use keyboard Page Down (simulates real user)
+        from selenium.webdriver.common.keys import Keys
+        from selenium.webdriver.common.action_chains import ActionChains
+        try:
+            body = driver.find_element(By.TAG_NAME, "body")
+            # Try multiple keyboard methods
+            body.send_keys(Keys.PAGE_DOWN)
+            sleep(0.3)
+            body.send_keys(Keys.PAGE_DOWN)
+            sleep(0.3)
+            # Try sending multiple arrow downs
+            for _ in range(10):
+                body.send_keys(Keys.ARROW_DOWN)
+            sleep(0.3)
+        except:
+            pass
+        
+        # Method 7: Use ActionChains to scroll (more reliable)
+        try:
+            actions = ActionChains(driver)
+            # Scroll using mouse wheel simulation
+            actions.move_by_offset(0, 0).perform()  # Move to center
+            actions.scroll_by_amount(0, scroll_amount).perform()
+            sleep(0.5)
+            # Scroll down using mouse wheel simulation
+            actions.send_keys(Keys.PAGE_DOWN).perform()
+            sleep(0.3)
+            actions.send_keys(Keys.PAGE_DOWN).perform()
+            sleep(0.3)
+        except:
+            pass
+        
+        # Method 8: Try to find and scroll the actual scrollable container
+        try:
+            scrollable_containers = driver.execute_script("""
+                var containers = [];
+                var allElements = document.querySelectorAll('*');
+                for (var i = 0; i < allElements.length; i++) {
+                    var el = allElements[i];
+                    var style = window.getComputedStyle(el);
+                    if (style.overflowY === 'auto' || style.overflowY === 'scroll' || 
+                        style.overflow === 'auto' || style.overflow === 'scroll') {
+                        if (el.scrollHeight > el.clientHeight) {
+                            containers.push(el);
+                        }
+                    }
+                }
+                return containers;
+            """)
+            if scrollable_containers:
+                # Scroll the first scrollable container
+                driver.execute_script("arguments[0].scrollTop += arguments[1];", scrollable_containers[0], scroll_amount)
+                sleep(0.5)
+        except:
+            pass
+        
+        # Wait for content to load - Facebook needs time to lazy load
+        sleep(2.5)  # Increased wait time for lazy loading
+        
+        # Also wait for any loading indicators to disappear
+        try:
+            WebDriverWait(driver, 3).until_not(
+                EC.presence_of_element_located((By.XPATH, "//*[contains(@class, 'loading') or contains(@aria-label, 'Loading')]"))
+            )
+        except:
+            pass  # No loading indicator or timeout is fine
+        
+        # Strategy 3: Scroll to bottom every few scrolls
+        if scrolls % 3 == 0:  # Every 3rd scroll
+            # Get max scroll height
+            max_scroll = driver.execute_script("""
+                return Math.max(
+                    document.body.scrollHeight,
+                    document.documentElement.scrollHeight,
+                    document.body.offsetHeight,
+                    document.documentElement.offsetHeight
+                );
+            """)
+            # Scroll to bottom using multiple methods
+            driver.execute_script(f"window.scrollTo(0, {max_scroll});")
+            driver.execute_script(f"document.documentElement.scrollTop = {max_scroll};")
+            driver.execute_script(f"document.body.scrollTop = {max_scroll};")
+            sleep(2.5)  # Wait longer for bottom content
+            # Also try to scroll feed container to bottom
+            if feed_container:
+                try:
+                    driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", feed_container)
+                    sleep(1.5)
+                except Exception:
+                    pass
+        
+        # Strategy 4: Try scrolling to trigger intersection observer
+        # Facebook uses intersection observer for lazy loading
+        driver.execute_script("""
+            // Trigger scroll event manually
+            window.dispatchEvent(new Event('scroll'));
+            // Also try to trigger resize
+            window.dispatchEvent(new Event('resize'));
+        """)
+        sleep(1)
+        
+        # Strategy 5: Try clicking/activating elements that might trigger loading
+        if scrolls % 5 == 0 and scrolls > 0:
+            try:
+                # Look for "See more" or "Load more" buttons
+                see_more_buttons = driver.find_elements(By.XPATH, "//span[contains(text(), 'See more') or contains(text(), 'Se mere')]")
+                for btn in see_more_buttons[:3]:  # Try first 3 buttons
+                    try:
+                        driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", btn)
+                        sleep(1)
+                        btn.click()
+                        sleep(2)
+                        print(f"[INFO] Clicked 'See more' button", flush=True)
+                    except:
+                        pass
+            except:
+                pass
+        
+        # Check if page height changed (try multiple methods)
+        new_height = driver.execute_script("return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight, document.body.offsetHeight, document.documentElement.offsetHeight);")
+        current_scroll_pos = driver.execute_script("""
+            return Math.max(
+                window.pageYOffset || 0,
+                window.scrollY || 0,
+                document.documentElement.scrollTop || 0,
+                document.body.scrollTop || 0
+            );
+        """)
+        
+        # Debug: Print scroll position to verify scrolling is working
+        if scrolls % 5 == 0:
+            print(f"[DEBUG] Scroll {scrolls}: current_scroll={current_scroll_pos}, target_scroll={target_scroll}, height={new_height}", flush=True)
+        
+        # Also check if we can see more posts by counting article elements
+        # This is more reliable than checking scroll position in headless mode
+        try:
+            current_articles = driver.find_elements(By.XPATH, "//div[@role='article']")
+            current_post_count = len(current_articles)
+            if current_post_count > last_post_count:
+                print(f"[INFO] Found more posts! Count increased from {last_post_count} to {current_post_count}", flush=True)
+                last_post_count = current_post_count
+                consecutive_no_change = 0  # Reset counter if we found more posts
+                # If we found more posts, scrolling is working even if position doesn't change
+                print(f"[INFO] Scrolling is working - found {current_post_count} posts so far", flush=True)
+        except:
+            pass
+        
+        # Also check if we have enough posts already
+        if last_post_count >= max_posts * 2:  # Get extra posts for filtering
+            print(f"[INFO] Found {last_post_count} posts, which should be enough. Stopping scroll.", flush=True)
+            break
+        
+        # Check if we got more posts (more reliable than height check in headless mode)
+        if current_post_count == last_post_count and current_post_count > 0:
+            consecutive_no_change += 1
+            
+            # Try more aggressive scrolling if no new posts
+            if consecutive_no_change % 3 == 0:
+                # Scroll way down and back up to trigger loading
+                max_scroll = driver.execute_script("return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);")
+                driver.execute_script(f"window.scrollTo(0, {max_scroll});")
+                sleep(2)
+                driver.execute_script("window.scrollTo(0, 0);")
+                sleep(1)
+                driver.execute_script(f"window.scrollTo(0, {max_scroll});")
+                sleep(2)
+                # Also try keyboard scrolling
+                try:
+                    body = driver.find_element(By.TAG_NAME, "body")
+                    for _ in range(5):
+                        body.send_keys(Keys.END)
+                        sleep(0.5)
+                    for _ in range(3):
+                        body.send_keys(Keys.PAGE_DOWN)
+                        sleep(0.5)
+                except:
+                    pass
+                # Re-check post count
+                try:
+                    current_articles = driver.find_elements(By.XPATH, "//div[@role='article']")
+                    current_post_count = len(current_articles)
+                    if current_post_count > last_post_count:
+                        print(f"[INFO] Aggressive scroll worked! Found {current_post_count} posts (was {last_post_count})", flush=True)
+                        last_post_count = current_post_count
+                        consecutive_no_change = 0
+                except:
+                    pass
+            
+            # Only break if we've had no new posts for many consecutive scrolls
+            if consecutive_no_change >= 20:  # Increased patience
+                print(f"[INFO] No more posts loading after {consecutive_no_change} consecutive scrolls (found {last_post_count} posts total)", flush=True)
+                # Try one last aggressive scroll
+                max_scroll = driver.execute_script("return Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);")
+                driver.execute_script(f"window.scrollTo(0, {max_scroll * 2});")
+                sleep(3)
+                # Final check
+                try:
+                    current_articles = driver.find_elements(By.XPATH, "//div[@role='article']")
+                    final_count = len(current_articles)
+                    if final_count > last_post_count:
+                        print(f"[INFO] Final scroll found {final_count} posts!", flush=True)
+                        last_post_count = final_count
+                    else:
+                        break
+                except:
+                    break
+        
+        # Check if height changed or we found more posts
+        if new_height == last_height and current_post_count == last_post_count:
+            consecutive_no_change += 1
         else:
             consecutive_no_change = 0  # Reset counter if we got new content
-            print(f"[INFO] Content loaded! Height changed from {last_height} to {new_height}", flush=True)
+            if new_height != last_height:
+                print(f"[INFO] Content loaded! Height changed from {last_height} to {new_height}", flush=True)
             
         last_height = new_height
         scrolls += 1
         
         # Print progress every 5 scrolls
         if scrolls % 5 == 0:
-            print(f"[INFO] Scroll {scrolls}/{max_scrolls}, height: {new_height}, consecutive no-change: {consecutive_no_change}", flush=True)
+            print(f"[INFO] Scroll {scrolls}/{max_scrolls}, height: {new_height}, scroll pos: {current_scroll_pos}, consecutive no-change: {consecutive_no_change}", flush=True)
 
     print(f"[INFO] Finished scrolling: {scrolls} scrolls completed, final height: {last_height}", flush=True)
     
-    # Scroll a few more times at the end to ensure all content is loaded
+    # Final aggressive scrolls to ensure all content is loaded
     print(f"[INFO] Doing final scrolls to ensure all posts are loaded...", flush=True)
-    for final_scroll in range(5):
+    for final_scroll in range(10):  # Increased from 5 to 10
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         sleep(2)
-        driver.execute_script("window.scrollBy(0, -300);")
+        # Try scrolling back up a bit and down again
+        driver.execute_script("window.scrollBy(0, -500);")
         sleep(1)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         sleep(2)
+        # Trigger events
+        driver.execute_script("window.dispatchEvent(new Event('scroll')); window.dispatchEvent(new Event('resize'));")
+        sleep(1)
     
     # Wait a bit more for content to load
     sleep(5)
@@ -319,6 +1745,169 @@ def scrape_facebook_group_posts(
     # Try multiple selectors and combine results to get more posts
     all_post_elements = []
     found_ids = set()
+    
+    # Prefer the very first feed post using aria-posinset='1'
+    try:
+        first_article = None
+        try:
+            candidates = driver.find_elements(By.XPATH, "//div[@role='article' and @aria-posinset='1']")
+            if candidates:
+                first_article = candidates[0]
+        except Exception:
+            first_article = None
+        if not first_article:
+            try:
+                pos_elem = driver.find_element(By.XPATH, "//*[@aria-posinset='1']")
+                try:
+                    first_article = pos_elem.find_element(By.XPATH, "./ancestor::div[@role='article'][1]")
+                except Exception:
+                    first_article = pos_elem
+            except Exception:
+                first_article = None
+        if first_article:
+            outer_html = first_article.get_attribute("outerHTML")
+            if outer_html:
+                temp_soup = BeautifulSoup(outer_html, "html.parser")
+                node = temp_soup.find()
+                if node:
+                    all_post_elements.append(node)
+                    found_ids.add(id(node))
+                    print("[INFO] Seeded first candidate from aria-posinset=1 (top feed post)", flush=True)
+    except Exception as e:
+        print(f"[DEBUG] Could not seed first post via aria-posinset=1: {e}", flush=True)
+    
+    # Author-targeted collection: explicitly find posts by the page name
+    try:
+        if page_name_from_url:
+            # Build common display variants of the page name
+            name_variants = {
+                page_name_from_url,
+                page_name_from_url.replace("-", " ").replace("_", " ").title(),
+                page_name_from_url.replace("-", " ").replace("_", " "),
+            }
+            # Selenium XPaths targeting role=article that contain the author name in header/link
+            xpaths = []
+            for nv in name_variants:
+                if not nv:
+                    continue
+                # Header span or link containing the name
+                xpaths.extend([
+                    f"//div[@role='article'][.//h2//*[contains(normalize-space(.), '{nv}')]]",
+                    f"//div[@role='article'][.//a[contains(normalize-space(.), '{nv}')]]",
+                    f"//div[contains(@class,'x1n2onr6')][.//a[contains(normalize-space(.), '{nv}')]]",
+                ])
+            for xp in xpaths[:10]:  # limit attempts
+                try:
+                    elems = driver.find_elements(By.XPATH, xp)
+                except Exception:
+                    elems = []
+                if not elems:
+                    continue
+                for el in elems:
+                    try:
+                        outer_html = el.get_attribute("outerHTML")
+                        if not outer_html:
+                            continue
+                        temp_soup = BeautifulSoup(outer_html, "html.parser")
+                        root = temp_soup.find()
+                        if not root:
+                            continue
+                        elem_id = id(root)
+                        if elem_id in found_ids:
+                            continue
+                        found_ids.add(elem_id)
+                        all_post_elements.append(root)
+                    except Exception:
+                        continue
+            if all_post_elements:
+                print(f"[INFO] Author-targeted pass found {len(all_post_elements)} elements for '{page_name_from_url}'", flush=True)
+    except Exception as e:
+        print(f"[DEBUG] Author-targeted collection failed: {e}", flush=True)
+    
+    # First, try the specific CSS selector provided by user for better accuracy
+    # This targets posts more precisely: [aria-posinset='1'] .x1jx94hy > div > div > div > div
+    try:
+        # Use Selenium to find elements with this selector (more reliable than BeautifulSoup for complex selectors)
+        # First try with specific aria-posinset='1', then try any aria-posinset
+        specific_selectors = [
+            "[aria-posinset='1'] .x1jx94hy > div > div > div > div",
+            "[aria-posinset] .x1jx94hy > div > div > div > div"
+        ]
+        
+        for css_selector in specific_selectors:
+            try:
+                specific_post_elements = driver.find_elements(By.CSS_SELECTOR, css_selector)
+                if specific_post_elements:
+                    print(f"[INFO] Found {len(specific_post_elements)} elements using specific CSS selector: {css_selector}", flush=True)
+                    # For each found element, find its parent post container
+                    for sel_elem in specific_post_elements:
+                        try:
+                            # Find the parent article or post container
+                            # Try multiple strategies to find the actual post container
+                            parent = None
+                            
+                            # Strategy 1: Find ancestor with role="article"
+                            try:
+                                parent = sel_elem.find_element(By.XPATH, "./ancestor::div[@role='article'][1]")
+                            except:
+                                pass
+                            
+                            # Strategy 2: Find ancestor with class x1n2onr6 (common post container class)
+                            if not parent:
+                                try:
+                                    parent = sel_elem.find_element(By.XPATH, "./ancestor::div[contains(@class, 'x1n2onr6')][1]")
+                                except:
+                                    pass
+                            
+                            # Strategy 3: Find ancestor with aria-posinset attribute
+                            if not parent:
+                                try:
+                                    parent = sel_elem.find_element(By.XPATH, "./ancestor::div[@aria-posinset][1]")
+                                except:
+                                    pass
+                            
+                            # Strategy 4: Use the element itself if no parent found
+                            if not parent:
+                                parent = sel_elem
+                            
+                            # Get the outer HTML and parse it
+                            outer_html = parent.get_attribute("outerHTML")
+                            if outer_html:
+                                temp_soup = BeautifulSoup(outer_html, "html.parser")
+                                if temp_soup.find():
+                                    elem = temp_soup.find()
+                                    elem_id = id(elem)
+                                    if elem_id not in found_ids:
+                                        found_ids.add(elem_id)
+                                        all_post_elements.append(elem)
+                        except Exception as e:
+                            print(f"[DEBUG] Error processing specific selector element: {e}", flush=True)
+                            continue
+                    
+                    # If we found elements with this selector, break (don't try next selector)
+                    if specific_post_elements:
+                        break
+            except Exception as e:
+                print(f"[DEBUG] Could not use CSS selector {css_selector}: {e}", flush=True)
+                continue
+    except Exception as e:
+        print(f"[DEBUG] Could not use specific CSS selector: {e}", flush=True)
+    
+    # Also try finding by aria-posinset attribute directly in BeautifulSoup
+    try:
+        posinset_elements = soup.find_all("div", attrs={"aria-posinset": True})
+        for elem in posinset_elements:
+            # Find nested .x1jx94hy elements
+            nested = elem.select(".x1jx94hy > div > div > div > div")
+            for nested_elem in nested:
+                elem_id = id(nested_elem)
+                if elem_id not in found_ids:
+                    found_ids.add(elem_id)
+                    all_post_elements.append(nested_elem)
+        if posinset_elements:
+            print(f"[INFO] Found {len(posinset_elements)} elements with aria-posinset attribute", flush=True)
+    except Exception as e:
+        print(f"[DEBUG] Could not find aria-posinset elements: {e}", flush=True)
     
     for selector in post_selectors:
         found = soup.find_all("div", selector)
@@ -858,7 +2447,8 @@ def scrape_facebook_group_posts(
 
             # First, try to find the main post text (not comments)
             for text_selector in text_selectors:
-                text_elements = post_element.find_all("div", text_selector, limit=10)
+                # Search any tag, not only divs; FB often uses spans for message
+                text_elements = post_element.find_all(True, text_selector, limit=10)
                 for text_element in text_elements:
                     # Skip if this element is inside a button or link
                     if text_element.find_parent("button") or (text_element.find_parent("a") and text_element.find_parent("a").get("href", "").startswith("#")):
@@ -985,15 +2575,15 @@ def scrape_facebook_group_posts(
                     post_data["post_text"] = all_text[:500]  # Limit length
 
             # Try to find the actual post link (not just author link)
-            # Look for links that contain /posts/, /permalink/, or /story.php
+            # Look for links that contain /posts/, /permalink/, /story.php, /videos/, /watch/, or photo links
             # Also check time links - they often link to the post
             if not post_data["post_link"] or ("/posts/" not in post_data["post_link"] and "/permalink/" not in post_data["post_link"] and "/story.php" not in post_data["post_link"]):
                 # First, try finding links with post patterns
-                post_links = post_element.find_all("a", href=lambda x: x and ("/posts/" in str(x) or "/permalink/" in str(x) or "/story.php" in str(x)))
+                post_links = post_element.find_all("a", href=lambda x: x and ("/posts/" in str(x) or "/permalink/" in str(x) or "/story.php" in str(x) or "/videos/" in str(x) or "/watch/" in str(x) or "photo.php" in str(x)))
                 for link in post_links[:10]:  # Check more links
                     href = link.get("href", "")
                     # Make sure it's a full URL or relative path to a post
-                    if href and ("/posts/" in href or "/permalink/" in href or "/story.php" in href):
+                    if href and ("/posts/" in href or "/permalink/" in href or "/story.php" in href or "/videos/" in href or "/watch/" in href or "photo.php" in href):
                         # Prepend facebook.com if it's a relative URL
                         if href.startswith("/"):
                             href = "https://www.facebook.com" + href
@@ -1013,7 +2603,8 @@ def scrape_facebook_group_posts(
                         time_indicators = ["hr", "min", "ago", "d.", "m.", "y.", "kl.", "for", "timer", "minutter"]
                         if any(indicator in link_text for indicator in time_indicators) and href:
                             # Make sure it's not just a profile link
-                            if "/user/" not in href and "/profile.php" not in href:
+                            allowed = ("/posts/" in href or "/permalink/" in href or "/story.php" in href or "/videos/" in href or "/watch/" in href or "photo.php" in href)
+                            if "/user/" not in href and "/profile.php" not in href and allowed:
                                 if href.startswith("/"):
                                     href = "https://www.facebook.com" + href
                                 post_data["post_link"] = href
@@ -1503,14 +3094,607 @@ def scrape_facebook_group_posts(
                 posts.append(post_data)
                 print(f"[INFO] Added post {len(posts)}: author='{post_data['author_name']}', text_length={len(post_data['post_text'])}", flush=True)
                 print(f"[INFO]   Text preview: {post_data['post_text'][:80]}...", flush=True)
+                # Stop after the first valid post
+                if len(posts) >= 1:
+                    break
             else:
                 print(f"[INFO] Skipped post {idx + 1}: no substantial text found (text_length={len(post_data.get('post_text', ''))})", flush=True)
 
         except Exception as e:
             print(f"[WARNING] Error processing post {idx + 1}: {e}", file=sys.stderr)
             continue
+        if len(posts) >= 1:
+            break
 
+    # Filter to only keep posts authored by the current page/group
+    if page_name_from_url:
+        before = len(posts)
+        posts = [p for p in posts if author_matches_page(p.get("author_name"), page_name_from_url)]
+        after = len(posts)
+        if after != before:
+            print(f"[INFO] Author filter applied: kept {after}/{before} posts for page '{page_name_from_url}'", flush=True)
+
+    # Try GraphQL interception via selenium-wire to fill remaining posts
+    if WIRE_AVAILABLE and hasattr(driver, "requests"):
+        try:
+            print("[INFO] Attempting to collect posts from GraphQL network traffic...", flush=True)
+            graphql_posts = collect_graphql_posts_from_requests(
+                driver,
+                existing_posts=posts,
+                max_posts=max_posts,
+                default_author_name=page_name_from_url or ""
+            )
+            # Deduplicate and merge
+            existing_keys = {create_post_key(p) for p in posts}
+            for p in graphql_posts:
+                # Enforce author filter from network capture as well
+                if page_name_from_url and not author_matches_page(p.get("author_name"), page_name_from_url):
+                    continue
+                try:
+                    k = create_post_key(p)
+                except Exception:
+                    k = None
+                if k and k not in existing_keys and p.get("post_text"):
+                    posts.append(p)
+                    existing_keys.add(k)
+                    print(f"[INFO] Added GraphQL post {len(posts)} via network interception", flush=True)
+                if len(posts) >= max_posts:
+                    break
+        except Exception as e:
+            print(f"[WARNING] GraphQL interception failed: {e}", file=sys.stderr)
+
+    # If we didn't get enough posts, try mbasic fallback pagination (more reliable in headless)
+    if len(posts) < max_posts:
+        try:
+            print(f"[INFO] Only scraped {len(posts)} posts, trying mbasic fallback to reach {max_posts}...", flush=True)
+            # Derive page name from URL again for mbasic
+            page_name = None
+            try:
+                if "/groups/" in group_url:
+                    page_name = group_url.split("/groups/")[-1].split("/")[0].split("?")[0]
+                elif "facebook.com/" in group_url:
+                    page_name = group_url.split("facebook.com/")[-1].split("/")[0].split("?")[0]
+            except Exception:
+                page_name = None
+            if page_name:
+                extra_posts = scrape_mbasic_posts(driver, page_name, max_posts, posts)
+                if len(posts) + len(extra_posts) < max_posts:
+                    # Try HTTP mbasic fallback if still short
+                    http_extra = scrape_mbasic_posts_http(driver, page_name, max_posts, posts + extra_posts)
+                    extra_posts.extend(http_extra)
+                # Deduplicate and extend
+                existing_keys = set()
+                for p in posts:
+                    try:
+                        existing_keys.add(create_post_key(p))
+                    except Exception:
+                        continue
+                for p in extra_posts:
+                    try:
+                        k = create_post_key(p)
+                        if k not in existing_keys:
+                            posts.append(p)
+                            existing_keys.add(k)
+                            print(f"[INFO] Added mbasic post {len(posts)} (fallback)", flush=True)
+                        if len(posts) >= max_posts:
+                            break
+                    except Exception:
+                        continue
+            else:
+                print("[INFO] Could not determine page name for mbasic fallback", flush=True)
+        except Exception as e:
+            print(f"[WARNING] mbasic fallback failed: {e}", file=sys.stderr)
+    
     return posts
+
+
+def scrape_mbasic_posts(
+    driver: webdriver.Chrome,
+    page_name: str,
+    max_posts: int,
+    existing_posts: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """Fallback: use mbasic.facebook.com with pagination to extract more posts."""
+    collected: list[dict[str, str]] = []
+    visited_links: set[str] = set()
+    seen_texts: set[str] = set()
+    
+    # Seed seen_texts from existing posts to avoid duplicates
+    for p in existing_posts or []:
+        txt = (p.get("post_text") or "").strip()
+        if txt:
+            seen_texts.add(re.sub(r"\s+", " ", txt.lower())[:240])
+    
+    def to_abs(url: str) -> str:
+        if url.startswith("http"):
+            return url
+        if url.startswith("/"):
+            return f"https://mbasic.facebook.com{url}"
+        return f"https://mbasic.facebook.com/{url}"
+    
+    # Start at mbasic page
+    # Try timeline first (more posts), then fallback to root if needed
+    url_candidates = [
+        f"https://mbasic.facebook.com/{page_name}?v=timeline",
+        f"https://mbasic.facebook.com/{page_name}/posts",
+        f"https://mbasic.facebook.com/{page_name}",
+    ]
+    url = url_candidates[0]
+    try:
+        driver.get(url)
+        sleep(3)
+    except Exception:
+        pass
+    
+    pages_traversed = 0
+    tried_candidates = 0
+    while len(collected) + len(existing_posts) < max_posts and pages_traversed < 20:
+        pages_traversed += 1
+        soup = BeautifulSoup(driver.page_source, "html.parser")
+        
+        # Find candidate post links
+    anchors = soup.find_all("a", href=True)
+    # Process each candidate link by extracting nearby text from listing (faster) first
+    for a in anchors:
+        href = a["href"]
+        href_lower = href.lower()
+        if not any(s in href_lower for s in ["/story.php", "/permalink.php", "/posts/"]):
+            continue
+            if len(collected) + len(existing_posts) >= max_posts:
+                break
+            abs_url = to_abs(href)
+            if abs_url in visited_links:
+                continue
+            visited_links.add(abs_url)
+            
+            # Try to extract text from the anchor's parent block on the listing page
+            post_block_text = ""
+            try:
+                parent = a.find_parent("div")
+                depth = 0
+                while parent and len(parent.get_text(strip=True)) < 40 and depth < 3:
+                    parent = parent.find_parent("div")
+                    depth += 1
+                if parent:
+                    text = parent.get_text(" ", strip=True)
+                    post_block_text = text
+            except Exception:
+                post_block_text = ""
+            
+            if not post_block_text or len(post_block_text) < 40:
+                # Open the post to get full text
+                try:
+                    driver.get(abs_url)
+                    sleep(2)
+                    psoup = BeautifulSoup(driver.page_source, "html.parser")
+                    # Common mbasic containers that hold story content
+                    content = None
+                    for sel in [
+                        {"id": "m_story_permalink_view"},
+                        {"id": "inline_share"},
+                        {"class": lambda x: x},
+                    ]:
+                        content = psoup.find("div", sel)
+                        if content:
+                            break
+                    text = content.get_text(" ", strip=True) if content else psoup.get_text(" ", strip=True)
+                    post_block_text = text
+                except Exception:
+                    continue
+            
+            # Clean and check text
+            text_clean = re.sub(r"\s+", " ", (post_block_text or "").strip())
+            # Skip obvious UI noise
+            ui_terms = ["like", "comment", "share", "se mere", "see more", "log in", "forgot account"]
+            if any(t in text_clean.lower() for t in ui_terms) and len(text_clean) < 80:
+                continue
+            if len(text_clean) < 40:
+                continue
+            
+            normalized = text_clean.lower()[:240]
+            if normalized in seen_texts:
+                continue
+            seen_texts.add(normalized)
+            
+            # Build post
+            post_link_www = abs_url.replace("mbasic.facebook.com", "www.facebook.com")
+            post = {
+                "post_id": f"mbasic_{len(existing_posts) + len(collected) + 1}",
+                "author_name": page_name.replace("-", " ").title(),
+                "post_text": text_clean,
+                "post_time": "",
+                "post_link": post_link_www,
+                "video_url": "",
+                "video_thumbnail": "",
+                "scraped_at": datetime.now(timezone.utc).isoformat(),
+            }
+            collected.append(post)
+            print(f"[INFO] Collected mbasic post {len(collected)}: {text_clean[:80]}...", flush=True)
+            
+            if len(collected) + len(existing_posts) >= max_posts:
+                break
+        
+        if len(collected) + len(existing_posts) >= max_posts:
+            break
+        
+        # Find pagination link ("See more posts", etc.)
+        next_link = None
+        # 1) Specific container Facebook uses on mbasic
+        try:
+            more_div = soup.find("div", id="m_more_item")
+            if more_div:
+                a_more = more_div.find("a", href=True)
+                if a_more:
+                    next_link = to_abs(a_more["href"])
+        except Exception:
+            pass
+        # 2) Common texts in English/Danish
+        if not next_link:
+            for text in ["See more posts", "Older posts", "See more", "Se flere opslag", "Ældre opslag", "Se mere"]:
+                link = soup.find("a", string=lambda x: x and text.lower() in x.lower())
+                if link and link.get("href"):
+                    next_link = to_abs(link["href"])
+                    break
+        # 3) Heuristics on href
+        if not next_link:
+            for a in anchors:
+                href_raw = a.get("href", "")
+                href = href_raw.lower()
+                if any(k in href for k in ["more", "older", "sectionloading", "unit_cursor", "timeline/stream"]):
+                    if "/story.php" not in href and "/permalink.php" not in href:
+                        next_link = to_abs(href_raw)
+                        break
+        # 4) If still nothing and we haven't tried other candidates, try next url candidate
+        if not next_link and tried_candidates < len(url_candidates) - 1 and len(collected) == 0 and pages_traversed <= 2:
+            tried_candidates += 1
+            url = url_candidates[tried_candidates]
+            print(f"[INFO] Switching mbasic URL candidate: {url}", flush=True)
+            try:
+                driver.get(url)
+                sleep(2)
+            except Exception:
+                pass
+            continue
+        
+        if not next_link:
+            print("[INFO] No more pagination links on mbasic", flush=True)
+            break
+        
+        try:
+            driver.get(next_link)
+            sleep(2)
+        except Exception:
+            break
+    
+    return collected
+
+
+def scrape_mbasic_posts_http(
+    driver: webdriver.Chrome,
+    page_name: str,
+    max_posts: int,
+    existing_posts: list[dict[str, str]],
+) -> list[dict[str, str]]:
+    """HTTP-only mbasic fallback using requests with transferred Selenium cookies."""
+    if requests is None:
+        print("[INFO] requests not available, skipping HTTP mbasic fallback", flush=True)
+        return []
+    
+    session = requests.Session()
+    # Transfer cookies from Selenium
+    try:
+        for c in driver.get_cookies():
+            try:
+                domain = c.get("domain") or ".facebook.com"
+                session.cookies.set(c.get("name"), c.get("value"), domain=domain)
+            except Exception:
+                continue
+    except Exception:
+        pass
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15A372 Safari/604.1",
+        "Accept-Language": "en-US,en;q=0.9,da;q=0.8",
+    }
+    
+    def abs_url(u: str) -> str:
+        if u.startswith("http"):
+            return u
+        if u.startswith("/"):
+            return f"https://mbasic.facebook.com{u}"
+        return f"https://mbasic.facebook.com/{u}"
+    
+    collected: list[dict[str, str]] = []
+    seen_texts = {re.sub(r"\\s+", " ", (p.get("post_text") or "").strip().lower())[:240] for p in (existing_posts or []) if p.get("post_text")}
+    visited_story_urls: set[str] = set()
+    
+    url_candidates = [
+        f"https://mbasic.facebook.com/{page_name}?v=timeline",
+        f"https://mbasic.facebook.com/{page_name}/posts",
+        f"https://mbasic.facebook.com/{page_name}",
+    ]
+    next_url: Optional[str] = url_candidates[0]
+    tried_idx = 0
+    
+    pages = 0
+    while next_url and len(collected) + len(existing_posts) < max_posts and pages < 30:
+        pages += 1
+        try:
+            resp = session.get(next_url, headers=headers, timeout=20)
+            html = resp.text
+        except Exception as e:
+            print(f"[DEBUG] HTTP get failed for {next_url}: {e}", flush=True)
+            # Try next candidate base URL once if initial fails
+            if tried_idx < len(url_candidates) - 1:
+                tried_idx += 1
+                next_url = url_candidates[tried_idx]
+                continue
+            break
+        
+        soup = BeautifulSoup(html, "htmlparser") if "htmlparser" in dir(BeautifulSoup) else BeautifulSoup(html, "html.parser")
+        
+        # Find candidate story links on listing page
+        anchors = soup.find_all("a", href=True)
+        story_links: list[str] = []
+        for a in anchors:
+            href = a["href"]
+            href_l = href.lower()
+            if any(s in href_l for s in ["/story.php", "/permalink.php", "/posts/"]):
+                story_links.append(abs_url(href))
+        
+        # Visit each story link to extract full text
+        for story_url in story_links:
+            if len(collected) + len(existing_posts) >= max_posts:
+                break
+            if story_url in visited_story_urls:
+                continue
+            visited_story_urls.add(story_url)
+            try:
+                r = session.get(story_url, headers=headers, timeout=20)
+                psoup = BeautifulSoup(r.text, "html.parser")
+                content = None
+                # Typical mbasic containers
+                for sel in [
+                    {"id": "m_story_permalink_view"},
+                    {"id": "root"},
+                    {"class": lambda x: x},
+                ]:
+                    content = psoup.find("div", sel)
+                    if content:
+                        break
+                text = content.get_text(" ", strip=True) if content else psoup.get_text(" ", strip=True)
+                text = re.sub(r"\\s+", " ", text or "").strip()
+                # Filter out obvious UI noise and too-short texts
+                if len(text) < 40:
+                    continue
+                ui_terms = ["like", "comment", "share", "see more", "se mere", "log in", "forgot account"]
+                if any(t in text.lower() for t in ui_terms) and len(text) < 80:
+                    continue
+                normalized = text.lower()[:240]
+                if normalized in seen_texts:
+                    continue
+                seen_texts.add(normalized)
+                
+                post = {
+                    "post_id": f"http_{len(existing_posts) + len(collected) + 1}",
+                    "author_name": page_name.replace("-", " ").title(),
+                    "post_text": text,
+                    "post_time": "",
+                    "post_link": story_url.replace("mbasic.facebook.com", "www.facebook.com"),
+                    "video_url": "",
+                    "video_thumbnail": "",
+                    "scraped_at": datetime.now(timezone.utc).isoformat(),
+                }
+                collected.append(post)
+                print(f"[INFO] HTTP mbasic collected {len(collected)}: {text[:80]}...", flush=True)
+            except Exception as e:
+                print(f"[DEBUG] HTTP story fetch failed {story_url}: {e}", flush=True)
+                continue
+        
+        if len(collected) + len(existing_posts) >= max_posts:
+            break
+        
+        # Find pagination link
+        next_link = None
+        try:
+            more_div = soup.find("div", id="m_more_item")
+            if more_div:
+                a_more = more_div.find("a", href=True)
+                if a_more:
+                    next_link = abs_url(a_more["href"])
+        except Exception:
+            pass
+        if not next_link:
+            texts = ["See more posts", "Older posts", "See more", "Se flere opslag", "Ældre opslag", "Se mere"]
+            for t in texts:
+                a = soup.find("a", string=lambda x: x and t.lower() in x.lower())
+                if a and a.get("href"):
+                    next_link = abs_url(a["href"])
+                    break
+        if not next_link:
+            # Heuristic: find links containing cursor params
+            for a in anchors:
+                href = a.get("href", "").lower()
+                raw = a.get("href", "")
+                if any(k in href for k in ["more", "older", "sectionloading", "unit_cursor", "timeline/stream"]):
+                    if "/story.php" not in href and "/permalink.php" not in href:
+                        next_link = abs_url(raw)
+                        break
+        if not next_link:
+            # Try switching to next base candidate once if no progress yet
+            if tried_idx < len(url_candidates) - 1 and len(collected) == 0 and pages <= 2:
+                tried_idx += 1
+                next_url = url_candidates[tried_idx]
+                print(f"[INFO] HTTP mbasic switching base URL to {next_url}", flush=True)
+                continue
+            print("[INFO] HTTP mbasic: no more pagination", flush=True)
+            break
+        next_url = next_link
+    
+    return collected
+
+
+def collect_graphql_posts_from_requests(
+    driver,
+    existing_posts: list[dict[str, str]],
+    max_posts: int,
+    default_author_name: str = "",
+) -> list[dict[str, str]]:
+    """Scan selenium-wire captured requests for GraphQL responses and extract posts."""
+    collected: list[dict[str, str]] = []
+    if not hasattr(driver, "requests"):
+        return collected
+    
+    # Build set of normalized existing texts to avoid duplicates
+    import re
+    seen_texts = set()
+    for p in existing_posts or []:
+        text = (p.get("post_text") or "").strip()
+        if text:
+            norm = re.sub(r"\s+", " ", text.lower())[:240]
+            seen_texts.add(norm)
+    
+    # Helper: recursively search dicts/lists for post-like objects
+    def extract_from_obj(obj) -> list[dict[str, str]]:
+        results: list[dict[str, str]] = []
+        if isinstance(obj, dict):
+            # Direct post-like node
+            post_id = None
+            post_text = None
+            author_name = None
+            # Try common shapes
+            try:
+                # Comet story locations
+                # obj.get('comet_sections',{}).get('content',{}).get('story' ... )
+                story = None
+                cs = obj.get("comet_sections")
+                if isinstance(cs, dict):
+                    content = cs.get("content")
+                    if isinstance(content, dict):
+                        story = content.get("story")
+                    if story is None:
+                        # Sometimes under context_layout.story
+                        cl = cs.get("context_layout")
+                        if isinstance(cl, dict):
+                            s2 = cl.get("story")
+                            if isinstance(s2, dict):
+                                story = s2
+                if story is None and "story" in obj and isinstance(obj["story"], dict):
+                    story = obj["story"]
+                if story:
+                    # message text
+                    msg = story.get("message") or {}
+                    if isinstance(msg, dict) and isinstance(msg.get("text"), str):
+                        post_text = msg.get("text")
+                    # feedback/story for post_id
+                    feedback = story.get("feedback") or {}
+                    if isinstance(feedback, dict):
+                        st = feedback.get("story") or {}
+                        if isinstance(st, dict) and isinstance(st.get("post_id"), str):
+                            post_id = st.get("post_id")
+                    # author
+                    actor_section = story.get("comet_sections", {}).get("actor_photo", {}).get("story")
+                    if isinstance(actor_section, dict):
+                        actors = actor_section.get("actors")
+                        if isinstance(actors, list) and actors and isinstance(actors[0], dict):
+                            author_name = actors[0].get("name")
+                # Alternative shapes: node->comet_sections...
+            except Exception:
+                pass
+            
+            # Fallbacks: generic keys
+            if not post_text:
+                if isinstance(obj.get("message"), dict) and isinstance(obj["message"].get("text"), str):
+                    post_text = obj["message"]["text"]
+            
+            if not post_id:
+                # Sometimes 'post_id' floats in nested dicts
+                if "post_id" in obj and isinstance(obj["post_id"], str):
+                    post_id = obj["post_id"]
+            
+            if not author_name:
+                # Try 'actor' or 'author'
+                if isinstance(obj.get("actor"), dict) and isinstance(obj["actor"].get("name"), str):
+                    author_name = obj["actor"]["name"]
+                elif isinstance(obj.get("author"), dict) and isinstance(obj["author"].get("name"), str):
+                    author_name = obj["author"]["name"]
+            
+            if post_text and (post_id or len(post_text) > 40):
+                # Build post
+                norm = re.sub(r"\s+", " ", post_text.lower())[:240]
+                if norm not in seen_texts:
+                    seen_texts.add(norm)
+                    collected_post = {
+                        "post_id": post_id or f"graphql_{len(existing_posts) + len(collected) + 1}",
+                        "author_name": author_name or (default_author_name.replace("-", " ").title() if default_author_name else ""),
+                        "post_text": post_text,
+                        "post_time": "",
+                        "post_link": "",
+                        "video_url": "",
+                        "video_thumbnail": "",
+                        "scraped_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                    results.append(collected_post)
+            
+            # Recurse into children
+            for v in obj.values():
+                results.extend(extract_from_obj(v))
+        elif isinstance(obj, list):
+            for item in obj:
+                results.extend(extract_from_obj(item))
+        return results
+    
+    # Iterate recorded requests; newest last
+    for req in getattr(driver, "requests", []):
+        try:
+            if not req.response:
+                continue
+            url = (req.url or "").lower()
+            if "graphql" not in url:
+                continue
+            # Only POST responses with body
+            body_bytes = getattr(req.response, "body", b"")
+            if not body_bytes:
+                continue
+            try:
+                text = body_bytes.decode("utf-8", errors="ignore")
+            except Exception:
+                continue
+            
+            # Some GraphQL endpoints return NDJSON (newline-delimited)
+            lines = [line for line in text.splitlines() if line.strip()]
+            for line in lines:
+                try:
+                    data = json.loads(line)
+                except Exception:
+                    # Some are standard JSON (not NDJSON)
+                    try:
+                        data = json.loads(text)
+                        # Consume whole body once
+                        lines = []
+                    except Exception:
+                        continue
+                posts_from_line = extract_from_obj(data)
+                for p in posts_from_line:
+                    if len(collected) + len(existing_posts) >= max_posts:
+                        break
+                    # Avoid adding trivially short UI text
+                    if isinstance(p.get("post_text"), str) and len(p["post_text"]) >= 40:
+                        collected.append(p)
+                if len(collected) + len(existing_posts) >= max_posts:
+                    break
+        except Exception:
+            continue
+        if len(collected) + len(existing_posts) >= max_posts:
+            break
+    
+    # Clear captured requests to avoid growth across runs
+    try:
+        driver.requests.clear()  # type: ignore
+    except Exception:
+        pass
+    
+    return collected
 
 
 def write_payload(
@@ -1543,6 +3727,10 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         "--group-url",
         required=True,
         help="URL of the Facebook group to scrape (e.g., https://www.facebook.com/groups/groupname)",
+    )
+    parser.add_argument(
+        "--search-query",
+        help="Optional search query to run inside the group/page (e.g., 'socialdemokratiet')",
     )
     parser.add_argument(
         "--email",
@@ -1601,17 +3789,27 @@ def main() -> int:
 
     driver = None
     try:
-        print("[INFO] Setting up Chrome driver...", flush=True)
-        driver = setup_chrome_driver(headless=args.headless)
-        print("[INFO] Chrome driver ready", flush=True)
+        print("[INFO] Setting up browser driver...", flush=True)
+        # Try Firefox first, fall back to Chrome if Firefox is not available
+        try:
+            driver = setup_driver(browser="firefox", headless=args.headless)
+            print("[INFO] Firefox driver ready", flush=True)
+        except Exception as e:
+            print(f"[WARNING] Firefox not available: {e}, using Chrome instead", flush=True)
+            driver = setup_driver(browser="chrome", headless=args.headless)
+            print("[INFO] Chrome driver ready", flush=True)
 
-        # Attempt login if credentials provided
-        if args.email and args.password:
-            print(f"[INFO] Attempting login with email: {args.email[:3]}***", flush=True)
-            login_success = login_to_facebook(driver, args.email, args.password)
+        # Attempt login using CLI flags or environment variables as fallback
+        email = (args.email or os.environ.get("FACEBOOK_EMAIL") or "").strip()
+        password = (args.password or os.environ.get("FACEBOOK_PASSWORD") or "").strip()
+        if email and password:
+            print(f"[INFO] Attempting login with email: {email[:3]}***", flush=True)
+            login_success = login_to_facebook(driver, email, password)
             print(f"[INFO] Login result: {login_success}", flush=True)
+            if not login_success:
+                print("[WARNING] Proceeding without login (login failed)", flush=True)
         else:
-            print("[INFO] No credentials provided, accessing as guest", flush=True)
+            print("[INFO] No credentials provided (flags/env), accessing as guest", flush=True)
 
         # Scrape posts
         print(f"[INFO] Starting to scrape posts (max: {args.max_posts})", flush=True)
@@ -1620,12 +3818,72 @@ def main() -> int:
             group_url,
             max_posts=args.max_posts,
             scroll_pause=args.scroll_pause,
+            search_query=(args.search_query or None),
         )
         print(f"[INFO] Scraped {len(posts)} posts", flush=True)
 
         # Write results (even if empty, so we know the script ran)
         write_payload(posts, group_url, output_path)
         
+        # Persist first post to per-party list with timestamp (dedup by link/text)
+        try:
+            # Determine page slug and party code
+            page_slug = None
+            if "/groups/" in group_url:
+                page_slug = group_url.split("/groups/")[-1].split("/")[0].split("?")[0].lower()
+            elif "facebook.com/" in group_url:
+                page_slug = group_url.split("facebook.com/")[-1].split("/")[0].split("?")[0].lower()
+            party_code = None
+            if page_slug:
+                normalized = page_slug.replace("-", "").replace("_", "")
+                party_code = PARTY_NAME_TO_CODE.get(normalized)
+            if posts and party_code:
+                # Build minimal record with scrapedAt timestamp
+                post = dict(posts[0])
+                post["scrapedAt"] = datetime.now(timezone.utc).isoformat()
+                
+                # Load or init store
+                try:
+                    PARTY_POSTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+                    if PARTY_POSTS_FILE.exists():
+                        store = json.loads(PARTY_POSTS_FILE.read_text(encoding="utf-8") or "{}")
+                    else:
+                        store = {}
+                except Exception:
+                    store = {}
+                
+                posts_list = store.get(party_code) or []
+                new_link = (post.get("post_link") or "").strip().lower()
+                new_text_norm = re.sub(r"\s+", " ", (post.get("post_text") or "").strip().lower())[:240]
+                exists = False
+                for existing in posts_list:
+                    link = (existing.get("post_link") or "").strip().lower()
+                    txt = re.sub(r"\s+", " ", (existing.get("post_text") or "").strip().lower())[:240]
+                    if (new_link and link and new_link == link) or (new_text_norm and txt and new_text_norm == txt):
+                        exists = True
+                        break
+                if not exists:
+                    posts_list.append(post)
+                    store[party_code] = posts_list
+                    # Also append to ALL list
+                    all_list = store.get("ALL") or []
+                    store["ALL"] = all_list
+                    all_exists = False
+                    for ex in all_list:
+                        link = (ex.get("post_link") or "").strip().lower()
+                        txt = re.sub(r"\s+", " ", (ex.get("post_text") or "").strip().lower())[:240]
+                        if (new_link and link and new_link == link) or (new_text_norm and txt and new_text_norm == txt):
+                            all_exists = True
+                            break
+                    if not all_exists:
+                        all_list.append(post)
+                    tmp = PARTY_POSTS_FILE.with_suffix(".tmp")
+                    tmp.write_text(json.dumps(store, ensure_ascii=False, indent=2), encoding="utf-8")
+                    tmp.replace(PARTY_POSTS_FILE)
+                    print(f"[SUCCESS] Appended first post to party list '{party_code}'", flush=True)
+        except Exception as persist_err:
+            print(f"[WARNING] Failed to persist party post list: {persist_err}", flush=True)
+
         if not posts:
             print("[WARNING] No posts were scraped. Facebook may have changed their HTML structure.", file=sys.stderr)
             print("[INFO] You may need to update the CSS selectors in the script.", file=sys.stderr)

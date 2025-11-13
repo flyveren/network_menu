@@ -1,21 +1,39 @@
 FROM node:20-alpine
 
-# Install Python, BeautifulSoup, Selenium dependencies, and utilities
+# Install Python, BeautifulSoup, Selenium dependencies, OCR libraries, SQLite, and utilities
 RUN apk add --no-cache \
     python3 \
     py3-pip \
     py3-beautifulsoup4 \
     py3-lxml \
+    xvfb \
     curl \
     ca-certificates \
     openssl \
     chromium \
     chromium-chromedriver \
-    bash
+    firefox \
+    firefox-esr \
+    geckodriver \
+    bash \
+    tesseract-ocr \
+    tesseract-ocr-data-dan \
+    tesseract-ocr-data-eng \
+    sqlite \
+    sqlite-dev \
+    build-base
 
-# Install Python packages for Facebook scraping
+# Install Python packages for Facebook scraping, OCR, and PDF parsing
 # Use --break-system-packages since we're in a container and need these packages
-RUN pip3 install --no-cache-dir --break-system-packages selenium webdriver-manager
+RUN pip3 install --no-cache-dir --break-system-packages \
+    selenium \
+    selenium-wire \
+    webdriver-manager \
+    pillow \
+    pytesseract \
+    PyPDF2 \
+    pdfplumber \
+    requests
 
 WORKDIR /usr/src/app
 

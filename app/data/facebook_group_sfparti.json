@@ -1,57 +1,6 @@
 {
   "source": "https://www.facebook.com/sfparti",
-  "scrapedAt": "2025-11-12T10:34:58.136920+00:00",
-  "totalPosts": 5,
-  "posts": [
-    {
-      "post_id": "post_1",
-      "author_name": "May Ferrigno Eriksen",
-      "post_text": "Du er sku dum det er sku ikke ældrecheck der er brug for men forhøjelse af folkepensionen",
-      "post_time": "",
-      "post_link": "",
-      "video_url": "",
-      "video_thumbnail": "",
-      "scraped_at": "2025-11-12T10:34:58.117209+00:00"
-    },
-    {
-      "post_id": "post_2",
-      "author_name": "Sfparti",
-      "post_text": "SF er ikke bare et parti. Men en bevægelse, der kæmper for en mere lige, retfærdig og grøn verden 💚",
-      "post_time": "",
-      "post_link": "",
-      "video_url": "",
-      "video_thumbnail": "",
-      "scraped_at": "2025-11-12T10:34:58.121108+00:00"
-    },
-    {
-      "post_id": "post_3",
-      "author_name": "Sfparti",
-      "post_text": "sf.dk/retningslinjer-paa-sfs-profiler-paa-sociale-medier",
-      "post_time": "",
-      "post_link": "",
-      "video_url": "",
-      "video_thumbnail": "",
-      "scraped_at": "2025-11-12T10:34:58.123246+00:00"
-    },
-    {
-      "post_id": "post_4",
-      "author_name": "Sfparti",
-      "post_text": "Skattelettelser til dem, der har mest, eller flere penge til folkepensionisten?",
-      "post_time": "",
-      "post_link": "",
-      "video_url": "",
-      "video_thumbnail": "",
-      "scraped_at": "2025-11-12T10:34:58.124922+00:00"
-    },
-    {
-      "post_id": "post_5",
-      "author_name": "Karsten Hønge",
-      "post_text": "Skattelettelser til dem, der har mest, eller flere penge til folkepensionisten?Det er da et let valg. Velbekomme!",
-      "post_time": "3h",
-      "post_link": "",
-      "video_url": "",
-      "video_thumbnail": "https://scontent-vie1-1.xx.fbcdn.net/v/t39.30808-1/504380933_1242625100569245_6425336504329335327_n.jpg?stp=cp6_dst-jpg_s40x40_tt6&_nc_cat=109&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=88w8FAxpLZQQ7kNvwFrPj0S&_nc_oc=AdlugeLFH8eWWIrajYG3wg95DulB7CITxyVSQSPDoIfjK3dMpH_ZZOiSip60rbuWqik&_nc_zt=24&_nc_ht=scontent-vie1-1.xx&_nc_gid=kp1vW2VCjo5_OxlerBMKmA&oh=00_Afh5iG8KxBC5c-SzFI_juvaKFDo9ziv-cvCzArXRLm6hNQ&oe=691A450A",
-      "scraped_at": "2025-11-12T10:34:58.131964+00:00"
-    }
-  ]
+  "scrapedAt": "2025-11-13T11:05:13.593643+00:00",
+  "totalPosts": 0,
+  "posts": []
 }

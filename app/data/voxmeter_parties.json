@@ -1,0 +1,94 @@
+{
+  "scraped_at": "2025-11-13T20:00:37.499469+00:00",
+  "data": {
+    "A": [
+      21.1,
+      21.1,
+      20.3,
+      27.5
+    ],
+    "B": [
+      5.8,
+      5.4,
+      5.2,
+      3.8
+    ],
+    "C": [
+      7.9,
+      7.1,
+      6.2,
+      5.5
+    ],
+    "F": [
+      12.2,
+      12.3,
+      12.6,
+      8.3
+    ],
+    "H": [
+      3.1,
+      2.1,
+      1.5,
+      0.0
+    ],
+    "I": [
+      9.9,
+      10.8,
+      12.2,
+      7.9
+    ],
+    "M": [
+      3.1,
+      3.5,
+      3.3,
+      9.3
+    ],
+    "O": [
+      8.4,
+      9.6,
+      8.9,
+      2.6
+    ],
+    "V": [
+      9.6,
+      10.5,
+      10.7,
+      13.3
+    ],
+    "Æ": [
+      9.5,
+      8.0,
+      9.5,
+      8.1
+    ],
+    "Ø": [
+      6.6,
+      7.0,
+      6.3,
+      5.1
+    ],
+    "Å": [
+      1.8,
+      2.1,
+      2.9,
+      3.3
+    ]
+  },
+  "format": {
+    "description": "4 values per party: [Seneste måling, Forrige måling, 1 måned siden, Valget 2022]",
+    "parties": {
+      "A": "Socialdemokratiet",
+      "B": "Radikale Venstre",
+      "C": "Det Konservative Folkeparti",
+      "F": "Socialistisk Folkeparti",
+      "H": "Borgernes Parti",
+      "I": "Liberal Alliance",
+      "M": "Moderaterne",
+      "O": "Dansk Folkeparti",
+      "V": "Venstre",
+      "Æ": "Danmarksdemokraterne",
+      "Ø": "Enhedslisten",
+      "Å": "Alternativet"
+    }
+  }
+}

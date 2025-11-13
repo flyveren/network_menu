@@ -1,17 +1,13 @@
-{
-  "source": "https://www.facebook.com/radikalevenstre",
-  "scrapedAt": "2025-11-12T11:17:17.866007+00:00",
-  "totalPosts": 1,
-  "posts": [
-    {
-      "post_id": "post_1",
-      "author_name": "Radikalevenstre",
-      "post_text": "'skaber sunde vaner for alle børn og unge'. Hvordan har I egentlig tænkt jer at gøre det uden at gribe dybt ind i familiernes og individernes selvbestemmelse?",
-      "post_time": "4h",
-      "post_link": "https://www.facebook.com/radikalevenstre/posts/pfbid0SAGuKtittUPFi37eDaJ1beBxZsa5wv3rQ4FWkdKbXFjvTh4374r8raJFRg2HEnGml?__cft__[0]=AZXCNKchWLtm2HWXIBnMQCUNc-fTlH0Ze0qUAyB1vqiW8gB2nSmNi187z8ajKbFT4j36nhFyPiBQr-AgbiGuA-tCBgowoE3y_7jBJLQ47zh0WOlWbzCTj7JfQq0sHSXHlTZedKglkXf6eA8NYA5wfmNclKt1qZUwvNUM5FqC-ycAvaTvYgGXimIXuIDXq8MEpU8&__tn__=%2CO%2CP-R",
-      "video_url": "",
-      "video_thumbnail": "https://scontent-vie1-1.xx.fbcdn.net/v/t39.30808-6/582974677_1441872947308075_938779362576002018_n.jpg?stp=dst-jpg_s640x640_tt6&_nc_cat=109&ccb=1-7&_nc_sid=833d8c&_nc_ohc=OWDOnnjwTQkQ7kNvwEEocD6&_nc_oc=AdmB2kzy4ThWxo49SBOYPZy6VykwoVKlcm5_TemKyB32HIH0ht9IaTkxqWehXx9ZCdM&_nc_zt=23&_nc_ht=scontent-vie1-1.xx&_nc_gid=SRSVrmIFrz5q9p-Tp0TxHQ&oh=00_AfgYTjre-paSByXzDCJ2j1R0CEzNSU_5nP5PPJ1rntYDqg&oe=691A3137",
-      "scraped_at": "2025-11-12T11:17:17.835359+00:00"
-    }
-  ]
-}
+[
+  {
+    "post_id": "c9f64b5097899adf",
+    "author_name": "Radikale Venstre",
+    "post_text": "Nu skal sagsanlæg og retssager åbenbart være en del af prisen, når man tager kampen op mod Messerschmidt og det yderste højre.",
+    "post_time": "",
+    "post_link": "https://www.facebook.com/radikalevenstre/posts/pfbid02XAmn7mREvNoWczud3CTLn3YUnhyQQxRFiv8wNQm8VxHFmnv41aoeWFsNgjF281iXl",
+    "video_url": "",
+    "video_thumbnail": "https://scontent-vie1-1.xx.fbcdn.net/v/t39.30808-6/583039602_1443091207186249_1763975568127631538_n.jpg?stp=dst-jpg_s640x640_tt6&_nc_cat=1&ccb=1-7&_nc_sid=127cfc&_nc_ohc=tYUN4sYh6dIQ7kNvwHw13hj&_nc_oc=AdmIkr7SZT7Yy918SDHm3adKw8HEIWBjthBLaDqn_zZsEs_wsZ6VK6JHaF9RqQRf8QU&_nc_zt=23&_nc_ht=scontent-vie1-1.xx&_nc_gid=hv1jPaJ2vzDiu4SHytFWjw&oh=00_AfgBpqyQ8UEmFn4MhG3RLGbmIG8kAS8ABTdqU9BXv_vnUA&oe=691C22B0",
+    "scraped_at": "2025-11-13T20:01:09.747740+00:00",
+    "party_code": "B"
+  }
+]

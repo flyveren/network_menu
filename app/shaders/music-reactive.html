@@ -671,24 +671,24 @@
       const playToggle = document.getElementById("play-toggle");
       const statusLabel = document.getElementById("play-status");
       if (playToggle) {
-        playToggle.addEventListener("click", () => {
-          if (!playing) {
-            startAudio();
-          } else {
-            stopAudio();
-          }
-        });
+      playToggle.addEventListener("click", () => {
+        if (!playing) {
+          startAudio();
+        } else {
+          stopAudio();
+        }
+      });
 
-        window.addEventListener(
-          "keydown",
-          (event) => {
-            if (event.code === "Space") {
-              event.preventDefault();
-              playToggle.click();
-            }
-          },
-          { passive: false }
-        );
+      window.addEventListener(
+        "keydown",
+        (event) => {
+          if (event.code === "Space") {
+            event.preventDefault();
+            playToggle.click();
+          }
+        },
+        { passive: false }
+      );
       }
       window.addEventListener(
         "pointerdown",

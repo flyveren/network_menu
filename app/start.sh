@@ -51,6 +51,12 @@ if ! python3 scripts/fetch_voxmeter.py >>"$CRON_LOG" 2>&1; then
   echo "[start.sh] Initial Voxmeter fetch failed, continuing with existing data." >>"$CRON_LOG"
 fi
 
+# Fetch initial Voxmeter party polling data
+echo "[start.sh] Running initial Voxmeter party poll fetch..." >>"$CRON_LOG"
+if ! python3 scripts/fetch_voxmeter_parties.py >>"$CRON_LOG" 2>&1; then
+  echo "[start.sh] Initial Voxmeter party fetch failed, continuing with existing data." >>"$CRON_LOG"
+fi
+
 # Start cron in the background.
 echo "[start.sh] Starting cron daemon..." >>"$CRON_LOG"
 crond -b -l 2 -L "$CRON_LOG"
