@@ -776,19 +776,21 @@
           display: flex;
         }
 
-        /* Color divider container - positioned at the top */
+        /* Color divider container - positioned at the bottom, above git grid, behind spotify player */
         .politics-divider {
-          position: absolute;
-          top: 0px!important; /* At the top, on top of git grid */
+          position: fixed;
+          bottom: 0;
           left: 0;
           right: 0;
           width: 100%;
           height: 12px; /* Thin line */
+          transform: translateY(10px);
           /* Default gradient - will be updated by JavaScript based on Voxmeter data */
           background: linear-gradient(to right, #ff0000 0%, #ff0000 47.5%, #808080 47.5%, #808080 52.5%, #1111ea 52.5%, #1111ea 100%);
-          z-index: 31; /* Higher than party-stats and git grid */
+          z-index: 4; /* Behind spotify player (z-index 12) but above git grid (z-index 3) */
           display: none; /* Hidden by default */
           overflow: visible; /* Allow labels to be visible */
+          opacity: 50%;
         }
         
         body.politics-mode .politics-divider {
@@ -831,18 +833,19 @@
 
         /* Party stats display */
         .party-stats {
-          position: relative;
-          top: -5px!important; /* At the top, on top of git grid */
-          left: 0;
-          right: 0;
-          width: 100%;
-          z-index: 30; /* Higher than git grid (which is z-index 3) */
+          position: fixed;
+          top: calc(var(--git-top-offset, 80px));
+          right: clamp(1rem, 3vw, 3rem);
+          width: auto;
+          max-width: 420px;
+          z-index: 1000;
           display: none;
-          padding: 0.3rem clamp(1rem, 5vw, 3rem); /* Smaller margins top and bottom */
-          background: transparent; /* Remove gray background */
-          backdrop-filter: none; /* Remove blur */
-          border-bottom: none; /* Remove border */
-          z-index: 999;
+          padding: 0;
+          background: transparent;
+          backdrop-filter: none;
+          border-radius: 0;
+          border: none;
+          pointer-events: none;
         }
 
         body.politics-mode .party-stats {
@@ -855,42 +858,39 @@
 
         .party-stats__container {
           max-width: 100%;
-          margin: 0 auto;
+          margin: 0;
           display: flex;
-          align-items: center;
-          justify-content: flex-start; /* Start from left */
-          gap: 2rem;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1rem;
         }
 
         .party-stats__spacer {
-          flex: 1;
-          min-width: 0;
+          display: none; /* Hide spacer when in bottom right */
         }
         
         .party-stats__buttons-wrapper {
-          display: flex;
-          align-items: center;
-          gap: 2rem;
-          flex-shrink: 0;
+          display: none; /* Hide buttons wrapper - buttons are now in top */
         }
+
 
         .party-stats__title {
           font-family: "JetBrains Mono", system-ui, sans-serif;
-          font-size: clamp(0.75rem, 1.5vw, 1.1rem); /* Smaller font size */
+          font-size: clamp(0.85rem, 1.6vw, 1.2rem);
           font-weight: 600;
           color: #ffffff;
-          margin: 0 0 0 0.5rem; /* Less left margin */
+          margin: 0 0 0.75rem 0;
           text-align: left;
           white-space: nowrap;
           flex-shrink: 0;
-          padding: 0.3rem 0.8rem; /* Add padding for background */
-          border-radius: 4px;
-          width: 320px; /* Fixed width wide enough for longest party names */
-          min-width: 320px;
-          max-width: 320px;
-          display: inline-block; /* Ensure background fits content */
-          overflow: hidden; /* Hide overflow if text is too long */
-          text-overflow: ellipsis; /* Show ellipsis if text is too long */
+          padding: 0.35rem 1rem;
+          border-radius: 999px;
+          width: auto;
+          min-width: 0;
+          max-width: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
         }
         
         /* Apply party button background colors to title */
@@ -908,44 +908,85 @@
         .party-stats__title[data-party="Å"] { background: #228B22; }
 
         .party-stats__values {
-          display: flex;
-          flex-wrap: nowrap;
-          justify-content: flex-end;
-          gap: clamp(1rem, 2vw, 1.5rem);
-          flex-shrink: 0;
-          margin-left: auto; /* Push to the right */
+          display: grid;
+          grid-template-columns: repeat(2, minmax(140px, 1fr));
+          gap: 0.85rem;
+          margin-left: auto;
+          justify-items: stretch;
         }
 
         .party-stats__value {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 0.3rem;
-          min-width: 60px;
+          gap: 0.25rem;
+          min-width: 150px;
+          padding: 0.75rem 1rem;
+          border-radius: 10px;
+          background: rgba(0, 0, 0, 0.6);
+          border: 2px solid rgba(255, 255, 255, 0.15);
         }
 
+        .party-stats__value[data-party="A"] { border-color: rgba(139, 26, 26, 0.8); }
+        .party-stats__value[data-party="B"] { border-color: rgba(106, 27, 154, 0.8); }
+        .party-stats__value[data-party="C"] { border-color: rgba(154, 205, 50, 0.8); }
+        .party-stats__value[data-party="F"] { border-color: rgba(255, 105, 180, 0.8); }
+        .party-stats__value[data-party="H"] { border-color: rgba(70, 130, 180, 0.8); }
+        .party-stats__value[data-party="I"] { border-color: rgba(64, 224, 208, 0.8); }
+        .party-stats__value[data-party="M"] { border-color: rgba(75, 0, 130, 0.8); }
+        .party-stats__value[data-party="O"] { border-color: rgba(255, 215, 0, 0.8); }
+        .party-stats__value[data-party="V"] { border-color: rgba(30, 58, 138, 0.8); }
+        .party-stats__value[data-party="Æ"] { border-color: rgba(135, 206, 235, 0.8); }
+        .party-stats__value[data-party="Ø"] { border-color: rgba(255, 140, 0, 0.8); }
+        .party-stats__value[data-party="Å"] { border-color: rgba(34, 139, 34, 0.8); }
+
+        .party-stats__number[data-party="A"] { color: #f44336 !important; }
+        .party-stats__number[data-party="B"] { color: #ba68c8 !important; }
+        .party-stats__number[data-party="C"] { color: #a5d63f !important; }
+        .party-stats__number[data-party="F"] { color: #ff7eb9 !important; }
+        .party-stats__number[data-party="H"] { color: #64b5f6 !important; }
+        .party-stats__number[data-party="I"] { color: #26c6da !important; }
+        .party-stats__number[data-party="M"] { color: #9575cd !important; }
+        .party-stats__number[data-party="O"] { color: #ffca28 !important; }
+        .party-stats__number[data-party="V"] { color: #5c6bc0 !important; }
+        .party-stats__number[data-party="Æ"] { color: #81d4fa !important; }
+        .party-stats__number[data-party="Ø"] { color: #ffa726 !important; }
+        .party-stats__number[data-party="Å"] { color: #66bb6a !important; }
+
         .party-stats__label {
-          font-family: "Courier New", Courier, monospace; /* Pixel font */
-          font-size: clamp(calc(0.5rem + 3px), calc(0.9vw + 3px), calc(0.65rem + 3px)); /* 3px larger */
+          font-family: "Courier New", Courier, monospace;
+          font-size: clamp(0.65rem, 1.1vw, 0.8rem);
           font-weight: 500;
-          color: #ffffff; /* White */
+          color: #ffffff;
+          text-align: center;
+        }
+
+        .party-stats__meta {
+          display: flex;
+          flex-direction: column;
+          gap: 0.1rem;
+          width: 100%;
+          align-items: center;
+        }
+
+        .party-stats__date {
+          font-family: "Courier New", Courier, monospace;
+          font-size: clamp(0.65rem, 1vw, 0.8rem);
+          color: #ffffff;
           text-align: center;
         }
 
         .party-stats__number {
-          font-family: "JetBrains Mono", system-ui, sans-serif;
-          font-size: clamp(calc(0.7rem + 3px), calc(1.2vw + 3px), calc(0.9rem + 3px)); /* 3px larger */
-          font-weight: 700;
-          color: #ffffff !important; /* White text - force visibility */
+          font-family: "Press Start 2P", "Courier New", monospace;
+          font-size: clamp(1rem, 1.4vw, 1.2rem);
+          font-weight: 400;
+          color: #ffffff;
           text-align: center;
-          min-height: 1.2em;
+          min-height: 1.5em;
           display: block !important;
           visibility: visible !important;
           opacity: 1 !important;
-          padding: 0.2rem 0.5rem; /* Add padding for background */
-          border-radius: 4px;
-          position: relative;
-          z-index: 1;
+          padding: 0;
         }
         
         /* Apply party button background colors to numbers */
@@ -969,47 +1010,23 @@
 
         /* === Party stats overlay: bottom-right squares with title above === */
         body.politics-mode .party-stats__values {
-          position: fixed;
-          right: 16px;
-          bottom: 8px; /* 8px closer to the bottom */
-          display: flex;
-          flex-direction: row;
-          flex-wrap: nowrap; /* inline in one row */
-          gap: 10px;
-          width: auto;
-          max-width: 90vw;
-          z-index: 1000;
-          margin-left: 0; /* override previous alignment */
-          justify-content: flex-end;
-          align-items: stretch;
+          position: static;
+          grid-template-columns: repeat(2, minmax(150px, 1fr));
         }
         body.politics-mode .party-stats__value {
-          background: #000000;
-          border: 1px solid #222222;
-          border-radius: 8px;
-          padding: 0.6rem 0.9rem;
-          min-height: 86px;
-          min-width: 90px; /* ensure square-like width */
-          align-items: center;
-          justify-content: center;
-          flex: 0 0 auto; /* keep fixed size boxes inline */
+          min-height: auto;
+          min-width: 0;
         }
-        /* Numbers should not carry party-colored backgrounds inside black squares */
         body.politics-mode .party-stats__number {
           background: transparent !important;
           padding: 0;
         }
-        /* Title positioned above the squares in the bottom-right */
         body.politics-mode .party-stats__title {
-          position: fixed;
-          right: 16px;
-          bottom: calc(8px + 100px); /* sit just above the bottom git grid/squares */
-          z-index: 1001;
-          width: auto;
-          min-width: 0;
-          max-width: 300px;
-          text-align: right;
-          margin: 0;
+          position: static;
+          width: 100%;
+          max-width: none;
+          text-align: left;
+          margin-bottom: 0.75rem;
         }
 
         .party-button {
@@ -1506,6 +1523,13 @@
           height: 100%;
         }
 
+        body.politics-mode .music-reactive {
+          display: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          height: 0 !important;
+        }
+
         body.news-mode .news-feed {
           display: flex !important;
         }
@@ -1635,30 +1659,53 @@
 
         .facebook-posts {
           position: fixed;
-          top: 0;
+          top: calc(var(--git-top-offset, 80px));
+          bottom: calc(var(--git-bottom-offset, 80px));
           left: 0;
           right: 0;
-          bottom: 0;
+          width: 100vw;
           background: transparent;
-          z-index: 1;
+          z-index: 5;
           display: flex;
           flex-direction: column;
-          padding: 0;
-          padding-top: 0;
-          padding-bottom: 0;
-          padding-left: clamp(7.5rem, 12.5vw, 10rem);
-          padding-right: clamp(7.5rem, 12.5vw, 10rem);
+          padding: clamp(1rem, 3vw, 2rem);
           overflow-y: auto;
-          overflow-x: hidden;
+          margin: 0;
           scrollbar-width: thin;
-          scrollbar-color: rgba(17, 17, 234, 0.4) transparent;
-          clip-path: inset(0);
+          scrollbar-color: #3b82f6 transparent;
+        }
+
+        .facebook-posts::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        .facebook-posts::-webkit-scrollbar-track {
+          background: transparent;
+        }
+
+        .facebook-posts::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, var(--party-color-light, #8ab4ff), var(--party-color, #3b82f6));
+          border-radius: 999px;
+          border: 2px solid rgba(0, 0, 0, 0);
+        }
+
+        .facebook-posts::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, var(--party-color-light, #9ec2ff), var(--party-color, #4f9bff));
         }
 
         .facebook-posts[hidden] {
           display: none;
         }
 
+
+        .facebook-posts__container {
+          display: flex;
+          flex-direction: row;
+          gap: 3rem;
+          align-items: flex-start;
+          width: 100%;
+          max-width: 100%;
+        }
 
         .facebook-posts__list {
           list-style: none;
@@ -1671,6 +1718,14 @@
           max-width: fit-content;
           margin-left: 3rem;
           margin-right: auto;
+          flex: 0 0 auto;
+        }
+
+        .facebook-posts__content {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          flex: 1;
         }
 
         .facebook-posts__column {
@@ -1678,6 +1733,195 @@
           flex-direction: column;
           gap: 2rem;
           align-items: flex-start;
+        }
+
+        .facebook-posts__sidebar {
+          position: fixed;
+          top: 0px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 10;
+          background: transparent;
+          backdrop-filter: none;
+          padding: 0px;
+          border-radius: 0;
+          border: none;
+          overflow: visible;
+          min-width: fit-content;
+          width: auto;
+        }
+
+        .party-sidebar__buttons {
+          display: flex;
+          flex-direction: row;
+          gap: 0.75rem;
+          align-items: flex-end;
+          flex-wrap: nowrap;
+          overflow: visible;
+        }
+
+        .party-sidebar__item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          position: relative;
+          min-width: 42px;
+          overflow: visible;
+        }
+
+        .party-sidebar__bar {
+          width: 42px;
+          min-height: 3px;
+          margin-bottom: 0.5rem;
+          border-radius: 4px;
+          transition: height 0.3s ease;
+          position: relative;
+        }
+
+        .party-sidebar__value {
+          position: absolute;
+          top: -20px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 12px;
+          font-weight: bold;
+          color: rgba(255, 255, 255, 0.9);
+          white-space: nowrap;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .party-sidebar__change {
+          position: absolute;
+          top: -40px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 11px;
+          font-weight: bold;
+          white-space: nowrap;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .party-sidebar__change.positive {
+          color: #4ade80; /* Green */
+        }
+
+        .party-sidebar__change.negative {
+          color: #f87171; /* Red */
+        }
+
+        .party-sidebar__change.neutral {
+          color: rgba(255, 255, 255, 0.7); /* Gray */
+        }
+
+        .party-sidebar__button {
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          border: 3px solid #ffffff;
+          background: rgba(255, 255, 255, 0.1);
+          color: #ffffff;
+          font-size: 18px;
+          font-weight: bold;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          position: relative;
+        }
+
+        .party-sidebar__button:hover,
+        .party-sidebar__button:focus-visible {
+          transform: scale(1.1);
+          border-color: #ffffff;
+          box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+
+        .party-sidebar__button.active {
+          border-color: #ffffff;
+          box-shadow: 0 0 20px rgba(255, 255, 255, 0.7);
+        }
+
+        /* Party colors for sidebar buttons - same as main menu */
+        .party-sidebar__button[data-party="A"] {
+          background: #8B1A1A;
+        }
+        .party-sidebar__button[data-party="B"] {
+          background: #6A1B9A;
+        }
+        .party-sidebar__button[data-party="C"] {
+          background: #9ACD32;
+        }
+        .party-sidebar__button[data-party="F"] {
+          background: #FF69B4;
+        }
+        .party-sidebar__button[data-party="H"] {
+          background: #4682B4;
+        }
+        .party-sidebar__button[data-party="I"] {
+          background: #40E0D0;
+        }
+        .party-sidebar__button[data-party="M"] {
+          background: #4B0082;
+        }
+        .party-sidebar__button[data-party="O"] {
+          background: #FFD700;
+        }
+        .party-sidebar__button[data-party="V"] {
+          background: #1E3A8A;
+        }
+        .party-sidebar__button[data-party="Æ"] {
+          background: #87CEEB;
+        }
+        .party-sidebar__button[data-party="Ø"] {
+          background: #FF8C00;
+        }
+        .party-sidebar__button[data-party="Å"] {
+          background: #228B22;
+        }
+        .party-sidebar__button[data-party="ALL"] {
+          background: #6b7280;
+        }
+
+        /* Party colors for sidebar bars - same as buttons */
+        .party-sidebar__bar[data-party="A"] {
+          background: #8B1A1A;
+        }
+        .party-sidebar__bar[data-party="B"] {
+          background: #6A1B9A;
+        }
+        .party-sidebar__bar[data-party="C"] {
+          background: #9ACD32;
+        }
+        .party-sidebar__bar[data-party="F"] {
+          background: #FF69B4;
+        }
+        .party-sidebar__bar[data-party="H"] {
+          background: #4682B4;
+        }
+        .party-sidebar__bar[data-party="I"] {
+          background: #40E0D0;
+        }
+        .party-sidebar__bar[data-party="M"] {
+          background: #4B0082;
+        }
+        .party-sidebar__bar[data-party="O"] {
+          background: #FFD700;
+        }
+        .party-sidebar__bar[data-party="V"] {
+          background: #1E3A8A;
+        }
+        .party-sidebar__bar[data-party="Æ"] {
+          background: #87CEEB;
+        }
+        .party-sidebar__bar[data-party="Ø"] {
+          background: #FF8C00;
+        }
+        .party-sidebar__bar[data-party="Å"] {
+          background: #228B22;
+        }
+        .party-sidebar__bar[data-party="ALL"] {
+          background: #6b7280;
         }
 
         .facebook-posts__list li {
@@ -2208,6 +2452,26 @@
           display: flex !important;
         }
 
+        .facebook-posts.facebook-posts--empty {
+          min-height: 60vh;
+        }
+
+        .facebook-posts__empty {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex: 1;
+          font-family: "Jersey 10", cursive;
+          font-size: clamp(1.4rem, 3vw, 2rem);
+          color: rgba(255, 255, 255, 0.8);
+          text-align: center;
+          padding: 2rem;
+        }
+
+        .facebook-posts__empty[hidden] {
+          display: none;
+        }
+
         body.politics-mode .spotify-player,
         body.politics-mode .spotify-connect-button {
           z-index: 20 !important;
@@ -2382,6 +2646,8 @@
           --bg-light: rgb(255, 237, 212);
           --txt-light: rgb(10, 10, 10);
           --txt-dark: rgb(245, 245, 245);
+          --git-top-offset: 0px;
+          --git-bottom-offset: 0px;
         }
 
         body {
@@ -2390,7 +2656,7 @@
           color: light-dark(var(--txt-light), var(--txt-dark));
           min-height: 100svh;
           margin: 0;
-          padding: 1rem;
+          padding: 0;
           font-family: "Jura", sans-serif;
           font-size: 1rem;
           line-height: 1.5;
@@ -2398,7 +2664,13 @@
           flex-direction: column;
           gap: 2rem;
           place-items: center;
+          overflow-x: hidden;
         }
+
+        body.politics-mode {
+          overflow: hidden;
+        }
+
 
         body > *:not(.background-video, .background-overlay) {
           position: relative;
@@ -2505,75 +2777,26 @@
     <div class="party-stats" id="party-stats" aria-label="Party polling statistics" hidden>
       <div class="party-stats__container">
         <h2 class="party-stats__title" id="party-stats-title">Parti</h2>
-        <div class="party-buttons" aria-label="Political party buttons">
-          <button type="button" class="party-button" data-party="ALL" data-url="" aria-label="Alle">
-            •
-            <span class="party-button__tooltip">Alle partier</span>
-          </button>
-          <button type="button" class="party-button" data-party="A" data-url="https://www.facebook.com/socialdemokratiet" aria-label="Socialdemokratiet">
-            A
-            <span class="party-button__tooltip">Socialdemokratiet</span>
-          </button>
-          <button type="button" class="party-button" data-party="B" data-url="https://www.facebook.com/radikalevenstre" aria-label="Radikale Venstre">
-            B
-            <span class="party-button__tooltip">Radikale Venstre</span>
-          </button>
-          <button type="button" class="party-button" data-party="C" data-url="https://www.facebook.com/Konservative/" aria-label="Det Konservative Folkeparti">
-            C
-            <span class="party-button__tooltip">Det Konservative Folkeparti</span>
-          </button>
-          <button type="button" class="party-button" data-party="F" data-url="https://www.facebook.com/sfparti" aria-label="Socialistisk Folkeparti">
-            F
-            <span class="party-button__tooltip">Socialistisk Folkeparti</span>
-          </button>
-          <button type="button" class="party-button" data-party="H" data-url="https://www.facebook.com/profile.php?id=61561610215954" aria-label="Borgernes Parti">
-            H
-            <span class="party-button__tooltip">Borgernes Parti</span>
-          </button>
-          <button type="button" class="party-button" data-party="I" data-url="https://www.facebook.com/LiberalAlliance" aria-label="Liberal Alliance">
-            I
-            <span class="party-button__tooltip">Liberal Alliance</span>
-          </button>
-          <button type="button" class="party-button" data-party="M" data-url="https://www.facebook.com/moderaterne" aria-label="Moderaterne">
-            M
-            <span class="party-button__tooltip">Moderaterne</span>
-          </button>
-          <button type="button" class="party-button" data-party="O" data-url="https://www.facebook.com/danskfolkeparti" aria-label="Dansk Folkeparti">
-            O
-            <span class="party-button__tooltip">Dansk Folkeparti</span>
-          </button>
-          <button type="button" class="party-button" data-party="V" data-url="https://www.facebook.com/venstre.dk" aria-label="Venstre">
-            V
-            <span class="party-button__tooltip">Venstre</span>
-          </button>
-          <button type="button" class="party-button" data-party="Æ" data-url="https://www.facebook.com/PartietDD" aria-label="Danmarksdemokraterne">
-            Æ
-            <span class="party-button__tooltip">Danmarksdemokraterne</span>
-          </button>
-          <button type="button" class="party-button" data-party="Ø" data-url="https://www.facebook.com/enhedslisten" aria-label="Enhedslisten">
-            Ø
-            <span class="party-button__tooltip">Enhedslisten</span>
-          </button>
-          <button type="button" class="party-button" data-party="Å" data-url="https://www.facebook.com/alternativet.dk" aria-label="Alternativet">
-            Å
-            <span class="party-button__tooltip">Alternativet</span>
-          </button>
-        </div>
-        <div class="party-stats__spacer"></div>
         <div class="party-stats__values">
-          <div class="party-stats__value">
-            <span class="party-stats__label">Seneste måling</span>
+          <div class="party-stats__value" id="party-stats-seneste-card">
+            <div class="party-stats__meta">
+              <span class="party-stats__label">Seneste måling</span>
+              <span class="party-stats__date" id="party-stats-seneste-date">--</span>
+            </div>
             <span class="party-stats__number" id="party-stats-seneste">--</span>
           </div>
-          <div class="party-stats__value">
-            <span class="party-stats__label">Forrige måling</span>
+          <div class="party-stats__value" id="party-stats-forrige-card">
+            <div class="party-stats__meta">
+              <span class="party-stats__label">Forrige måling</span>
+              <span class="party-stats__date" id="party-stats-forrige-date">--</span>
+            </div>
             <span class="party-stats__number" id="party-stats-forrige">--</span>
           </div>
-          <div class="party-stats__value">
+          <div class="party-stats__value" id="party-stats-maaned-card">
             <span class="party-stats__label">1 måned siden</span>
             <span class="party-stats__number" id="party-stats-maaned">--</span>
           </div>
-          <div class="party-stats__value">
+          <div class="party-stats__value" id="party-stats-valg-card">
             <span class="party-stats__label">Valget 2022</span>
             <span class="party-stats__number" id="party-stats-valg">--</span>
           </div>
@@ -2684,7 +2907,14 @@
       aria-label="Facebook group posts"
       hidden
     >
-      <ul class="facebook-posts__list" id="facebook-posts-list" aria-live="polite"></ul>
+      <div class="facebook-posts__container">
+          <div class="facebook-posts__content">
+            <ul class="facebook-posts__list" id="facebook-posts-list" aria-live="polite"></ul>
+            <div class="facebook-posts__empty" id="facebook-posts-empty" hidden>
+              Ingen opslag for dette parti endnu. Vælg et andet parti eller vent på næste scraping.
+            </div>
+          </div>
+      </div>
       <p class="facebook-posts__error" id="facebook-posts-error" hidden>
         Unable to load posts right now.
       </p>
@@ -2692,6 +2922,11 @@
         Scraping Facebook group...
       </p>
     </aside>
+    <div class="facebook-posts__sidebar" id="facebook-posts-sidebar" aria-label="Party menu with polling bars">
+      <div class="party-sidebar__buttons" aria-label="Political party buttons">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </div>
     <button type="button" class="spotify-connect-button" id="spotify-connect-button" aria-haspopup="dialog" aria-expanded="false" aria-controls="spotify-auth-modal">
       <img src="./spotify_connect.png" alt="Connect Spotify" />
     </button>
@@ -2935,6 +3170,8 @@
       const facebookPostsList = document.getElementById("facebook-posts-list");
       const facebookPostsError = document.getElementById("facebook-posts-error");
       const facebookPostsLoading = document.getElementById("facebook-posts-loading");
+      const facebookPostsEmpty = document.getElementById("facebook-posts-empty");
+      let facebookPostsInitialized = false;
 
       const MAX_POST_TEXT_PREVIEW = 320;
 
@@ -2993,8 +3230,15 @@
         li.className = "facebook-post";
 
         const party = post.party_code || getPartyForPost(post);
-        if (party) {
-          li.setAttribute("data-party", party);
+        // Always set data-party, even if null (for filtering)
+        li.setAttribute("data-party", party || "");
+        
+        if (!party) {
+          console.warn("[POST] Post without party code:", {
+            author: post.author_name,
+            link: post.post_link,
+            text: (post.post_text || "").substring(0, 50)
+          });
         }
 
         const partyInfo = party ? partyConfig[party] : null;
@@ -3282,22 +3526,33 @@
           // Add active class to clicked button
           button.classList.add("active");
           
-          // Only show party stats (for real parties), don't scrape posts or update divider
-          // Ensure politics mode is active to show stats
-          if (!document.body.classList.contains("politics-mode")) {
+          // Ensure the diagram/posts container stays visible before filtering.
+          // This guarantees we don't accidentally hide the sidebar when toggling parties quickly.
+          ensurePoliticsModeActive().then(() => {
             document.body.classList.add("politics-mode");
             document.body.classList.remove("ai-mode");
             document.body.classList.remove("news-mode");
             document.body.classList.remove("visualizer-active");
-          }
 
-          // Filter visible Facebook posts by party
-          filterFacebookPostsByParty(party);
+            // Update sidebar active state
+            document.querySelectorAll(".party-sidebar__button").forEach((btn) => {
+              btn.classList.remove("active");
+            });
+            const sidebarButton = document.querySelector(`.party-sidebar__button[data-party="${party}"]`);
+            if (sidebarButton) {
+              sidebarButton.classList.add("active");
+            }
 
-          // Load and display party stats only for actual parties (skip ALL)
-          if (party !== "ALL") {
-            loadPartyStats(party);
-          }
+            // Filter visible Facebook posts by party (use setTimeout to ensure posts are rendered)
+            setTimeout(() => {
+              filterFacebookPostsByParty(party);
+            }, 100);
+
+            // Load and display party stats only for actual parties (skip ALL)
+            if (party !== "ALL") {
+              loadPartyStats(party);
+            }
+          });
 
           // Don't scrape posts or update divider when clicking party buttons
         });
@@ -3331,13 +3586,14 @@
           document.body.classList.remove("ai-mode");
           document.body.classList.remove("news-mode");
           document.body.classList.remove("visualizer-active");
-          // Show party-stats container so buttons are visible
-          const partyStats = document.getElementById("party-stats");
+        // Show party-stats container
+        const partyStats = document.getElementById("party-stats");
           if (partyStats) {
             partyStats.hidden = false;
           }
           // Load existing posts from all parties
           loadFacebookPosts().then(() => {
+            facebookPostsInitialized = true;
             // Start auto-refresh after initial load
             startFacebookPostsAutoRefresh();
           });
@@ -3349,11 +3605,58 @@
         }
       };
 
+      // Keep the Facebook posts/diagram view alive whenever we need to filter or show stats.
+      // Calling this prevents the sidebar from disappearing if the DOM element is still marked as hidden.
+      const ensurePoliticsModeActive = () => {
+        return new Promise((resolve) => {
+          const facebookPostsElement = document.getElementById("facebook-posts");
+          if (!facebookPostsElement) {
+            resolve();
+            return;
+          }
+
+          const alreadyVisible = !facebookPostsElement.hidden;
+          const showView = () => {
+            facebookPostsElement.hidden = false;
+            document.body.classList.add("politics-mode");
+            document.body.classList.remove("ai-mode");
+            document.body.classList.remove("news-mode");
+            document.body.classList.remove("visualizer-active");
+            const partyStats = document.getElementById("party-stats");
+            if (partyStats) {
+              partyStats.hidden = false;
+            }
+          };
+
+          if (alreadyVisible) {
+            showView();
+            resolve();
+            return;
+          }
+
+          showView();
+
+          if (!facebookPostsInitialized) {
+            openFacebookPosts();
+            setTimeout(resolve, 800);
+            return;
+          }
+
+          requestAnimationFrame(() => resolve());
+        });
+      };
+
       async function loadPartyStats(partyCode) {
         const partyStats = document.getElementById("party-stats");
         const partyStatsTitle = document.getElementById("party-stats-title");
         const partyStatsSeneste = document.getElementById("party-stats-seneste");
+        const partyStatsSenesteDate = document.getElementById("party-stats-seneste-date");
         const partyStatsForrige = document.getElementById("party-stats-forrige");
+        const partyStatsForrigeDate = document.getElementById("party-stats-forrige-date");
+        const partyStatsSenesteCard = document.getElementById("party-stats-seneste-card");
+        const partyStatsForrigeCard = document.getElementById("party-stats-forrige-card");
+        const partyStatsMaanedCard = document.getElementById("party-stats-maaned-card");
+        const partyStatsValgCard = document.getElementById("party-stats-valg-card");
         const partyStatsMaaned = document.getElementById("party-stats-maaned");
         const partyStatsValg = document.getElementById("party-stats-valg");
 
@@ -3385,11 +3688,23 @@
         // Show the stats container
         partyStats.hidden = false;
 
+        const resetCard = (cardEl, numberEl) => {
+          if (numberEl) {
+            numberEl.textContent = "--";
+            numberEl.removeAttribute("data-party");
+          }
+          if (cardEl) {
+            cardEl.removeAttribute("data-party");
+          }
+        };
+
         // Reset values while loading
-        if (partyStatsSeneste) partyStatsSeneste.textContent = "--";
-        if (partyStatsForrige) partyStatsForrige.textContent = "--";
-        if (partyStatsMaaned) partyStatsMaaned.textContent = "--";
-        if (partyStatsValg) partyStatsValg.textContent = "--";
+        resetCard(partyStatsSenesteCard, partyStatsSeneste);
+        resetCard(partyStatsForrigeCard, partyStatsForrige);
+        resetCard(partyStatsMaanedCard, partyStatsMaaned);
+        resetCard(partyStatsValgCard, partyStatsValg);
+        if (partyStatsSenesteDate) partyStatsSenesteDate.textContent = "--";
+        if (partyStatsForrigeDate) partyStatsForrigeDate.textContent = "--";
 
         try {
           console.log("[PARTY-STATS] Fetching party stats from /api/voxmeter/parties");
@@ -3428,11 +3743,12 @@
               isArray: Array.isArray(partyData),
               length: partyData?.length
             });
-            // Show "--" for all values instead of hiding
-            if (partyStatsSeneste) partyStatsSeneste.textContent = "--";
-            if (partyStatsForrige) partyStatsForrige.textContent = "--";
-            if (partyStatsMaaned) partyStatsMaaned.textContent = "--";
-            if (partyStatsValg) partyStatsValg.textContent = "--";
+            resetCard(partyStatsSenesteCard, partyStatsSeneste);
+            resetCard(partyStatsForrigeCard, partyStatsForrige);
+            resetCard(partyStatsMaanedCard, partyStatsMaaned);
+            resetCard(partyStatsValgCard, partyStatsValg);
+            if (partyStatsSenesteDate) partyStatsSenesteDate.textContent = "--";
+            if (partyStatsForrigeDate) partyStatsForrigeDate.textContent = "--";
             // Keep stats visible but show placeholder values
             setTimeout(() => updateFacebookPostsPadding(), 100);
             return;
@@ -3456,33 +3772,16 @@
             hasDates: !!data?.dates
           });
           
-          // Update labels with dates - find labels by their parent container
-          const senesteValueDiv = document.querySelector("#party-stats-seneste")?.parentElement;
-          const forrigeValueDiv = document.querySelector("#party-stats-forrige")?.parentElement;
-          
-          const senesteLabel = senesteValueDiv?.querySelector(".party-stats__label");
-          const forrigeLabel = forrigeValueDiv?.querySelector(".party-stats__label");
-          
-          if (senesteLabel) {
-            if (senesteDate) {
-              senesteLabel.textContent = `Seneste måling (${senesteDate})`;
-              console.log(`[PARTY-STATS] Updated Seneste måling label with date: ${senesteDate}`);
-            } else {
-              senesteLabel.textContent = "Seneste måling";
-            }
+          if (partyStatsSenesteDate) {
+            partyStatsSenesteDate.textContent = senesteDate ? senesteDate : "--";
           }
           
-          if (forrigeLabel) {
-            if (forrigeDate) {
-              forrigeLabel.textContent = `Forrige måling (${forrigeDate})`;
-              console.log(`[PARTY-STATS] Updated Forrige måling label with date: ${forrigeDate}`);
-            } else {
-              forrigeLabel.textContent = "Forrige måling";
-            }
+          if (partyStatsForrigeDate) {
+            partyStatsForrigeDate.textContent = forrigeDate ? forrigeDate : "--";
           }
           
           // Force update with explicit style changes to ensure visibility
-          const updateValue = (element, value, label) => {
+          const updateValue = (element, value, label, cardElement) => {
             if (element) {
               const formattedValue = `${value.toFixed(1)}%`;
               element.textContent = formattedValue;
@@ -3492,6 +3791,12 @@
               element.style.color = "#ffffff"; // White text
               element.style.background = ""; // Clear inline background to allow CSS to apply
               element.setAttribute("data-party", partyCode); // Set data-party for background color
+              if (cardElement) {
+                cardElement.setAttribute("data-party", partyCode);
+                const partyColor = getComputedStyle(document.documentElement).getPropertyValue(`--party-color-${partyCode.toLowerCase()}`) || element.style.color || "#3b82f6";
+                document.documentElement.style.setProperty("--party-color", partyColor.trim());
+                document.documentElement.style.setProperty("--party-color-light", `${partyColor.trim()}cc`);
+              }
               // Force reflow to ensure CSS is applied
               void element.offsetWidth;
               console.log(`[PARTY-STATS] Set ${label} to: ${formattedValue}`, element);
@@ -3500,10 +3805,10 @@
             }
           };
           
-          updateValue(partyStatsSeneste, partyData[0], "Seneste måling");
-          updateValue(partyStatsForrige, partyData[1], "Forrige måling");
-          updateValue(partyStatsMaaned, partyData[2], "1 måned siden");
-          updateValue(partyStatsValg, partyData[3], "Valget 2022");
+          updateValue(partyStatsSeneste, partyData[0], "Seneste måling", partyStatsSenesteCard);
+          updateValue(partyStatsForrige, partyData[1], "Forrige måling", partyStatsForrigeCard);
+          updateValue(partyStatsMaaned, partyData[2], "1 måned siden", partyStatsMaanedCard);
+          updateValue(partyStatsValg, partyData[3], "Valget 2022", partyStatsValgCard);
 
           console.log(`[PARTY-STATS] Updated stats for ${partyCode}:`, partyData);
           
@@ -3515,30 +3820,6 @@
             partyStats.hidden = false;
           }
           
-          // Update padding after showing stats (but don't update divider)
-          setTimeout(() => {
-            // Only update padding, not divider when showing party stats
-            const topGrid = document.querySelector(".github-contrib-overlay--top");
-            const bottomGrid = document.querySelector(".github-contrib-overlay--bottom");
-            const facebookPosts = document.querySelector(".facebook-posts");
-            const partyStats = document.getElementById("party-stats");
-            
-            if (facebookPosts) {
-              const topHeight = topGrid ? topGrid.offsetHeight : 56;
-              const bottomHeight = bottomGrid ? bottomGrid.offsetHeight : 56;
-              const dividerHeight = 10;
-              const statsHeight = (partyStats && !partyStats.hidden) ? partyStats.offsetHeight : 0;
-              const totalTopOffset = topHeight + dividerHeight + statsHeight;
-              
-              facebookPosts.style.paddingTop = `${totalTopOffset}px`;
-              facebookPosts.style.paddingBottom = `${bottomHeight}px`;
-              facebookPosts.style.clipPath = `inset(${totalTopOffset}px 0 ${bottomHeight}px 0)`;
-              
-              if (partyStats) {
-                partyStats.style.top = `${topHeight + dividerHeight}px`;
-              }
-            }
-          }, 100);
         } catch (error) {
           console.error("[PARTY-STATS] Failed to load party stats:", error);
           // Hide stats on error
@@ -3554,6 +3835,165 @@
       let currentFacebookPostsCount = 0;
       let facebookPostsEventSource = null;
 
+      // Function to create and update party sidebar with polling bars
+      async function updatePartySidebar() {
+        const sidebar = document.getElementById("facebook-posts-sidebar");
+        if (!sidebar) return;
+
+        const buttonsContainer = sidebar.querySelector(".party-sidebar__buttons");
+        if (!buttonsContainer) return;
+
+        // Clear existing buttons
+        buttonsContainer.innerHTML = "";
+
+        // Get polling data
+        let pollingData = {};
+        try {
+          const response = await fetch("/api/voxmeter/parties");
+          if (response.ok) {
+            const data = await response.json();
+            pollingData = data?.data || {};
+          }
+        } catch (error) {
+          console.warn("[PARTY-SIDEBAR] Failed to load polling data:", error);
+        }
+
+        // Create buttons for all parties (same order as main menu)
+        const partyOrder = ["ALL", "A", "B", "C", "F", "H", "I", "M", "O", "V", "Æ", "Ø", "Å"];
+        
+        for (const partyCode of partyOrder) {
+          // For "ALL", use partyConfig from main menu (it doesn't have partyConfig entry)
+          if (partyCode === "ALL") {
+            const item = document.createElement("div");
+            item.className = "party-sidebar__item";
+
+            const bar = document.createElement("div");
+            bar.className = "party-sidebar__bar";
+            bar.setAttribute("data-party", partyCode);
+            bar.style.height = "3px";
+            bar.style.width = "42px";
+            bar.style.opacity = "0.3"; // Make it subtle
+
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "party-sidebar__button";
+            button.setAttribute("data-party", "ALL");
+            button.setAttribute("data-url", "");
+            button.setAttribute("aria-label", "Alle partier");
+            button.textContent = "•";
+
+            const tooltip = document.createElement("span");
+            tooltip.className = "party-button__tooltip";
+            tooltip.textContent = "Alle partier";
+            button.appendChild(tooltip);
+
+            button.addEventListener("click", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              currentParty = "ALL";
+              
+              document.querySelectorAll(".party-sidebar__button").forEach((btn) => {
+                btn.classList.remove("active");
+              });
+              document.querySelectorAll(".party-button").forEach((btn) => {
+                btn.classList.remove("active");
+              });
+              button.classList.add("active");
+              const mainButton = document.querySelector(`.party-button[data-party="ALL"]`);
+              if (mainButton) mainButton.classList.add("active");
+
+              ensurePoliticsModeActive().then(() => {
+                filterFacebookPostsByParty("ALL");
+              });
+            });
+
+            item.appendChild(bar);
+            item.appendChild(button);
+            buttonsContainer.appendChild(item);
+            continue;
+          }
+
+          const partyInfo = partyConfig[partyCode];
+          if (!partyInfo) continue;
+
+          // Get polling value for this party
+          const partyData = pollingData[partyCode] || pollingData[partyCode.toLowerCase()];
+          const senesteValue = partyData && Array.isArray(partyData) && partyData.length > 0 ? partyData[0] : 0;
+          const forrigeValue = partyData && Array.isArray(partyData) && partyData.length > 1 ? partyData[1] : 0;
+          
+          // Calculate bar height (seneste måling * 3px)
+          const barHeight = Math.max(3, senesteValue * 3); // Minimum 3px
+
+          // Create item container
+          const item = document.createElement("div");
+          item.className = "party-sidebar__item";
+
+          // Create bar
+          const bar = document.createElement("div");
+          bar.className = "party-sidebar__bar";
+          bar.setAttribute("data-party", partyCode);
+          bar.style.height = `${barHeight}px`;
+          bar.style.width = "42px"; // Same width as button
+
+          // Create button
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "party-sidebar__button";
+          button.setAttribute("data-party", partyCode);
+          button.setAttribute("data-url", partyInfo.url || "");
+          button.setAttribute("aria-label", partyInfo.name);
+          button.textContent = partyCode === "ALL" ? "•" : partyCode;
+
+          // Add tooltip
+          const tooltip = document.createElement("span");
+          tooltip.className = "party-button__tooltip";
+          tooltip.textContent = partyInfo.name;
+          button.appendChild(tooltip);
+
+          // Add click handler (same as main menu buttons)
+          button.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const party = button.getAttribute("data-party");
+            currentParty = party;
+            
+            // Update active state
+            document.querySelectorAll(".party-sidebar__button").forEach((btn) => {
+              btn.classList.remove("active");
+            });
+            document.querySelectorAll(".party-button").forEach((btn) => {
+              btn.classList.remove("active");
+            });
+            button.classList.add("active");
+            const mainButton = document.querySelector(`.party-button[data-party="${party}"]`);
+            if (mainButton) mainButton.classList.add("active");
+
+            ensurePoliticsModeActive().then(() => {
+              // Filter posts
+              filterFacebookPostsByParty(party);
+
+              // Load stats if not ALL
+              if (party !== "ALL") {
+                loadPartyStats(party);
+              }
+            });
+          });
+
+          // Append bar and button
+          item.appendChild(bar);
+          item.appendChild(button);
+          buttonsContainer.appendChild(item);
+        }
+
+        // Set active state based on currentParty
+        if (currentParty) {
+          const activeButton = buttonsContainer.querySelector(`.party-sidebar__button[data-party="${currentParty}"]`);
+          if (activeButton) {
+            activeButton.classList.add("active");
+          }
+        }
+      }
+
       async function loadFacebookPosts(partyUrl = null, silent = false) {
         if (!facebookPostsList || !facebookPostsError || !facebookPostsLoading) return;
 
@@ -3561,9 +4001,18 @@
           facebookPostsError.hidden = true;
           facebookPostsLoading.hidden = false;
           facebookPostsList.innerHTML = "";
+          if (facebookPostsEmpty) {
+            facebookPostsEmpty.hidden = true;
+          }
+          if (facebookPosts) {
+            facebookPosts.classList.remove("facebook-posts--empty");
+          }
         }
 
         try {
+          // Update party sidebar when loading posts
+          await updatePartySidebar();
+
           // Load all posts from all parties (no URL parameter needed) with cache-busting
           const ts = Date.now();
           const response = await fetch(`/api/facebook/posts?_=${ts}`);
@@ -3682,18 +4131,52 @@
         }
       }
       // Filter visible posts by party code ("ALL" shows everything)
+      function setPostsEmptyState(isEmpty, partyCode = "ALL") {
+        if (!facebookPosts || !facebookPostsEmpty) return;
+        if (isEmpty && partyCode !== "ALL") {
+          const partyName = partyConfig[partyCode]?.name || partyCode;
+          facebookPostsEmpty.textContent = `Ingen opslag fundet for ${partyName} endnu. Prøv at scrape igen eller vælg et andet parti.`;
+          facebookPostsEmpty.hidden = false;
+          facebookPosts.classList.add("facebook-posts--empty");
+        } else {
+          facebookPostsEmpty.hidden = true;
+          facebookPosts.classList.remove("facebook-posts--empty");
+        }
+      }
+
       function filterFacebookPostsByParty(partyCode) {
         const list = document.getElementById("facebook-posts-list");
-        if (!list) return;
+        if (!list) {
+          console.warn("[FILTER] facebook-posts-list not found");
+          return;
+        }
         const items = list.querySelectorAll("li.facebook-post");
+        console.log(`[FILTER] Filtering ${items.length} posts by party: ${partyCode}`);
+        
+        if (!partyCode || partyCode === "ALL") {
+          // Show all posts when "ALL" is selected
+          items.forEach((item) => {
+            item.style.display = "";
+          });
+          console.log(`[FILTER] Showing all ${items.length} posts`);
+          setPostsEmptyState(false, "ALL");
+          return;
+        }
+        
+        // Filter by specific party
+        let visibleCount = 0;
         items.forEach((item) => {
           const postParty = item.getAttribute("data-party");
-          if (!partyCode || partyCode === "ALL" || !postParty) {
+          if (postParty === partyCode) {
             item.style.display = "";
+            visibleCount++;
           } else {
-            item.style.display = (postParty === partyCode) ? "" : "none";
+            item.style.display = "none";
           }
         });
+        console.log(`[FILTER] Showing ${visibleCount} posts for party ${partyCode}`);
+
+        setPostsEmptyState(visibleCount === 0, partyCode);
       }
 
       // Auto-refresh functions using Server-Sent Events (SSE)
@@ -3772,6 +4255,12 @@
         if (!facebookPostsList) return;
         
         facebookPostsList.innerHTML = "";
+        if (facebookPostsEmpty) {
+          facebookPostsEmpty.hidden = true;
+        }
+        if (facebookPosts) {
+          facebookPosts.classList.remove("facebook-posts--empty");
+        }
         
         const container = document.createElement("div");
         container.className = "facebook-posts__column";
@@ -5270,38 +5759,24 @@
     }
 
     function updateFacebookPostsPadding() {
+      const politicsDivider = document.querySelector(".politics-divider");
+      const facebookPosts = document.getElementById("facebook-posts");
       const topGrid = document.querySelector(".github-contrib-overlay--top");
       const bottomGrid = document.querySelector(".github-contrib-overlay--bottom");
-      const facebookPosts = document.querySelector(".facebook-posts");
-      const politicsDivider = document.querySelector(".politics-divider");
-      const partyStats = document.getElementById("party-stats");
       
       if (!facebookPosts) return;
       
-      const topHeight = topGrid ? topGrid.offsetHeight : 56;
-      const bottomHeight = bottomGrid ? bottomGrid.offsetHeight : 56;
-      const dividerHeight = politicsDivider ? politicsDivider.offsetHeight : 10;
-      const statsHeight = (partyStats && !partyStats.hidden) ? partyStats.offsetHeight : 0;
+      const topHeight = topGrid ? topGrid.getBoundingClientRect().height : 0;
+      const bottomHeight = bottomGrid ? bottomGrid.getBoundingClientRect().height : 0;
+      const topOffset = topHeight + 4;
+      const bottomOffset = bottomHeight + 4;
+      document.documentElement.style.setProperty("--git-top-offset", `${topOffset}px`);
+      document.documentElement.style.setProperty("--git-bottom-offset", `${bottomOffset}px`);
       
-      // Make the posts window start right below the top git grid
-      const totalTopOffset = topHeight;
-      
-      facebookPosts.style.paddingTop = `${Math.max(0, totalTopOffset)}px`; // Ensure non-negative
-      facebookPosts.style.paddingBottom = `${bottomHeight}px`;
-      facebookPosts.style.clipPath = `inset(${Math.max(0, totalTopOffset)}px 0 ${bottomHeight}px 0)`;
-      
-      // Update party stats position
-      if (partyStats) {
-        partyStats.style.top = `${topHeight + dividerHeight}px`;
-      }
-      
-      // Update divider position to be right after the top grid
-      // Only update divider colors if politics button was clicked (not party buttons)
-      if (politicsDivider && document.body.classList.contains("politics-mode")) {
-        politicsDivider.style.top = `${topHeight}px`;
-        // Only update divider colors if facebook posts are visible (indicates politics button was clicked)
-        const facebookPosts = document.getElementById("facebook-posts");
-        if (facebookPosts && !facebookPosts.hidden) {
+      if (politicsDivider) {
+        politicsDivider.style.bottom = `${bottomHeight}px`;
+        politicsDivider.style.top = "auto";
+        if (document.body.classList.contains("politics-mode") && facebookPosts && !facebookPosts.hidden) {
           updatePoliticsDivider();
         }
       }
@@ -5357,6 +5832,8 @@
     window.addEventListener("resize", () => {
       if (contributionMatrix && contributionViews.length > 0) {
         renderContributionViews();
+      } else {
+        updateFacebookPostsPadding();
       }
     });
 

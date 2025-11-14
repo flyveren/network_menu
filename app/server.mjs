@@ -539,10 +539,12 @@ async function loadEnv() {
 async function handleTextToSpeech(req, res) {
   console.log("/api/speech request received");
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
+    // Use ElevenLabs API only
+    const elevenlabsApiKey = process.env.ELEVENLABS_API_KEY;
+    
+    if (!elevenlabsApiKey) {
       res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
-      res.end(JSON.stringify({ error: "Missing OPENAI_API_KEY in environment" }));
+      res.end(JSON.stringify({ error: "Missing ELEVENLABS_API_KEY in environment" }));
       return;
     }
 
@@ -575,36 +577,109 @@ async function handleTextToSpeech(req, res) {
       return;
     }
 
-    const model = process.env.OPENAI_TTS_MODEL ?? "gpt-4o-mini-tts";
-    const voice = payload?.voice || process.env.OPENAI_TTS_VOICE || "alloy";
-    const responseFormat = payload?.response_format || process.env.OPENAI_TTS_FORMAT || "mp3";
-    const speed = Number.parseFloat(payload?.speed ?? process.env.OPENAI_TTS_SPEED ?? "1.0");
-    const pitch = Number.parseFloat(payload?.pitch ?? process.env.OPENAI_TTS_PITCH ?? "0");
+    // Use ElevenLabs API only
+    // Standard voices (don't count against custom voice limit):
+    const standardVoices = {
+      male: [
+        { id: "TxGEqnHWrfWFTfGW9XjX", name: "Josh" },
+        { id: "VR6AewLTigWG4xSOukaG", name: "Arnold" },
+        { id: "pNInz6obpgDQGcFmaJgB", name: "Adam" },
+        { id: "yoZ06aMxZJJ28mfd3POQ", name: "Sam" },
+      ],
+      female: [
+        { id: "21m00Tcm4TlvDq8ikWAM", name: "Rachel" },
+        { id: "AZnzlk1XvdvUeBnXmlld", name: "Domi" },
+        { id: "EXAVITQu4vr4xnSDxMaL", name: "Bella" },
+        { id: "MF3mGyEYCl7XYWbV9V6O", name: "Elli" },
+      ],
+    };
+    
+    // Default to Josh (male, good for Danish)
+    const defaultVoiceId = "TxGEqnHWrfWFTfGW9XjX";
+    let voiceId = payload?.voice_id || process.env.ELEVENLABS_VOICE_ID || defaultVoiceId;
+    const modelId = payload?.model_id || process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
+    const stability = Number.parseFloat(payload?.stability ?? process.env.ELEVENLABS_STABILITY ?? "0.5");
+    const similarityBoost = Number.parseFloat(payload?.similarity_boost ?? process.env.ELEVENLABS_SIMILARITY_BOOST ?? "0.75");
+    const style = Number.parseFloat(payload?.style ?? process.env.ELEVENLABS_STYLE ?? "0.0");
+    const useSpeakerBoost = payload?.use_speaker_boost !== undefined ? payload.use_speaker_boost : (process.env.ELEVENLABS_USE_SPEAKER_BOOST === "true");
 
-    const fetchUrl = `${process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1"}/audio/speech`;
-    console.log("Calling OpenAI speech model", model, "voice", voice);
-    const response = await fetch(fetchUrl, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        voice,
-        input: text,
-        response_format: responseFormat,
-        speed: Number.isFinite(speed) ? speed : 1.0,
-        pitch: Number.isFinite(pitch) ? pitch : 0,
-      }),
-    });
+    // Try the requested voice first, then fallback to standard voices if it fails
+    const voicesToTry = [voiceId, ...standardVoices.male.map(v => v.id)];
+    
+    let lastError = null;
+    for (let i = 0; i < voicesToTry.length; i++) {
+      const currentVoiceId = voicesToTry[i];
+      const fetchUrl = `https://api.elevenlabs.io/v1/text-to-speech/${currentVoiceId}`;
+      console.log(`Calling ElevenLabs API (attempt ${i + 1}/${voicesToTry.length})`, "voice_id", currentVoiceId, "model", modelId);
+      
+      const response = await fetch(fetchUrl, {
+        method: "POST",
+        headers: {
+          "Accept": "audio/mpeg",
+          "Content-Type": "application/json",
+          "xi-api-key": elevenlabsApiKey,
+        },
+        body: JSON.stringify({
+          text,
+          model_id: modelId,
+          voice_settings: {
+            stability: Math.max(0, Math.min(1, stability)),
+            similarity_boost: Math.max(0, Math.min(1, similarityBoost)),
+            style: Math.max(0, Math.min(1, style)),
+            use_speaker_boost: useSpeakerBoost,
+          },
+        }),
+      });
 
-    console.log("/api/speech status", response.status);
-    const arrayBuffer = await response.arrayBuffer();
-    res.writeHead(response.status, {
-      "Content-Type": response.headers.get("content-type") ?? `audio/${responseFormat}`,
-    });
-    res.end(Buffer.from(arrayBuffer));
+      console.log("/api/speech ElevenLabs status", response.status, "voice_id", currentVoiceId);
+      
+      if (response.ok) {
+        // Success! Return the audio
+        const arrayBuffer = await response.arrayBuffer();
+        if (i > 0) {
+          console.log(`Successfully used fallback voice ${currentVoiceId} (original voice ${voiceId} failed)`);
+        }
+        res.writeHead(200, {
+          "Content-Type": "audio/mpeg",
+          "Cache-Control": "no-cache",
+        });
+        res.end(Buffer.from(arrayBuffer));
+        return;
+      }
+      
+      // Not successful, save error and try next voice
+      const errorText = await response.text();
+      lastError = { status: response.status, text: errorText };
+      
+      // Try to parse error
+      let errorDetails = {};
+      try {
+        errorDetails = JSON.parse(errorText);
+      } catch {
+        // Not JSON, use raw text
+      }
+      
+      // If it's not a voice_limit_reached error, don't try other voices
+      if (errorDetails?.detail?.status !== "voice_limit_reached" && response.status !== 404) {
+        console.error("ElevenLabs API error (non-recoverable):", errorText);
+        res.writeHead(response.status, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ error: "ElevenLabs API error", details: errorText }));
+        return;
+      }
+      
+      // Continue to next voice
+      console.log(`Voice ${currentVoiceId} failed, trying next standard voice...`);
+    }
+    
+    // All voices failed
+    console.error("All ElevenLabs voices failed. Last error:", lastError);
+    res.writeHead(lastError?.status || 500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ 
+      error: "ElevenLabs API error", 
+      message: "All voice attempts failed. Please check your ELEVENLABS_VOICE_ID in .env and use a standard voice.",
+      details: lastError?.text 
+    }));
+    return;
   } catch (error) {
     console.error("Text-to-speech proxy failed:", error);
     res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });

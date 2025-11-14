@@ -40,6 +40,15 @@ An ambient navigation hub featuring reactive shaders, rotating quotes, weather, 
      # OPENAI_TTS_MODEL=gpt-4o-mini-tts
      # OPENAI_TTS_VOICE=alloy
      # OPENAI_TTS_FORMAT=mp3
+     
+     # ElevenLabs API for text-to-speech (optional - if set, will use ElevenLabs instead of OpenAI TTS)
+     # ELEVENLABS_API_KEY=your-elevenlabs-api-key
+     # ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM  # Default: Rachel (see https://elevenlabs.io/docs/api-reference/text-to-speech)
+     # ELEVENLABS_MODEL_ID=eleven_multilingual_v2
+     # ELEVENLABS_STABILITY=0.5
+     # ELEVENLABS_SIMILARITY_BOOST=0.75
+     # ELEVENLABS_STYLE=0.0
+     # ELEVENLABS_USE_SPEAKER_BOOST=false
      ```
 
 3. **Run the dev server**:
@@ -85,7 +94,7 @@ An ambient navigation hub featuring reactive shaders, rotating quotes, weather, 
 
 - The transcription endpoint proxies requests to OpenAI via `/api/transcribe`. Make sure your server runs in a secure environment; never expose `OPENAI_API_KEY` to the client.
 - If the placeholder shows "Tillad mikrofonadgang for at optage", enable mic access in the browser.
-- After each AI reply, the server automatically synthesizes speech via `/api/speech`; customize the voice/model via env vars above. The audio also feeds the music visualizer.
+- After each AI reply, the server automatically synthesizes speech via `/api/speech`. By default, it uses OpenAI TTS, but you can enable ElevenLabs API for more natural voice synthesis by setting `ELEVENLABS_API_KEY` in your `.env` file. The audio also feeds the music visualizer.
 - If you receive "Tillad mikrofonadgang for at optage" when clicking the brain button, check that the page is served via HTTPS or localhost and that the browser permitted microphone access.
 - Logging for GitHub contribution fallback requests is available via `server.mjs`.
 - Static assets sit directly in `app/`. Adjust or extend the shader, news parser, or weather integrations as needed.

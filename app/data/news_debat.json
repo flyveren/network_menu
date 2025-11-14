@@ -1,8 +1,38 @@
 {
   "source": "https://wallnot.dk/rss?category=debat",
   "category": "debat",
-  "fetchedAt": "2025-11-13T22:58:07.226606+00:00",
+  "fetchedAt": "2025-11-14T09:35:42.623370+00:00",
   "items": [
+    {
+      "title": "Havet kan genrejses med stærk lokal indsats",
+      "link": "https://avisendanmark.dk/debat/havet-kan-genrejses-med-staerk-lokal-indsats",
+      "pubDate": "Fri, 14 Nov 2025 10:00:00 +0100"
+    },
+    {
+      "title": "Handicappolitik bliver levende i kommunerne",
+      "link": "https://avisendanmark.dk/debat/handicappolitik-bliver-levende-i-kommunerne",
+      "pubDate": "Fri, 14 Nov 2025 08:00:00 +0100"
+    },
+    {
+      "title": "Praktikken kan blive kommunernes stærkeste valgkort",
+      "link": "https://avisendanmark.dk/debat/praktikken-kan-blive-kommunernes-staerkeste-valgkort",
+      "pubDate": "Fri, 14 Nov 2025 06:00:00 +0100"
+    },
+    {
+      "title": "Ny kogebog forvandler rugbrødsrester til knasende falafler og labre godter",
+      "link": "https://pov.international/ny-kogebog-forvandler-rugbroedsrester-til-godter/",
+      "pubDate": "Fri, 14 Nov 2025 00:05:00 +0100"
+    },
+    {
+      "title": "De gamle mænds tidsalder – og kvinderne, som følger trop",
+      "link": "https://pov.international/gamle-maends-tidsalder-kvinderne-foelger-trop/",
+      "pubDate": "Fri, 14 Nov 2025 00:02:00 +0100"
+    },
+    {
+      "title": "DEI er ikke et frit valg",
+      "link": "https://pov.international/dei-er-ikke-et-frit-valg/",
+      "pubDate": "Fri, 14 Nov 2025 00:01:00 +0100"
+    },
     {
       "title": "Huslejeloft forværrer boligmanglen | Berlingske",
       "link": "https://www.berlingske.dk/laesere/huslejeloft-forvaerrer-boligmanglen",
@@ -72,36 +102,6 @@
       "title": "Kun en tåbe tror på, at AI vil komme os alle sammen til gode",
       "link": "https://www.information.dk/debat/2025/11/kun-taabe-tror-paa-ai-komme-sammen-gode?kupon=eyJpYXQiOjE3NjI5NzE0NzksInN1YiI6IjIxODA1MDo4MzQ2MjcifQ.X7v9FMrMlQhV66G-cHFW0g",
       "pubDate": "Wed, 12 Nov 2025 19:00:06 +0100"
-    },
-    {
-      "title": "Mange glemmer, at boligforbedringer er en god forretning",
-      "link": "https://avisendanmark.dk/debat/mange-glemmer-at-boligforbedringer-er-en-god-forretning",
-      "pubDate": "Wed, 12 Nov 2025 18:00:00 +0100"
-    },
-    {
-      "title": "Konfronterer LA efter massiv kritik af DR: Skal de fyres!?",
-      "link": "https://www.bt.dk/debat/konfronterer-la-efter-massiv-kritik-af-dr-skal-de-fyres",
-      "pubDate": "Wed, 12 Nov 2025 09:36:10 +0100"
-    },
-    {
-      "title": "Sebastian Dorset: Det her er altså ikke et argument for at hade valgplakater",
-      "link": "https://avisendanmark.dk/debat/sebastian-dorset-hvad-valgplakathadere-overser",
-      "pubDate": "Wed, 12 Nov 2025 06:00:00 +0100"
-    },
-    {
-      "title": "En studietur til Berlin bekræftede mig i, hvor afgørende den demokratiske dannelse er",
-      "link": "https://pov.international/berlin-bekraeftede-mig-i-demokratisk-dannelse/",
-      "pubDate": "Wed, 12 Nov 2025 04:41:06 +0100"
-    },
-    {
-      "title": "57.000 selfies i sekundet, men behovet for selviagttagelse er ikke nyt",
-      "link": "https://pov.international/57-000-selfies-men-selviagttagelsen-er-ikke-ny/",
-      "pubDate": "Wed, 12 Nov 2025 02:44:55 +0100"
-    },
-    {
-      "title": "Line Barfod: Ja, du skal være bange, Tom Jensen. Mamdanis sejr i New York er et forvarsel om et rødt København | Berlingske",
-      "link": "https://www.berlingske.dk/laesere/line-barfod-ja-du-skal-vaere-bange-tom-jensen-mamdanis-sejr-i-new-york-er-et-forvarsel-om-et-roedt-koebenhavn",
-      "pubDate": "Tue, 11 Nov 2025 21:47:21 +0100"
     }
   ]
 }
