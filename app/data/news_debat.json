@@ -1,8 +1,18 @@
 {
   "source": "https://wallnot.dk/rss?category=debat",
   "category": "debat",
-  "fetchedAt": "2025-11-13T20:00:05.520069+00:00",
+  "fetchedAt": "2025-11-13T22:58:07.226606+00:00",
   "items": [
+    {
+      "title": "Huslejeloft forværrer boligmanglen | Berlingske",
+      "link": "https://www.berlingske.dk/laesere/huslejeloft-forvaerrer-boligmanglen",
+      "pubDate": "Thu, 13 Nov 2025 21:09:55 +0100"
+    },
+    {
+      "title": "Remigrationen er ikke bare en idé – det er kulminationen på 30 års politisk forfald",
+      "link": "https://www.information.dk/debat/2025/11/remigrationen-bare-ide-kulminationen-paa-30-aars-politisk-forfald?kupon=eyJpYXQiOjE3NjMwNjM2NDcsInN1YiI6IjI0NDUwMzo4MzQ4NTYifQ.EPpUAtod6l4knPVxnVjiMg",
+      "pubDate": "Thu, 13 Nov 2025 19:24:24 +0100"
+    },
     {
       "title": "Muslimske bønnekald er ikke et stort problem i dag. Jeg gør mit for, at det forbliver sådan",
       "link": "https://information.dk/debat/2025/11/muslimske-boennekald-stort-problem-dag-goer-forbliver-saadan",
@@ -92,16 +102,6 @@
       "title": "Line Barfod: Ja, du skal være bange, Tom Jensen. Mamdanis sejr i New York er et forvarsel om et rødt København | Berlingske",
       "link": "https://www.berlingske.dk/laesere/line-barfod-ja-du-skal-vaere-bange-tom-jensen-mamdanis-sejr-i-new-york-er-et-forvarsel-om-et-roedt-koebenhavn",
       "pubDate": "Tue, 11 Nov 2025 21:47:21 +0100"
-    },
-    {
-      "title": "12 Venstre-borgmestre: Vi sikrer tryg beskatning af landbrugs-, skov- og naturejendomme",
-      "link": "https://avisendanmark.dk/debat/12-venstre-borgmestre-vi-sikrer-tryg-beskatning-af-landbrugs-skov-og-naturejendomme",
-      "pubDate": "Tue, 11 Nov 2025 19:55:00 +0100"
-    },
-    {
-      "title": "Efter DR-dokumentar: Lærlinge skal sikres trygge lærepladser",
-      "link": "https://avisendanmark.dk/debat/efter-dr-dokumentar-laerlinge-skal-sikres-trygge-laerepladser",
-      "pubDate": "Tue, 11 Nov 2025 18:00:00 +0100"
     }
   ]
 }

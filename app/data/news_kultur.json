@@ -1,12 +1,17 @@
 {
   "source": "https://wallnot.dk/rss?category=kultur",
   "category": "kultur",
-  "fetchedAt": "2025-11-13T20:00:07.190073+00:00",
+  "fetchedAt": "2025-11-13T22:58:06.150460+00:00",
   "items": [
     {
       "title": "Mors giftige farvel: Dansk dokumentarfilm sprænger rammerne",
       "link": "https://avisendanmark.dk/kultur/mors-giftige-farvel-dansk-dokumentarfilm-spraenger-rammerne",
       "pubDate": "Thu, 13 Nov 2025 20:45:00 +0100"
+    },
+    {
+      "title": "Nyklassiker. Hvad er årets bedste film? Weekendavisen inviterer læserne til at stemme.",
+      "link": "https://www.weekendavisen.dk/kultur/afstemning-aarets-film-2025",
+      "pubDate": "Thu, 13 Nov 2025 20:27:54 +0100"
     },
     {
       "title": "Hun synger på 14 sprog og får stående applaus fra hele verden. Spansk superstjerne har lavet et nyt album",
@@ -97,11 +102,6 @@
       "title": "Under lup. Videnskaben kan ikke fortælle os, hvem vi skal stemme på. Men den kan gøre os klogere på lokalpolitik.",
       "link": "https://www.weekendavisen.dk/ideer/kommunalvalg-under-lup",
       "pubDate": "Wed, 12 Nov 2025 15:06:18 +0100"
-    },
-    {
-      "title": "Sangeren Mø aflyser alle koncerter resten af året",
-      "link": "https://www.kristeligt-dagblad.dk/kultur/sangeren-moe-aflyser-alle-koncerter-resten-af-aaret",
-      "pubDate": "Wed, 12 Nov 2025 12:39:12 +0100"
     }
   ]
 }

@@ -35,10 +35,26 @@ function initializeDatabase(db) {
       UNIQUE(post_id, party_code, post_link)
     );
     
+    CREATE TABLE IF NOT EXISTS polling_data (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      party_code TEXT NOT NULL,
+      seneste_maaling_value REAL NOT NULL,
+      seneste_maaling_date TEXT,
+      forrige_maaling_value REAL NOT NULL,
+      forrige_maaling_date TEXT,
+      maaned_siden_value REAL NOT NULL,
+      valget_2022_value REAL NOT NULL,
+      scraped_at TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(party_code, scraped_at)
+    );
+    
     CREATE INDEX IF NOT EXISTS idx_party_code ON posts(party_code);
     CREATE INDEX IF NOT EXISTS idx_scraped_at ON posts(scraped_at DESC);
     CREATE INDEX IF NOT EXISTS idx_post_link ON posts(post_link);
     CREATE INDEX IF NOT EXISTS idx_author_name ON posts(author_name);
+    CREATE INDEX IF NOT EXISTS idx_polling_party_code ON polling_data(party_code);
+    CREATE INDEX IF NOT EXISTS idx_polling_scraped_at ON polling_data(scraped_at DESC);
   `);
   
   console.log("[DB] Database initialized at", DB_PATH);
@@ -180,6 +196,75 @@ export function deletePost(postId, partyCode = null) {
   } catch (error) {
     console.error("[DB] Error deleting post:", error);
     return false;
+  }
+}
+
+export function insertPollingData(pollingData) {
+  const db = getDatabase();
+  
+  const stmt = db.prepare(`
+    INSERT OR REPLACE INTO polling_data (
+      party_code, seneste_maaling_value, seneste_maaling_date,
+      forrige_maaling_value, forrige_maaling_date,
+      maaned_siden_value, valget_2022_value, scraped_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  try {
+    stmt.run(
+      pollingData.party_code,
+      pollingData.seneste_maaling_value,
+      pollingData.seneste_maaling_date || null,
+      pollingData.forrige_maaling_value,
+      pollingData.forrige_maaling_date || null,
+      pollingData.maaned_siden_value,
+      pollingData.valget_2022_value,
+      pollingData.scraped_at || new Date().toISOString()
+    );
+    return true;
+  } catch (error) {
+    console.error("[DB] Error inserting polling data:", error);
+    return false;
+  }
+}
+
+export function getLatestPollingData(partyCode = null) {
+  const db = getDatabase();
+  
+  if (partyCode) {
+    const stmt = db.prepare(`
+      SELECT * FROM polling_data
+      WHERE party_code = ?
+      ORDER BY scraped_at DESC
+      LIMIT 1
+    `);
+    const result = stmt.get(partyCode);
+    return result ? {
+      party_code: result.party_code,
+      seneste_maaling_value: result.seneste_maaling_value,
+      seneste_maaling_date: result.seneste_maaling_date,
+      forrige_maaling_value: result.forrige_maaling_value,
+      forrige_maaling_date: result.forrige_maaling_date,
+      maaned_siden_value: result.maaned_siden_value,
+      valget_2022_value: result.valget_2022_value,
+      scraped_at: result.scraped_at,
+    } : null;
+  } else {
+    const stmt = db.prepare(`
+      SELECT * FROM polling_data
+      WHERE scraped_at = (SELECT MAX(scraped_at) FROM polling_data)
+      ORDER BY party_code
+    `);
+    return stmt.all().map(row => ({
+      party_code: row.party_code,
+      seneste_maaling_value: row.seneste_maaling_value,
+      seneste_maaling_date: row.seneste_maaling_date,
+      forrige_maaling_value: row.forrige_maaling_value,
+      forrige_maaling_date: row.forrige_maaling_date,
+      maaned_siden_value: row.maaned_siden_value,
+      valget_2022_value: row.valget_2022_value,
+      scraped_at: row.scraped_at,
+    }));
   }
 }
 

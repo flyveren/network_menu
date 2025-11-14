@@ -1695,6 +1695,7 @@
           height: auto;
           width: 600px;
           flex-shrink: 0;
+          overflow: hidden;
         }
         /* First post spacing from the git grid */
         .facebook-posts__list li:first-child {
@@ -1765,15 +1766,15 @@
           background: rgba(255, 68, 68, 0.2);
         }
         .facebook-post__party-circle {
-          width: 32px;
-          height: 32px;
+          width: 42px;
+          height: 42px;
           border-radius: 50%;
           border: 2px solid white;
           display: flex;
           align-items: center;
           justify-content: center;
           font-family: "JetBrains Mono", system-ui, sans-serif;
-          font-size: 16px;
+          font-size: 18px;
           font-weight: 600;
           color: white;
           flex-shrink: 0;
@@ -1789,6 +1790,14 @@
           font-size: 20px;
           font-weight: 600;
           line-height: 1.2;
+        }
+        .facebook-post__title a {
+          color: inherit;
+          text-decoration: none;
+        }
+        .facebook-post__title a:hover,
+        .facebook-post__title a:focus-visible {
+          text-decoration: underline;
         }
         /* Party colors for post titles - match party button backgrounds */
         .facebook-post[data-party="A"] .facebook-post__title {
@@ -1878,6 +1887,7 @@
         .facebook-post__content {
           display: block;
           width: 100%;
+          background: transparent;
         }
         .facebook-post__author {
           display: none;
@@ -1887,6 +1897,21 @@
           line-height: 1.4;
           color: #eaeaea;
         }
+        .facebook-post__read-more {
+          background: transparent;
+          border: none;
+          color: #9dc5ff;
+          font-size: 14px;
+          cursor: pointer;
+          padding: 0;
+          margin-top: 4px;
+          align-self: flex-start;
+          text-decoration: underline;
+        }
+        .facebook-post__read-more:hover,
+        .facebook-post__read-more:focus-visible {
+          color: #cde4ff;
+        }
         .facebook-post__time {
           display: none; /* Hide post_time, use scraped_at instead */
         }
@@ -1895,6 +1920,11 @@
           padding: 0;
           width: calc(100% + 3rem);
           max-width: calc(100% + 3rem);
+          background: #000000 !important;
+          border-radius: 0 0 8px 8px;
+          overflow: hidden;
+          position: relative;
+          z-index: 1;
         }
         .facebook-post__media {
           margin: 0;
@@ -1902,6 +1932,7 @@
           width: 100%;
           max-width: 100%;
           display: block;
+          background: #000000 !important;
         }
         .facebook-post__media-img {
           display: block;
@@ -1923,6 +1954,7 @@
           max-width: 100%;
           margin: 0;
           padding: 0;
+          background: #000000 !important;
         }
         .facebook-post__media-video iframe {
           width: 100% !important;
@@ -1934,6 +1966,7 @@
           max-width: 100%;
           margin: 0;
           padding: 0;
+          background: #000000;
         }
         .facebook-post__media video {
           width: 100% !important;
@@ -2798,6 +2831,65 @@
     </div>
 
     <script>
+      // Filter out browser extension errors (ad blockers, privacy extensions)
+      const originalError = console.error;
+      const originalWarn = console.warn;
+      
+      function isBrowserExtensionError(message) {
+        if (!message) return false;
+        const msg = String(message).toLowerCase();
+        return (
+          msg.includes('invalid flags supplied to regexp constructor') ||
+          msg.includes('failed to apply filter') ||
+          msg.includes('failed to execute \'matches\'') ||
+          msg.includes('failed to execute \'queryselectorall\'') ||
+          msg.includes('matches-path') ||
+          msg.includes('css-selector') ||
+          msg.includes('syntaxerror: invalid flags') ||
+          msg.includes('syntaxerror: failed to execute') ||
+          msg.includes('not a valid selector') ||
+          msg.includes('has-text') || // Playwright-style selector not supported in browser
+          msg.includes('watch_feed') || // Facebook-specific extension filter
+          msg.includes('marketplace/item') || // Facebook marketplace filter
+          msg.includes('aria-posinset') // Facebook-specific extension filter
+        );
+      }
+      
+      console.error = function(...args) {
+        const errorMessage = args.join(' ');
+        if (isBrowserExtensionError(errorMessage)) {
+          return; // Suppress these errors
+        }
+        originalError.apply(console, args);
+      };
+      
+      console.warn = function(...args) {
+        const warnMessage = args.join(' ');
+        if (isBrowserExtensionError(warnMessage)) {
+          return; // Suppress these warnings
+        }
+        originalWarn.apply(console, args);
+      };
+
+      // Also filter uncaught errors from browser extensions
+      window.addEventListener('error', (event) => {
+        const errorMessage = event.message || event.error?.message || '';
+        if (isBrowserExtensionError(errorMessage)) {
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        }
+      }, true);
+      
+      // Also catch unhandled promise rejections from extensions
+      window.addEventListener('unhandledrejection', (event) => {
+        const errorMessage = event.reason?.message || String(event.reason || '');
+        if (isBrowserExtensionError(errorMessage)) {
+          event.preventDefault();
+          return false;
+        }
+      });
+
       const btnNav = document.getElementById("btn-nav-toggle");
       const nav = btnNav.closest("nav");
 
@@ -2844,6 +2936,8 @@
       const facebookPostsError = document.getElementById("facebook-posts-error");
       const facebookPostsLoading = document.getElementById("facebook-posts-loading");
 
+      const MAX_POST_TEXT_PREVIEW = 320;
+
       // Helpers
       function formatScrapedAt(iso) {
         if (!iso) return "";
@@ -2855,6 +2949,236 @@
           return "";
         }
       }
+
+      function appendPostText(container, textContent) {
+        if (!textContent) return;
+        const fullText = textContent.trim();
+        if (!fullText) return;
+
+        const textEl = document.createElement("div");
+        textEl.className = "facebook-post__text";
+
+        if (fullText.length > MAX_POST_TEXT_PREVIEW) {
+          const truncated = fullText.slice(0, MAX_POST_TEXT_PREVIEW).trimEnd() + "…";
+          textEl.textContent = truncated;
+          textEl.dataset.expanded = "false";
+
+          const readMoreBtn = document.createElement("button");
+          readMoreBtn.type = "button";
+          readMoreBtn.className = "facebook-post__read-more";
+          readMoreBtn.textContent = "Læs mere";
+          readMoreBtn.addEventListener("click", () => {
+            const expanded = textEl.dataset.expanded === "true";
+            if (expanded) {
+              textEl.textContent = truncated;
+              textEl.dataset.expanded = "false";
+              readMoreBtn.textContent = "Læs mere";
+            } else {
+              textEl.textContent = fullText;
+              textEl.dataset.expanded = "true";
+              readMoreBtn.textContent = "Læs mindre";
+            }
+          });
+
+          container.appendChild(textEl);
+          container.appendChild(readMoreBtn);
+        } else {
+          textEl.textContent = fullText;
+          container.appendChild(textEl);
+        }
+      }
+
+      function createFacebookPostElement(post) {
+        const li = document.createElement("li");
+        li.className = "facebook-post";
+
+        const party = post.party_code || getPartyForPost(post);
+        if (party) {
+          li.setAttribute("data-party", party);
+        }
+
+        const partyInfo = party ? partyConfig[party] : null;
+        const circleLabel = party
+          ? (party.length <= 3 ? party : party.charAt(0).toUpperCase())
+          : "?";
+
+        // Header with party circle
+        const header = document.createElement("div");
+        header.className = "facebook-post__header";
+
+        const partyCircle = document.createElement("div");
+        partyCircle.className = "facebook-post__party-circle";
+        partyCircle.textContent = circleLabel;
+        header.appendChild(partyCircle);
+
+        const headerContent = document.createElement("div");
+        headerContent.className = "facebook-post__header-content";
+
+        const title = document.createElement("div");
+        title.className = "facebook-post__title";
+        const titleLink = document.createElement("a");
+        titleLink.href = partyInfo?.url || post.post_link || "#";
+        titleLink.target = "_blank";
+        titleLink.rel = "noopener noreferrer";
+        titleLink.textContent = partyInfo?.name || post.author_name || "Facebook";
+        title.appendChild(titleLink);
+        headerContent.appendChild(title);
+
+        const scraped = document.createElement("div");
+        scraped.className = "facebook-post__scraped";
+        scraped.textContent = formatScrapedAt(post.scraped_at);
+        headerContent.appendChild(scraped);
+
+        header.appendChild(headerContent);
+
+        const menuButton = document.createElement("button");
+        menuButton.className = "facebook-post__menu-button";
+        menuButton.innerHTML = "⋯";
+        menuButton.setAttribute("aria-label", "Menu");
+
+        const dropdown = document.createElement("div");
+        dropdown.className = "facebook-post__menu-dropdown";
+
+        const menuContainer = document.createElement("div");
+        menuContainer.style.position = "absolute";
+        menuContainer.style.top = "0";
+        menuContainer.style.right = "0";
+        menuContainer.style.zIndex = "10";
+        menuContainer.appendChild(menuButton);
+        menuContainer.appendChild(dropdown);
+
+        let handleOutsideClick;
+
+        const deleteItem = document.createElement("div");
+        deleteItem.className = "facebook-post__menu-item delete";
+        deleteItem.textContent = "Slet post";
+        deleteItem.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (confirm("Er du sikker på, at du vil slette denne post?")) {
+            const partyCode = party || post.party_code || li.getAttribute("data-party") || "";
+            if (!partyCode) {
+              alert("Kan ikke bestemme partiet for posten. Prøv at opdatere siden.");
+              dropdown.classList.remove("show");
+              document.removeEventListener("click", handleOutsideClick);
+              return;
+            }
+            try {
+              const response = await fetch(`/api/facebook/posts?post_id=${encodeURIComponent(post.post_id)}&party_code=${encodeURIComponent(partyCode)}`, {
+                method: "DELETE",
+              });
+              if (response.ok) {
+                li.remove();
+                loadFacebookPosts();
+              } else {
+                alert("Kunne ikke slette posten");
+              }
+            } catch (error) {
+              console.error("Error deleting post:", error);
+              alert("Fejl ved sletning af post");
+            }
+          }
+          dropdown.classList.remove("show");
+          document.removeEventListener("click", handleOutsideClick);
+        });
+
+        dropdown.appendChild(deleteItem);
+
+        handleOutsideClick = (event) => {
+          if (!menuContainer.contains(event.target)) {
+            dropdown.classList.remove("show");
+            document.removeEventListener("click", handleOutsideClick);
+          }
+        };
+
+        menuButton.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const willShow = !dropdown.classList.contains("show");
+          dropdown.classList.toggle("show");
+          if (willShow) {
+            document.addEventListener("click", handleOutsideClick);
+          } else {
+            document.removeEventListener("click", handleOutsideClick);
+          }
+        });
+
+        header.appendChild(menuContainer);
+        li.appendChild(header);
+
+        const contentWrapper = document.createElement("div");
+        contentWrapper.className = "facebook-post__content";
+
+        const author = document.createElement("span");
+        author.className = "facebook-post__author";
+        author.textContent = post.author_name || "Unknown Author";
+        contentWrapper.appendChild(author);
+
+        appendPostText(contentWrapper, post.post_text);
+
+        li.appendChild(contentWrapper);
+
+        const mediaUrl = post.image_url || post.video_thumbnail || "";
+        const videoUrl = (post.video_url && post.video_url.startsWith("http")) ? post.video_url : "";
+        if (mediaUrl || videoUrl) {
+          const media = document.createElement("div");
+          media.className = "facebook-post__media";
+          if (videoUrl) {
+            if (videoUrl.includes("facebook.com")) {
+              const iframe = document.createElement("iframe");
+              iframe.src = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoUrl)}&show_text=false&width=600&height=400&appId`;
+              iframe.className = "facebook-post__media-video";
+              iframe.width = "100%";
+              iframe.height = "400";
+              iframe.style.border = "none";
+              iframe.style.overflow = "hidden";
+              iframe.style.borderRadius = "0";
+              iframe.style.width = "100%";
+              iframe.style.maxWidth = "100%";
+              iframe.style.margin = "0";
+              iframe.style.padding = "0";
+              iframe.style.display = "block";
+              iframe.style.background = "#000000";
+              iframe.setAttribute("scrolling", "no");
+              iframe.setAttribute("frameborder", "0");
+              iframe.setAttribute("allowfullscreen", "true");
+              iframe.setAttribute("allow", "autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share");
+              media.appendChild(iframe);
+            } else {
+              const video = document.createElement("video");
+              video.className = "facebook-post__media-video";
+              video.controls = true;
+              video.preload = "metadata";
+              video.style.width = "100%";
+              video.style.maxWidth = "100%";
+              video.style.height = "auto";
+              video.style.borderRadius = "0";
+              video.style.margin = "0";
+              video.style.padding = "0";
+              if (mediaUrl) {
+                video.poster = mediaUrl;
+              }
+              const source = document.createElement("source");
+              source.src = videoUrl;
+              source.type = "video/mp4";
+              video.appendChild(source);
+              video.textContent = "Din browser understøtter ikke videoafspilning.";
+              media.appendChild(video);
+            }
+          } else if (mediaUrl) {
+            const img = document.createElement("img");
+            img.src = mediaUrl;
+            img.alt = "Media";
+            img.className = "facebook-post__media-img";
+            media.appendChild(img);
+          }
+          const mediaContainer = document.createElement("div");
+          mediaContainer.className = "facebook-post__media-container";
+          mediaContainer.appendChild(media);
+          li.appendChild(mediaContainer);
+        }
+
+        return li;
+      }
+
       // Party buttons configuration
       const partyConfig = {
         A: { name: "Socialdemokratiet", url: "https://www.facebook.com/socialdemokratiet" },
@@ -3117,6 +3441,46 @@
           // Update values: [Seneste måling, Forrige måling, 1 måned siden, Valget 2022, ...]
           console.log(`[PARTY-STATS] Updating elements with values:`, partyData);
           
+          // Get dates from response if available
+          // Try both uppercase and lowercase party code
+          let dates = data?.dates?.[partyCode] || data?.dates?.[partyCode.toLowerCase()] || {};
+          const senesteDate = dates.seneste_date || null;
+          const forrigeDate = dates.forrige_date || null;
+          
+          console.log(`[PARTY-STATS] Dates for ${partyCode}:`, { 
+            senesteDate, 
+            forrigeDate, 
+            dates,
+            allDates: data?.dates,
+            partyCode,
+            hasDates: !!data?.dates
+          });
+          
+          // Update labels with dates - find labels by their parent container
+          const senesteValueDiv = document.querySelector("#party-stats-seneste")?.parentElement;
+          const forrigeValueDiv = document.querySelector("#party-stats-forrige")?.parentElement;
+          
+          const senesteLabel = senesteValueDiv?.querySelector(".party-stats__label");
+          const forrigeLabel = forrigeValueDiv?.querySelector(".party-stats__label");
+          
+          if (senesteLabel) {
+            if (senesteDate) {
+              senesteLabel.textContent = `Seneste måling (${senesteDate})`;
+              console.log(`[PARTY-STATS] Updated Seneste måling label with date: ${senesteDate}`);
+            } else {
+              senesteLabel.textContent = "Seneste måling";
+            }
+          }
+          
+          if (forrigeLabel) {
+            if (forrigeDate) {
+              forrigeLabel.textContent = `Forrige måling (${forrigeDate})`;
+              console.log(`[PARTY-STATS] Updated Forrige måling label with date: ${forrigeDate}`);
+            } else {
+              forrigeLabel.textContent = "Forrige måling";
+            }
+          }
+          
           // Force update with explicit style changes to ensure visibility
           const updateValue = (element, value, label) => {
             if (element) {
@@ -3298,211 +3662,11 @@
             facebookPostsList.appendChild(container);
             
             // Add all posts to the single container
-            data.posts.forEach((post, index) => {
-            
-            const li = document.createElement("li");
-            li.className = "facebook-post";
-            
-            // Determine which party this post belongs to
-            const party = getPartyForPost(post);
-            if (party) {
-              li.setAttribute("data-party", party);
-            }
-
-            // Header with party circle
-            const header = document.createElement("div");
-            header.className = "facebook-post__header";
-            
-            // Party circle
-            const partyCircle = document.createElement("div");
-            partyCircle.className = "facebook-post__party-circle";
-            partyCircle.textContent = party || "?";
-            header.appendChild(partyCircle);
-            
-            // Header content (party name and date)
-            const headerContent = document.createElement("div");
-            headerContent.className = "facebook-post__header-content";
-            
-            const title = document.createElement("div");
-            title.className = "facebook-post__title";
-            title.textContent = party ? partyConfig[party].name : (post.author_name || "Facebook");
-            headerContent.appendChild(title);
-            
-            const scraped = document.createElement("div");
-            scraped.className = "facebook-post__scraped";
-            scraped.textContent = formatScrapedAt(post.scraped_at);
-            headerContent.appendChild(scraped);
-            
-            header.appendChild(headerContent);
-            
-            // Menu button (three dots)
-            const menuButton = document.createElement("button");
-            menuButton.className = "facebook-post__menu-button";
-            menuButton.innerHTML = "⋯";
-            menuButton.setAttribute("aria-label", "Menu");
-            
-            // Dropdown menu
-            const dropdown = document.createElement("div");
-            dropdown.className = "facebook-post__menu-dropdown";
-            
-            const deleteItem = document.createElement("div");
-            deleteItem.className = "facebook-post__menu-item delete";
-            deleteItem.textContent = "Slet post";
-            deleteItem.addEventListener("click", async (e) => {
-              e.stopPropagation();
-              if (confirm("Er du sikker på, at du vil slette denne post?")) {
-                const partyCode = party || post.party_code || li.getAttribute("data-party") || "";
-                if (!partyCode) {
-                  alert("Kan ikke bestemme partiet for posten. Prøv at opdatere siden.");
-                  dropdown.classList.remove("show");
-                  return;
-                }
-                try {
-                  const response = await fetch(`/api/facebook/posts?post_id=${encodeURIComponent(post.post_id)}&party_code=${encodeURIComponent(partyCode)}`, {
-                    method: "DELETE",
-                  });
-                  if (response.ok) {
-                    li.remove();
-                    // Reload posts to refresh the list
-                    loadFacebookPosts();
-                  } else {
-                    alert("Kunne ikke slette posten");
-                  }
-                } catch (error) {
-                  console.error("Error deleting post:", error);
-                  alert("Fejl ved sletning af post");
-                }
-              }
-              dropdown.classList.remove("show");
+            data.posts.forEach((post) => {
+              const li = createFacebookPostElement(post);
+              container.appendChild(li);
             });
-            
-            dropdown.appendChild(deleteItem);
-            
-            // Create container for button and dropdown
-            const menuContainer = document.createElement("div");
-            menuContainer.style.position = "absolute";
-            menuContainer.style.top = "0";
-            menuContainer.style.right = "0";
-            menuContainer.style.zIndex = "10";
-            menuContainer.appendChild(menuButton);
-            menuContainer.appendChild(dropdown);
-            
-            const handleOutsideClick = (event) => {
-              if (!menuContainer.contains(event.target)) {
-                dropdown.classList.remove("show");
-                document.removeEventListener("click", handleOutsideClick);
-              }
-            };
-            
-            // Toggle dropdown on button click
-            menuButton.addEventListener("click", (e) => {
-              e.stopPropagation();
-              const willShow = !dropdown.classList.contains("show");
-              dropdown.classList.toggle("show");
-              if (willShow) {
-                document.addEventListener("click", handleOutsideClick);
-              } else {
-                document.removeEventListener("click", handleOutsideClick);
-              }
-            });
-            
-            // Close dropdown when clicking outside
-            document.addEventListener("click", (e) => {
-              if (!menuContainer.contains(e.target)) {
-                dropdown.classList.remove("show");
-              }
-            });
-            
-            header.appendChild(menuContainer);
-
-            // Content
-            const contentWrapper = document.createElement("div");
-            contentWrapper.className = "facebook-post__content";
-
-            const author = document.createElement("span");
-            author.className = "facebook-post__author";
-            author.textContent = post.author_name || "Unknown Author";
-
-            const text = document.createElement("p");
-            text.className = "facebook-post__text";
-            text.textContent = post.post_text || "";
-
-            li.appendChild(header);
-            contentWrapper.appendChild(author);
-            if (post.post_text) {
-              contentWrapper.appendChild(text);
-            }
-
-            // Add content
-            li.appendChild(contentWrapper);
-
-            // Media (image/video) beneath the text
-            const mediaUrl = post.image_url || post.video_thumbnail || "";
-            const videoUrl = (post.video_url && post.video_url.startsWith("http")) ? post.video_url : "";
-            if (mediaUrl || videoUrl) {
-              const media = document.createElement("div");
-              media.className = "facebook-post__media";
-              if (videoUrl) {
-                // Check if it's a Facebook video URL
-                if (videoUrl.includes("facebook.com")) {
-                  // Use Facebook embed iframe with cleaner settings
-                  const iframe = document.createElement("iframe");
-                  iframe.src = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoUrl)}&show_text=false&width=600&height=400`;
-                  iframe.className = "facebook-post__media-video";
-                  iframe.width = "100%";
-                  iframe.height = "400";
-                  iframe.style.border = "none";
-                  iframe.style.overflow = "hidden";
-                  iframe.style.borderRadius = "0";
-                  iframe.style.width = "100%";
-                  iframe.style.maxWidth = "100%";
-                  iframe.style.margin = "0";
-                  iframe.style.padding = "0";
-                  iframe.style.display = "block";
-                  iframe.setAttribute("scrolling", "no");
-                  iframe.setAttribute("frameborder", "0");
-                  iframe.setAttribute("allowfullscreen", "true");
-                  iframe.setAttribute("allow", "autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share");
-                  media.appendChild(iframe);
-                } else {
-                  // For non-Facebook videos, use HTML5 video player
-                  const video = document.createElement("video");
-                  video.className = "facebook-post__media-video";
-                  video.controls = true;
-                  video.preload = "metadata";
-                  video.style.width = "100%";
-                  video.style.maxWidth = "100%";
-                  video.style.height = "auto";
-                  video.style.borderRadius = "0";
-                  video.style.margin = "0";
-                  video.style.padding = "0";
-                  if (mediaUrl) {
-                    video.poster = mediaUrl;
-                  }
-                  const source = document.createElement("source");
-                  source.src = videoUrl;
-                  source.type = "video/mp4";
-                  video.appendChild(source);
-                  video.textContent = "Din browser understøtter ikke videoafspilning.";
-                  media.appendChild(video);
-                }
-              } else if (mediaUrl) {
-                // Regular image
-                const img = document.createElement("img");
-                img.src = mediaUrl;
-                img.alt = "Media";
-                img.className = "facebook-post__media-img";
-                media.appendChild(img);
-              }
-              const mediaContainer = document.createElement("div");
-              mediaContainer.className = "facebook-post__media-container";
-              mediaContainer.appendChild(media);
-              li.appendChild(mediaContainer);
-            }
-
-            container.appendChild(li);
-          });
-          } // End of if (!silent || hasNewPosts)
+          }
 
           if (!silent) {
             facebookPostsLoading.hidden = true;
@@ -3609,210 +3773,15 @@
         
         facebookPostsList.innerHTML = "";
         
-        // Create single row container
         const container = document.createElement("div");
         container.className = "facebook-posts__column";
         facebookPostsList.appendChild(container);
         
-        // Add all posts to the single container
-        posts.forEach((post, index) => {
-          
-          const li = document.createElement("li");
-          li.className = "facebook-post";
-          const party = getPartyForPost(post);
-          if (party) {
-            li.setAttribute("data-party", party);
-          }
-          
-          // Header with party circle, party name and scrape time
-          const header = document.createElement("div");
-          header.className = "facebook-post__header";
-          
-          // Party circle
-          const partyCircle = document.createElement("div");
-          partyCircle.className = "facebook-post__party-circle";
-          partyCircle.textContent = party || "?";
-          header.appendChild(partyCircle);
-          
-          // Header content (party name and date)
-          const headerContent = document.createElement("div");
-          headerContent.className = "facebook-post__header-content";
-          
-          const title = document.createElement("div");
-          title.className = "facebook-post__title";
-          title.textContent = party ? partyConfig[party].name : (post.author_name || "Unknown");
-          headerContent.appendChild(title);
-          
-          if (post.scraped_at) {
-            const scrapedAt = document.createElement("div");
-            scrapedAt.className = "facebook-post__scraped";
-            const date = new Date(post.scraped_at);
-            scrapedAt.textContent = date.toLocaleString("da-DK", {
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            });
-            headerContent.appendChild(scrapedAt);
-          }
-          
-          header.appendChild(headerContent);
-          
-          // Menu button (three dots)
-          const menuButton = document.createElement("button");
-          menuButton.className = "facebook-post__menu-button";
-          menuButton.innerHTML = "⋯";
-          menuButton.setAttribute("aria-label", "Menu");
-          
-          // Dropdown menu
-          const dropdown = document.createElement("div");
-          dropdown.className = "facebook-post__menu-dropdown";
-          
-          const deleteItem = document.createElement("div");
-          deleteItem.className = "facebook-post__menu-item delete";
-          deleteItem.textContent = "Slet post";
-          deleteItem.addEventListener("click", async (e) => {
-            e.stopPropagation();
-            if (confirm("Er du sikker på, at du vil slette denne post?")) {
-              try {
-                const response = await fetch(`/api/facebook/posts?post_id=${encodeURIComponent(post.post_id)}`, {
-                  method: "DELETE",
-                });
-                if (response.ok) {
-                  li.remove();
-                  // Reload posts to refresh the list
-                  loadFacebookPosts();
-                } else {
-                  alert("Kunne ikke slette posten");
-                }
-              } catch (error) {
-                console.error("Error deleting post:", error);
-                alert("Fejl ved sletning af post");
-              }
-            }
-            dropdown.classList.remove("show");
-          });
-          
-          dropdown.appendChild(deleteItem);
-          
-          // Create container for button and dropdown
-          const menuContainer = document.createElement("div");
-          menuContainer.style.position = "absolute";
-          menuContainer.style.top = "0";
-          menuContainer.style.right = "0";
-          menuContainer.style.zIndex = "10";
-          menuContainer.appendChild(menuButton);
-          menuContainer.appendChild(dropdown);
-          
-          const handleOutsideClick = (event) => {
-            if (!menuContainer.contains(event.target)) {
-              dropdown.classList.remove("show");
-              document.removeEventListener("click", handleOutsideClick);
-            }
-          };
-          
-          // Toggle dropdown on button click
-          menuButton.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const willShow = !dropdown.classList.contains("show");
-            dropdown.classList.toggle("show");
-            if (willShow) {
-              document.addEventListener("click", handleOutsideClick);
-            } else {
-              document.removeEventListener("click", handleOutsideClick);
-            }
-          });
-          
-          // Close dropdown when clicking outside
-          document.addEventListener("click", (e) => {
-            if (!menuContainer.contains(e.target)) {
-              dropdown.classList.remove("show");
-            }
-          });
-          
-          header.appendChild(menuContainer);
-          li.appendChild(header);
-          
-          // Post text
-          if (post.post_text) {
-            const text = document.createElement("div");
-            text.className = "facebook-post__text";
-            text.textContent = post.post_text;
-            li.appendChild(text);
-          }
-          
-          // Media (video or image)
-          const videoUrl = post.video_url;
-          const mediaUrl = post.video_thumbnail || post.image_url;
-          
-          if (videoUrl || mediaUrl) {
-            const mediaContainer = document.createElement("div");
-            mediaContainer.className = "facebook-post__media-container";
-            
-            const media = document.createElement("div");
-            media.className = "facebook-post__media";
-            
-            if (videoUrl) {
-              // Check if it's a Facebook video URL
-              if (videoUrl.includes("facebook.com")) {
-                // Use Facebook embed iframe with cleaner settings
-                const iframe = document.createElement("iframe");
-                iframe.src = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(videoUrl)}&show_text=false&width=600&height=400`;
-                iframe.className = "facebook-post__media-video";
-                iframe.width = "100%";
-                iframe.height = "400";
-                iframe.style.border = "none";
-                iframe.style.overflow = "hidden";
-                iframe.style.borderRadius = "0";
-                iframe.style.width = "100%";
-                iframe.style.maxWidth = "100%";
-                iframe.style.margin = "0";
-                iframe.style.padding = "0";
-                iframe.style.display = "block";
-                iframe.setAttribute("scrolling", "no");
-                iframe.setAttribute("frameborder", "0");
-                iframe.setAttribute("allowfullscreen", "true");
-                iframe.setAttribute("allow", "autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share");
-                media.appendChild(iframe);
-              } else {
-                // For non-Facebook videos, use HTML5 video player
-                const video = document.createElement("video");
-                video.className = "facebook-post__media-video";
-                video.controls = true;
-                video.preload = "metadata";
-                video.style.width = "100%";
-                video.style.maxWidth = "100%";
-                video.style.height = "auto";
-                video.style.borderRadius = "0";
-                video.style.margin = "0";
-                video.style.padding = "0";
-                if (mediaUrl) {
-                  video.poster = mediaUrl;
-                }
-                const source = document.createElement("source");
-                source.src = videoUrl;
-                source.type = "video/mp4";
-                video.appendChild(source);
-                video.textContent = "Din browser understøtter ikke videoafspilning.";
-                media.appendChild(video);
-              }
-            } else if (mediaUrl) {
-              // Regular image
-              const img = document.createElement("img");
-              img.src = mediaUrl;
-              img.alt = "Media";
-              img.className = "facebook-post__media-img";
-              media.appendChild(img);
-            }
-            mediaContainer.appendChild(media);
-            li.appendChild(mediaContainer);
-          }
-          
+        (posts || []).forEach((post) => {
+          const li = createFacebookPostElement(post);
           container.appendChild(li);
         });
         
-        // Apply current party filter after rendering
         filterFacebookPostsByParty(currentParty);
       }
 
@@ -3864,91 +3833,12 @@
           }
 
           facebookPostsList.innerHTML = "";
+          const container = document.createElement("div");
+          container.className = "facebook-posts__column";
+          facebookPostsList.appendChild(container);
           data.posts.forEach((post) => {
-            const li = document.createElement("li");
-            li.className = "facebook-post";
-            
-            // Determine which party this post belongs to
-            const party = getPartyForPost(post);
-            if (party) {
-              li.setAttribute("data-party", party);
-            }
-
-            // Create content wrapper
-            const contentWrapper = document.createElement("div");
-            contentWrapper.className = "facebook-post__content";
-
-            const author = document.createElement("span");
-            author.className = "facebook-post__author";
-            author.textContent = post.author_name || "Unknown Author";
-
-            const text = document.createElement("p");
-            text.className = "facebook-post__text";
-            text.textContent = post.post_text || "";
-
-            contentWrapper.appendChild(author);
-            if (post.post_text) {
-              contentWrapper.appendChild(text);
-            }
-
-            // Add video thumbnail to the left if available
-            if (post.video_url || post.video_thumbnail) {
-              const videoContainer = document.createElement("div");
-              videoContainer.className = "facebook-post__video";
-              
-              if (post.video_url && post.video_url.startsWith("http")) {
-                // Check if it's a Facebook video/reel URL - use embed iframe
-                if (post.video_url.includes("facebook.com") && (post.video_url.includes("/reel/") || post.video_url.includes("/video/") || post.video_url.includes("/watch/"))) {
-                  // Use Facebook embed iframe
-                  const iframe = document.createElement("iframe");
-                  iframe.className = "facebook-post__media-video";
-                  iframe.src = `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(post.video_url)}&show_text=false&width=500`;
-                  iframe.width = "100%";
-                  iframe.height = "500";
-                  iframe.style.border = "none";
-                  iframe.style.overflow = "hidden";
-                  iframe.setAttribute("scrolling", "no");
-                  iframe.setAttribute("frameborder", "0");
-                  iframe.setAttribute("allowfullscreen", "true");
-                  iframe.setAttribute("allow", "autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share");
-                  iframe.style.display = "block";
-                  iframe.style.width = "100%";
-                  iframe.style.height = "500px";
-                  iframe.style.minHeight = "400px";
-                  videoContainer.appendChild(iframe);
-                } else {
-                  // Use HTML5 video player for direct video URLs
-                  const video = document.createElement("video");
-                  video.className = "facebook-post__media-video";
-                  video.controls = true;
-                  video.preload = "metadata";
-                  if (post.video_thumbnail) {
-                    video.poster = post.video_thumbnail; // Use thumbnail as poster
-                  }
-                  const source = document.createElement("source");
-                  source.src = post.video_url;
-                  source.type = "video/mp4";
-                  video.appendChild(source);
-                  video.textContent = "Din browser understøtter ikke videoafspilning.";
-                  videoContainer.appendChild(video);
-                }
-              } else if (post.video_thumbnail) {
-                // Fallback to thumbnail image if no video URL
-                const thumbnail = document.createElement("img");
-                thumbnail.src = post.video_thumbnail;
-                thumbnail.alt = "Video thumbnail";
-                thumbnail.className = "facebook-post__video-thumbnail";
-                videoContainer.appendChild(thumbnail);
-              }
-              
-              // Add video first (left side)
-              li.appendChild(videoContainer);
-            }
-            
-            // Add content wrapper (right side)
-            li.appendChild(contentWrapper);
-
-            facebookPostsList.appendChild(li);
+            const li = createFacebookPostElement(post);
+            container.appendChild(li);
           });
 
           console.log("[FACEBOOK] Posts rendered, hiding loading indicator");

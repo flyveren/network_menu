@@ -80,6 +80,9 @@ def scrape_party_data(driver: webdriver.Chrome) -> dict[str, list[float]]:
     """Scrape party polling data from the bar chart."""
     url = "https://voxmeter.dk/meningsmalinger/"
     
+    # Store dates from header row
+    header_dates = {'seneste': None, 'forrige': None}
+    
     print(f"[INFO] Fetching data from: {url}", flush=True)
     
     try:
@@ -206,12 +209,44 @@ def scrape_party_data(driver: webdriver.Chrome) -> dict[str, list[float]]:
                                         print(f"[DEBUG] First row: {table[0][:8] if len(table[0]) > 8 else table[0]}", flush=True)
                                     
                                     # Based on actual PDF structure:
+                                    # Table 0: Header row with dates
+                                    # Table 1: Party data rows
                                     # Col 1: Party name (e.g., "A – Socialdemokratiet")
-                                    # Col 4: Seneste måling (with date)
-                                    # Col 7: Forrige måling (with date)
+                                    # Col 4: Seneste måling (value only, date in header)
+                                    # Col 7: Forrige måling (value only, date in header)
                                     # Col 10: 1 måned siden (with date)
                                     # Col 13: Valget 2022
-                                    # Last column is not important (user said)
+                                    
+                                    # Extract dates from header row (table 0)
+                                    # Row 0 has labels: ['', '', 'Seneste måling', '', '', 'Forrige måling', '', '', '1 måned siden', '']
+                                    # Row 1 has dates: [None, None, '10.11.2025', None, None, '03.11.2025', None, None, '13.10.2025', None]
+                                    if table_idx == 0:
+                                        if len(table) >= 2:
+                                            # Dates are in row 1 (second row)
+                                            date_row = table[1]
+                                            
+                                            # Seneste måling date is in column 2 (index 2)
+                                            if len(date_row) > 2:
+                                                seneste_date_cell = str(date_row[2] or "").strip()
+                                                if seneste_date_cell:
+                                                    # Clean up date format (might be DD.MM.YYYY, convert to DD/MM/YYYY or DD/MM)
+                                                    seneste_date = seneste_date_cell.replace('.', '/')
+                                                    # Remove year if present for consistency (or keep it)
+                                                    # For now, keep full date
+                                                    header_dates['seneste'] = seneste_date
+                                                    print(f"[DEBUG] Found Seneste måling date in column 2: {seneste_date}", flush=True)
+                                            
+                                            # Forrige måling date is in column 5 (index 5)
+                                            if len(date_row) > 5:
+                                                forrige_date_cell = str(date_row[5] or "").strip()
+                                                if forrige_date_cell:
+                                                    # Clean up date format
+                                                    forrige_date = forrige_date_cell.replace('.', '/')
+                                                    header_dates['forrige'] = forrige_date
+                                                    print(f"[DEBUG] Found Forrige måling date in column 5: {forrige_date}", flush=True)
+                                        
+                                        print(f"[DEBUG] Final header dates: seneste={header_dates['seneste']}, forrige={header_dates['forrige']}", flush=True)
+                                        continue
                                     
                                     # Column indices based on structure
                                     seneste_col = 4
@@ -223,7 +258,12 @@ def scrape_party_data(driver: webdriver.Chrome) -> dict[str, list[float]]:
                                     if table_idx != 1:
                                         continue
                                     
+                                    # Get dates from header if available
+                                    seneste_date = header_dates.get('seneste')
+                                    forrige_date = header_dates.get('forrige')
+                                    
                                     print(f"[DEBUG] Using columns: Seneste={seneste_col}, Forrige={forrige_col}, Måned={maaned_col}, Valget={valg_col}", flush=True)
+                                    print(f"[DEBUG] Dates from header: seneste={seneste_date}, forrige={forrige_date}", flush=True)
                                     
                                     # Now look for party rows in table 1
                                     for row_idx, row in enumerate(table):
@@ -257,22 +297,25 @@ def scrape_party_data(driver: webdriver.Chrome) -> dict[str, list[float]]:
                                                 # Extract values from the 4 columns: Seneste, Forrige, Måned, Valget
                                                 values = []
                                                 
-                                                # Extract Seneste måling (col 4)
+                                                # Extract Seneste måling (col 4) - date comes from header
+                                                seneste_value = None
                                                 if seneste_col < len(row):
                                                     seneste_cell = str(row[seneste_col] or "").strip()
-                                                    # Extract number (ignore date and parentheses)
+                                                    # Extract number (ignore parentheses with changes)
                                                     seneste_nums = re.findall(r'(\d+[,.]?\d*)', seneste_cell)
                                                     for num_str in seneste_nums:
                                                         try:
                                                             val = float(num_str.replace(',', '.'))
                                                             if 0 <= val <= 100:
+                                                                seneste_value = val
                                                                 values.append(val)
                                                                 print(f"[DEBUG] Found Seneste måling for {party_code}: {val}", flush=True)
                                                                 break
                                                         except ValueError:
                                                             pass
                                                 
-                                                # Extract Forrige måling (col 7)
+                                                # Extract Forrige måling (col 7) - date comes from header
+                                                forrige_value = None
                                                 if forrige_col < len(row):
                                                     forrige_cell = str(row[forrige_col] or "").strip()
                                                     forrige_nums = re.findall(r'(\d+[,.]?\d*)', forrige_cell)
@@ -280,6 +323,7 @@ def scrape_party_data(driver: webdriver.Chrome) -> dict[str, list[float]]:
                                                         try:
                                                             val = float(num_str.replace(',', '.'))
                                                             if 0 <= val <= 100:
+                                                                forrige_value = val
                                                                 values.append(val)
                                                                 print(f"[DEBUG] Found Forrige måling for {party_code}: {val}", flush=True)
                                                                 break
@@ -316,13 +360,22 @@ def scrape_party_data(driver: webdriver.Chrome) -> dict[str, list[float]]:
                                                 
                                                 # We need exactly 4 values: Seneste måling, Forrige måling, 1 måned siden, Valget 2022
                                                 if len(values) >= 4:
-                                                    result[party_code] = values[:4]
-                                                    print(f"[INFO] Found data for {party_name} ({party_code}) from PDF: {values[:4]}", flush=True)
+                                                    # Store values with dates
+                                                    result[party_code] = {
+                                                        "values": values[:4],
+                                                        "seneste_date": seneste_date,
+                                                        "forrige_date": forrige_date,
+                                                    }
+                                                    print(f"[INFO] Found data for {party_name} ({party_code}) from PDF: {values[:4]} (dates: seneste={seneste_date}, forrige={forrige_date})", flush=True)
                                                 elif len(values) >= 1:
                                                     # If we have partial data, pad with last value or 0
                                                     while len(values) < 4:
                                                         values.append(values[-1] if values else 0)
-                                                    result[party_code] = values[:4]
+                                                    result[party_code] = {
+                                                        "values": values[:4],
+                                                        "seneste_date": seneste_date,
+                                                        "forrige_date": forrige_date,
+                                                    }
                                                     print(f"[INFO] Found partial data for {party_name} ({party_code}) from PDF (padded): {values[:4]}", flush=True)
                                                 break
                 except Exception as pdf_error:
@@ -1425,10 +1478,25 @@ def scrape_party_data(driver: webdriver.Chrome) -> dict[str, list[float]]:
 
 
 def write_payload(data: dict, output_path: Path) -> None:
-    """Write party polling data to JSON file."""
+    """Write party polling data to JSON file and database."""
+    scraped_at = datetime.now(timezone.utc).isoformat()
+    
+    # Normalize data format - convert dict format to list format for JSON compatibility
+    normalized_data = {}
+    for party_code, party_data in data.items():
+        if isinstance(party_data, dict) and "values" in party_data:
+            # New format with dates
+            normalized_data[party_code] = party_data["values"]
+        elif isinstance(party_data, list):
+            # Old format (list of values)
+            normalized_data[party_code] = party_data
+        else:
+            # Unknown format, skip
+            continue
+    
     payload = {
-        "scraped_at": datetime.now(timezone.utc).isoformat(),
-        "data": data,
+        "scraped_at": scraped_at,
+        "data": normalized_data,
         "format": {
             "description": "4 values per party: [Seneste måling, Forrige måling, 1 måned siden, Valget 2022]",
             "parties": {
@@ -1448,11 +1516,68 @@ def write_payload(data: dict, output_path: Path) -> None:
         }
     }
     
+    # Add dates to payload if available
+    dates_data = {}
+    for party_code, party_data in data.items():
+        if isinstance(party_data, dict) and "values" in party_data:
+            dates_data[party_code] = {
+                "seneste_date": party_data.get("seneste_date"),
+                "forrige_date": party_data.get("forrige_date"),
+            }
+    if dates_data:
+        payload["dates"] = dates_data
+    
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
     
     print(f"[INFO] Wrote data to {output_path}", flush=True)
+    
+    # Save to database
+    try:
+        sys.path.insert(0, str(Path(__file__).parent))
+        from db_helper import insert_polling_data
+        
+        saved_count = 0
+        for party_code, party_data in data.items():
+            if isinstance(party_data, dict) and "values" in party_data:
+                values = party_data["values"]
+                if len(values) >= 4:
+                    polling_data = {
+                        "party_code": party_code,
+                        "seneste_maaling_value": values[0],
+                        "seneste_maaling_date": party_data.get("seneste_date"),
+                        "forrige_maaling_value": values[1],
+                        "forrige_maaling_date": party_data.get("forrige_date"),
+                        "maaned_siden_value": values[2],
+                        "valget_2022_value": values[3],
+                        "scraped_at": scraped_at,
+                    }
+                    if insert_polling_data(polling_data):
+                        saved_count += 1
+            elif isinstance(party_data, list) and len(party_data) >= 4:
+                # Old format without dates
+                polling_data = {
+                    "party_code": party_code,
+                    "seneste_maaling_value": party_data[0],
+                    "seneste_maaling_date": None,
+                    "forrige_maaling_value": party_data[1],
+                    "forrige_maaling_date": None,
+                    "maaned_siden_value": party_data[2],
+                    "valget_2022_value": party_data[3],
+                    "scraped_at": scraped_at,
+                }
+                if insert_polling_data(polling_data):
+                    saved_count += 1
+        
+        if saved_count > 0:
+            print(f"[INFO] Saved {saved_count} party polling records to database", flush=True)
+        else:
+            print(f"[WARNING] No polling data saved to database", flush=True)
+    except Exception as e:
+        print(f"[WARNING] Failed to save polling data to database: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

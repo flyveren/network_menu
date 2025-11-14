@@ -84,16 +84,77 @@ def post_exists(post, party_code):
         cursor = conn.execute("""
             SELECT COUNT(*) FROM posts
             WHERE party_code = ? AND (
+                (post_id != '' AND post_id = ?) OR
                 (post_link != '' AND post_link = ?) OR
                 (post_text != '' AND post_text = ?)
             )
         """, (
             party_code,
+            post.get("post_id") or "",
             post.get("post_link") or "",
             post.get("post_text") or "",
         ))
         count = cursor.fetchone()[0]
         return count > 0
+    finally:
+        conn.close()
+
+
+def get_db_polling():
+    """Get database connection and ensure polling_data table exists."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA journal_mode = WAL")
+    
+    # Create polling_data table if it doesn't exist
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS polling_data (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            party_code TEXT NOT NULL,
+            seneste_maaling_value REAL NOT NULL,
+            seneste_maaling_date TEXT,
+            forrige_maaling_value REAL NOT NULL,
+            forrige_maaling_date TEXT,
+            maaned_siden_value REAL NOT NULL,
+            valget_2022_value REAL NOT NULL,
+            scraped_at TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(party_code, scraped_at)
+        )
+    """)
+    
+    # Create indexes
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_polling_party_code ON polling_data(party_code)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_polling_scraped_at ON polling_data(scraped_at DESC)")
+    
+    conn.commit()
+    return conn
+
+
+def insert_polling_data(polling_data):
+    """Insert or replace polling data in the database."""
+    conn = get_db_polling()
+    try:
+        conn.execute("""
+            INSERT OR REPLACE INTO polling_data (
+                party_code, seneste_maaling_value, seneste_maaling_date,
+                forrige_maaling_value, forrige_maaling_date,
+                maaned_siden_value, valget_2022_value, scraped_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            polling_data.get("party_code"),
+            polling_data.get("seneste_maaling_value"),
+            polling_data.get("seneste_maaling_date"),
+            polling_data.get("forrige_maaling_value"),
+            polling_data.get("forrige_maaling_date"),
+            polling_data.get("maaned_siden_value"),
+            polling_data.get("valget_2022_value"),
+            polling_data.get("scraped_at") or datetime.now(timezone.utc).isoformat(),
+        ))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[DB] Error inserting polling data: {e}", flush=True)
+        return False
     finally:
         conn.close()
 

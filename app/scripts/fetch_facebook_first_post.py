@@ -24,6 +24,151 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
+SEE_MORE_KEYWORDS = [
+    "see more",
+    "se mere",
+    "vis mere",
+    "læs mere",
+    "read more",
+    "show more",
+]
+
+COMMENT_EXACT_MATCHES = {
+    "skriv en kommentar",
+    "se flere kommentarer",
+    "kommentarer",
+    "kommentar",
+    "kommenter",
+    "write a comment",
+    "view more comments",
+    "see more comments",
+    "reply",
+    "svar",
+    "del",
+    "vis flere kommentarer",
+    "vis alle",
+    "show more comments",
+}
+
+COMMENT_CONTAINS_KEYWORDS = (
+    "synes godt om",  # likes
+    "liker dette",
+    "likes",
+    " synes godt om",
+    " kommenter",
+    " kommentar",
+    "jeg er bange for",  # Common comment starter
+    "redigeret",  # "Edited" in comments
+    "se mere",  # "See more" in comments (but we want it in posts too, so be careful)
+)
+
+
+def _click_see_more(article, driver):
+    """Click 'See more' / 'Læs mere' button to expand post text."""
+    try:
+        candidates = article.find_elements(
+            By.XPATH,
+            ".//*[self::div or self::span or self::a][contains(text(),'Se mere') or contains(text(),'See more') or contains(text(),'Vis mere') or contains(text(),'Læs mere') or contains(text(),'Read more') or contains(text(),'Show more')]",
+        )
+        for element in candidates:
+            try:
+                text = (element.text or "").strip().lower()
+            except Exception:
+                text = ""
+            if not text:
+                continue
+            if any(keyword in text for keyword in SEE_MORE_KEYWORDS):
+                try:
+                    driver.execute_script("arguments[0].click();", element)
+                    sleep(0.2)
+                except Exception:
+                    try:
+                        element.click()
+                        sleep(0.2)
+                    except Exception:
+                        continue
+    except Exception:
+        pass
+
+
+def _clean_post_text(text: str) -> str:
+    """Clean post text by removing comment-related content."""
+    if not text:
+        return ""
+    lines = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        lower = line.lower()
+        
+        # Skip exact matches
+        if lower in COMMENT_EXACT_MATCHES:
+            continue
+        
+        # Skip lines starting with comment keywords
+        if any(lower.startswith(keyword) for keyword in COMMENT_EXACT_MATCHES):
+            continue
+        
+        # Skip short lines that contain comment keywords (likely UI elements)
+        if any(keyword in lower for keyword in COMMENT_CONTAINS_KEYWORDS) and len(lower) <= 60:
+            continue
+        
+        # Skip lines that look like comment metadata (e.g., "Redigeret", "6 t.")
+        if lower in ["redigeret", "edited"] and len(lines) > 0:
+            # If we have content and this is just "edited", skip it
+            continue
+        
+        # Skip lines that are just timestamps or engagement counts
+        if re.match(r'^\d+[.,]?\d*\s*(tusind|t\.|timer|hours?|min\.|minutes?)$', lower):
+            continue
+        
+        lines.append(line)
+    
+    # Join and clean up
+    result = "\n".join(lines).strip()
+    
+    # Remove trailing comment indicators
+    result = re.sub(r'\s*(Se mere|See more|Vis flere kommentarer|View more comments)\s*$', '', result, flags=re.IGNORECASE)
+    
+    return result
+
+
+def _is_valid_post_text(text: str) -> bool:
+    """Check if text is valid post content (not a comment or UI element)."""
+    if not text:
+        return False
+    stripped = text.strip()
+    if len(stripped) < 20:
+        return False
+    lower = stripped.lower()
+    
+    # Skip exact matches
+    if lower in COMMENT_EXACT_MATCHES:
+        return False
+    
+    # Skip if text starts with common comment patterns
+    comment_starters = [
+        "jeg er bange for",
+        "i am afraid",
+        "jeg synes",
+        "i think",
+        "jeg mener",
+        "i believe",
+        "undergøg om",  # "Investigate whether" - from the comment in the image
+    ]
+    if any(lower.startswith(starter) for starter in comment_starters):
+        # Only reject if it's clearly a comment (short or has comment indicators)
+        if len(stripped) < 100 or any(keyword in lower for keyword in ["redigeret", "edited", "svar", "reply"]):
+            return False
+    
+    # Skip if text contains comment metadata patterns
+    if re.search(r'\bredigeret\b|\bedited\b', lower) and len(stripped) < 150:
+        return False
+    
+    return True
+
+
 # Import database helper
 sys.path.insert(0, str(Path(__file__).parent))
 from db_helper import insert_post, post_exists
@@ -242,52 +387,186 @@ def scrape_first_post(driver, page_url: str) -> dict | None:
         print(f"[INFO] Checking article {idx+1}...", flush=True)
         
         try:
-            # Extract text using JavaScript (most reliable)
-            post_text = driver.execute_script("""
-                var article = arguments[0];
-                var textNodes = [];
-                var walker = document.createTreeWalker(
-                    article,
-                    NodeFilter.SHOW_TEXT,
-                    null,
-                    false
-                );
-                var node;
-                while (node = walker.nextNode()) {
-                    var text = node.textContent.trim();
-                    if (text && text.length > 30) {
-                        // Skip UI elements
-                        if (!text.match(/^(Synes godt om|Kommenter|Del|Like|Comment|Share|Alle reaktioner|All reactions|\\d+[mhd]|\\d+\\s*(min|hour|day))/i)) {
-                            textNodes.push(text);
-                        }
-                    }
-                }
-                // Return the longest text node (likely post content)
-                if (textNodes.length > 0) {
-                    var longest = textNodes.sort((a, b) => b.length - a.length)[0];
-                    // Filter out author names (2-3 words, all capitalized, no punctuation)
-                    var words = longest.split(' ');
-                    if (words.length <= 3 && words.every(w => w[0] && w[0] === w[0].toUpperCase()) && 
-                        !/[.,!?:👇👆]/.test(longest)) {
-                        // Might be author name, try next longest
-                        if (textNodes.length > 1) {
-                            return textNodes[1];
-                        }
-                    }
-                    return longest;
-                }
-                return '';
-            """, article)
+            _click_see_more(article, driver)
+
+            post_text = ""
             
-            # Filter out author names
-            if post_text:
-                words = post_text.split()
-                if len(words) <= 3 and all(w[0].isupper() if w else False for w in words) and not any(c in post_text for c in [".", ",", "!", "?", ":", "👇", "👆"]):
-                    print(f"[DEBUG] Text '{post_text}' looks like author name, skipping...", flush=True)
+            # Helper function to check if element is in a comment section
+            def is_in_comment_section(element):
+                """Check if element is inside a comment structure."""
+                try:
+                    # Check parent elements for comment indicators
+                    parent = element
+                    for _ in range(10):  # Check up to 10 levels up
+                        try:
+                            parent = parent.find_element(By.XPATH, "./..")
+                        except:
+                            break
+                        
+                        # Check for comment-related attributes and classes
+                        try:
+                            parent_id = parent.get_attribute("id") or ""
+                            parent_class = parent.get_attribute("class") or ""
+                            parent_role = parent.get_attribute("role") or ""
+                            
+                            # Check for comment indicators
+                            if any(indicator in parent_id.lower() for indicator in ["comment", "reply", "svar"]):
+                                return True
+                            if any(indicator in parent_class.lower() for indicator in ["comment", "reply", "svar", "ufi"]):
+                                return True
+                            if "comment" in parent_role.lower():
+                                return True
+                            
+                            # Check for comment action buttons nearby
+                            try:
+                                comment_buttons = parent.find_elements(By.XPATH, 
+                                    ".//a[contains(., 'Svar') or contains(., 'Reply') or contains(., 'Kommenter')] | "
+                                    ".//button[contains(., 'Svar') or contains(., 'Reply')]")
+                                if comment_buttons:
+                                    return True
+                            except:
+                                pass
+                        except:
+                            continue
+                    return False
+                except:
+                    return False
+            
+            # Prioritized selectors for post text (not comments)
+            main_text_selectors = [
+                ".//div[@data-ad-preview='message']//span[@dir='auto']",
+                ".//div[@data-ad-preview='message']",
+                ".//div[contains(@data-ad-preview,'message')]",
+                # Try to find text in the upper part of article (before comments)
+                ".//div[@role='article']//div[contains(@class,'x1y1aw1k')]//span[@dir='auto'][1]",
+                ".//div[contains(@class,'x19h7ccj')]//span[@dir='auto'][1]",
+            ]
+
+            seen_elements = set()
+            text_candidates = []
+            
+            # First pass: find candidates with prioritized selectors
+            for selector in main_text_selectors:
+                try:
+                    elements = article.find_elements(By.XPATH, selector)
+                except Exception:
+                    continue
+                for element in elements:
+                    # Skip if in comment section
+                    if is_in_comment_section(element):
+                        continue
+                    
+                    elem_id = getattr(element, "id", None)
+                    if elem_id and elem_id in seen_elements:
+                        continue
+                    seen_elements.add(elem_id)
+                    text_candidates.append(element)
+
+            # If no candidates found, try broader search but exclude comments
+            if not text_candidates:
+                try:
+                    all_text_elements = article.find_elements(By.XPATH, 
+                        ".//div[@dir='auto' and string-length(normalize-space(text())) > 20] | "
+                        ".//span[@dir='auto' and string-length(normalize-space(text())) > 20]")
+                    for element in all_text_elements[:10]:  # Limit to first 10
+                        if is_in_comment_section(element):
+                            continue
+                        elem_id = getattr(element, "id", None)
+                        if elem_id and elem_id in seen_elements:
+                            continue
+                        seen_elements.add(elem_id)
+                        text_candidates.append(element)
+                except:
+                    pass
+
+            # Evaluate candidates - prefer text from upper part of article
+            best_candidate = None
+            best_score = -1
+            
+            for element in text_candidates:
+                try:
+                    candidate = (element.text or "").strip()
+                except Exception:
+                    continue
+                
+                # Clean and validate
+                candidate = _clean_post_text(candidate)
+                if not _is_valid_post_text(candidate):
+                    continue
+                
+                # Calculate score: prefer longer text and text higher in the article
+                score = len(candidate)
+                
+                # Bonus for being in upper part of article (post text is usually before comments)
+                try:
+                    # Get element position relative to article
+                    element_y = element.location['y']
+                    article_y = article.location['y']
+                    article_height = article.size['height']
+                    
+                    # If element is in upper 60% of article, give bonus
+                    relative_position = (element_y - article_y) / max(article_height, 1)
+                    if relative_position < 0.6:
+                        score += 100  # Bonus for being in upper part
+                except:
+                    pass
+                
+                # Prefer text that doesn't look like a comment
+                if not any(starter in candidate.lower()[:50] for starter in ["jeg er bange", "i am afraid", "undergøg om"]):
+                    score += 50
+                
+                if score > best_score:
+                    best_score = score
+                    best_candidate = candidate
+            
+            if best_candidate:
+                post_text = best_candidate[:1000]
+
+            if not post_text:
+                # Fallback: get all text and try to extract post text (not comments)
+                try:
+                    js_text = driver.execute_script("return arguments[0].innerText || arguments[0].textContent || '';", article)
+                    js_text = (js_text or "").strip()
+                    
+                    # Split by common comment section markers
+                    comment_markers = [
+                        "kommentarer",
+                        "comments",
+                        "vis flere kommentarer",
+                        "view more comments",
+                        "se flere kommentarer",
+                        "see more comments",
+                    ]
+                    
+                    # Try to find where comments start
+                    lines = js_text.split('\n')
+                    post_lines = []
+                    found_comment_section = False
+                    
+                    for line in lines:
+                        line_lower = line.strip().lower()
+                        # If we hit a comment marker, stop collecting
+                        if any(marker in line_lower for marker in comment_markers):
+                            found_comment_section = True
+                            break
+                        # Skip empty lines and UI elements
+                        if line.strip() and len(line.strip()) > 3:
+                            post_lines.append(line.strip())
+                    
+                    # If we found comment section, use text before it
+                    if found_comment_section and post_lines:
+                        js_text = '\n'.join(post_lines)
+                    else:
+                        # Otherwise use cleaned version of all text
+                        js_text = _clean_post_text(js_text)
+                    
+                    if _is_valid_post_text(js_text):
+                        post_text = js_text[:1000]
+                except Exception:
                     post_text = ""
-            
-            if not post_text or len(post_text) < 20:
-                print(f"[DEBUG] No good text found (length: {len(post_text) if post_text else 0})", flush=True)
+
+            if not post_text:
+                print(f"[DEBUG] No good text found (length: 0)", flush=True)
                 continue
             
             print(f"[INFO] Found text: {post_text[:100]}... (length: {len(post_text)})", flush=True)

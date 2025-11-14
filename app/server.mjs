@@ -1461,6 +1461,39 @@ async function handleVoxmeterParties(req, res) {
       const ageHours = (now - scrapedAt) / (1000 * 60 * 60);
       
       if (ageHours < 1 && data.data && Object.keys(data.data).length > 0) {
+        // Try to enrich with dates from database
+        try {
+          const { getLatestPollingData } = await import("./db.js");
+          const dbData = getLatestPollingData();
+          
+          if (dbData && Array.isArray(dbData) && dbData.length > 0) {
+            // Create a map of party_code to dates
+            const datesMap = {};
+            for (const row of dbData) {
+              if (row.party_code) {
+                datesMap[row.party_code] = {
+                  seneste_date: row.seneste_maaling_date,
+                  forrige_date: row.forrige_maaling_date,
+                };
+              }
+            }
+            
+            // Add dates to data if not already present
+            if (!data.dates) {
+              data.dates = datesMap;
+            } else {
+              // Merge dates from database (prefer database dates)
+              for (const [partyCode, dates] of Object.entries(datesMap)) {
+                if (!data.dates[partyCode] || !data.dates[partyCode].seneste_date) {
+                  data.dates[partyCode] = dates;
+                }
+              }
+            }
+          }
+        } catch (dbError) {
+          console.log(`[VOXMETER-PARTIES] Could not enrich cached data with database dates: ${dbError.message}`);
+        }
+        
         // Return cached data immediately
         res.writeHead(200, {
           "Content-Type": "application/json; charset=utf-8",
@@ -1503,6 +1536,39 @@ async function handleVoxmeterParties(req, res) {
     if (existsSync(dataPath)) {
       const fileContent = await readFile(dataPath, "utf-8");
       const data = JSON.parse(fileContent);
+      
+      // Try to enrich with dates from database
+      try {
+        const { getLatestPollingData } = await import("./db.js");
+        const dbData = getLatestPollingData();
+        
+        if (dbData && Array.isArray(dbData) && dbData.length > 0) {
+          // Create a map of party_code to dates
+          const datesMap = {};
+          for (const row of dbData) {
+            if (row.party_code) {
+              datesMap[row.party_code] = {
+                seneste_date: row.seneste_maaling_date,
+                forrige_date: row.forrige_maaling_date,
+              };
+            }
+          }
+          
+          // Add dates to data if not already present
+          if (!data.dates) {
+            data.dates = datesMap;
+          } else {
+            // Merge dates from database (prefer database dates)
+            for (const [partyCode, dates] of Object.entries(datesMap)) {
+              if (!data.dates[partyCode] || !data.dates[partyCode].seneste_date) {
+                data.dates[partyCode] = dates;
+              }
+            }
+          }
+        }
+      } catch (dbError) {
+        console.log(`[VOXMETER-PARTIES] Could not enrich with database dates: ${dbError.message}`);
+      }
       
       res.writeHead(200, {
         "Content-Type": "application/json; charset=utf-8",

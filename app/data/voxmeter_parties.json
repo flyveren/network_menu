@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2025-11-13T20:00:37.499469+00:00",
+  "scraped_at": "2025-11-13T22:59:15.110888+00:00",
   "data": {
     "A": [
       21.1,
@@ -89,6 +89,56 @@
       "Æ": "Danmarksdemokraterne",
       "Ø": "Enhedslisten",
       "Å": "Alternativet"
+    }
+  },
+  "dates": {
+    "A": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "B": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "C": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "F": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "H": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "I": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "M": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "O": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "V": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "Æ": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "Ø": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
+    },
+    "Å": {
+      "seneste_date": "10/11/2025",
+      "forrige_date": "03/11/2025"
     }
   }
 }

@@ -1,15 +1,15 @@
 {
   "source": "https://vejr.tv2.dk/vejr/maribo-2617072",
-  "fetchedAt": "2025-11-13T20:00:02.039552+00:00",
-  "temperature_c": 13.0,
-  "temperature_text": "13°",
+  "fetchedAt": "2025-11-13T22:58:01.238762+00:00",
+  "temperature_c": 11.0,
+  "temperature_text": "11°",
   "feels_like_c": null,
   "feels_like_text": null,
   "symbol_url": "https://web.tv2a.dk/gfx/weather/symbols/cloudy.svg",
   "symbol_description": "Skyet",
   "precipitation_mm": 0.0,
   "precipitation_text": "0",
-  "wind_speed_ms": 9.0,
-  "wind_text": "9",
+  "wind_speed_ms": 8.0,
+  "wind_text": "8",
   "wind_direction": "Frisk vind fra vest"
 }

@@ -1,17 +1,13 @@
-{
-  "source": "https://www.facebook.com/moderaterne",
-  "scrapedAt": "2025-11-13T11:10:27.146697+00:00",
-  "totalPosts": 1,
-  "posts": [
-    {
-      "post_id": "post_1",
-      "author_name": "Moderaterne",
-      "post_text": "ModeraterneVerified account",
-      "post_time": "15m",
-      "post_link": "",
-      "video_url": "blob:https://www.facebook.com/b66ac148-2446-4ba1-b8c2-f5b846748db4",
-      "video_thumbnail": "https://scontent-vie1-1.xx.fbcdn.net/v/t15.5256-10/581476631_4154826028161261_1071304402724333457_n.jpg?stp=dst-jpg_s960x960_tt6&_nc_cat=106&ccb=1-7&_nc_sid=5fad0e&_nc_ohc=LjLqXKKFRa4Q7kNvwG3E-qB&_nc_oc=Adnjsd0qk4_zAk1WW4R48KsXSIGVZaGbPMWWRr75xuSO26EOngMKaVaFBOcZpCzoMfc&_nc_zt=23&_nc_ht=scontent-vie1-1.xx&_nc_gid=t85PE_GzBDiNPBZpuyKlEA&oh=00_AfhHnpfBnELCIS7kXc1raB5EpHW6cxaC9sUUwdTQA8kVxw&oe=691B7AF6",
-      "scraped_at": "2025-11-13T11:10:27.132299+00:00"
-    }
-  ]
-}
+[
+  {
+    "post_id": "d7ea0e0657ea2dcf",
+    "author_name": "Moderaterne",
+    "post_text": "Introducing DPM Internationals!\nJoin the conversation now: dpmi.dk",
+    "post_time": "",
+    "post_link": "https://www.facebook.com/reel/1150221763927447/",
+    "video_url": "https://www.facebook.com/reel/1150221763927447",
+    "video_thumbnail": "",
+    "scraped_at": "2025-11-13T21:08:45.054991+00:00",
+    "party_code": "M"
+  }
+]

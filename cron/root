@@ -6,5 +6,5 @@
 */15 * * * * cd /usr/src/app && python3 scripts/fetch_weather.py >> /var/log/cron.log 2>&1
 0 */4 * * * cd /usr/src/app && python3 scripts/fetch_voxmeter.py >> /var/log/cron.log 2>&1
 0 */4 * * * cd /usr/src/app && python3 scripts/fetch_voxmeter_parties.py >> /var/log/cron.log 2>&1
-*/5 * * * * cd /usr/src/app && FACEBOOK_EMAIL="$FACEBOOK_EMAIL" FACEBOOK_PASSWORD="$FACEBOOK_PASSWORD" python3 scripts/scrape_facebook_parties.py >> /var/log/cron.log 2>&1
+*/10 * * * * cd /usr/src/app && python3 scripts/scrape_facebook_parties.py >> /var/log/cron.log 2>&1
 
