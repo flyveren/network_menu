@@ -201,6 +201,15 @@ const requestListener = async (req, res) => {
       return;
     }
 
+    if (
+      (requestUrl.pathname === "/api/voxmeter/history" || normalizedPathname === "/api/voxmeter/history") &&
+      req.method === "GET"
+    ) {
+      console.log("[SERVER] Handling /api/voxmeter/history");
+      await handleVoxmeterHistory(req, res, requestUrl);
+      return;
+    }
+
     if (requestUrl.pathname === "/favicon.ico") {
       res.writeHead(204);
       res.end();
@@ -209,7 +218,7 @@ const requestListener = async (req, res) => {
 
     const sanitizedPath = normalize(
       normalizedPathname === "/"
-        ? "index.html"
+      ? "index.html"
         : normalizedPathname.replace(/^\//, "")
     ).replace(/^\.\.(\/|\\)/g, "");
     const filePath = sanitizedPath.endsWith("/")
@@ -1706,6 +1715,45 @@ async function handleVoxmeterParties(req, res) {
   pythonProcess.on("error", (error) => {
     console.error(`[VOXMETER-PARTIES] Failed to start background scraper:`, error);
   });
+}
+
+async function handleVoxmeterHistory(req, res, requestUrl) {
+  try {
+    const partyParam = requestUrl.searchParams.get("party");
+    if (!partyParam) {
+      res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: "Missing required 'party' query parameter" }));
+      return;
+    }
+    
+    const partyCode = partyParam.trim().toUpperCase();
+    if (!partyCode || partyCode.length > 2) {
+      res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ error: "Invalid party code" }));
+      return;
+    }
+    
+    const limitParam = Number.parseInt(requestUrl.searchParams.get("limit") ?? "0", 10);
+    const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 365) : 180;
+    
+    const { getPollingHistory } = await import("./db.js");
+    const history = getPollingHistory(partyCode, limit);
+    
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-cache",
+    });
+    res.end(JSON.stringify({
+      party: partyCode,
+      limit,
+      count: history.length,
+      history,
+    }));
+  } catch (error) {
+    console.error("[VOXMETER-HISTORY] Failed to load history:", error);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Failed to load history", details: error.message }));
+  }
 }
 
 function respondWithSpotifyResult(res, origin, data, status = 200) {

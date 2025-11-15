@@ -33,11 +33,13 @@ def get_db():
             post_link TEXT,
             video_url TEXT,
             video_thumbnail TEXT,
+            meta_tags TEXT,
             scraped_at TEXT NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             UNIQUE(post_id, party_code, post_link)
         )
     """)
+    ensure_column(conn, "posts", "meta_tags", "TEXT")
     
     # Create indexes
     conn.execute("CREATE INDEX IF NOT EXISTS idx_party_code ON posts(party_code)")
@@ -55,8 +57,8 @@ def insert_post(post, party_code):
         conn.execute("""
             INSERT OR REPLACE INTO posts (
                 post_id, party_code, author_name, post_text, post_time,
-                post_link, video_url, video_thumbnail, scraped_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                post_link, video_url, video_thumbnail, meta_tags, scraped_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             post.get("post_id") or f"post_{int(datetime.now(timezone.utc).timestamp())}",
             party_code,
@@ -66,6 +68,7 @@ def insert_post(post, party_code):
             post.get("post_link") or "",
             post.get("video_url") or "",
             post.get("video_thumbnail") or "",
+            serialize_meta_tags(post.get("meta_tags")),
             post.get("scraped_at") or datetime.now(timezone.utc).isoformat(),
         ))
         conn.commit()
@@ -75,6 +78,32 @@ def insert_post(post, party_code):
         return False
     finally:
         conn.close()
+
+
+def ensure_column(conn, table_name, column_name, column_type):
+    """Ensure a column exists on a table."""
+    cursor = conn.execute(f"PRAGMA table_info({table_name})")
+    columns = {row[1] for row in cursor.fetchall()}
+    if column_name not in columns:
+        try:
+            conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}")
+            conn.commit()
+        except sqlite3.OperationalError as exc:
+            # Ignore if column was added concurrently
+            if "duplicate column name" not in str(exc).lower():
+                raise
+
+
+def serialize_meta_tags(meta_value):
+    """Serialize meta tag structures to JSON strings."""
+    if meta_value in (None, "", []):
+        return ""
+    if isinstance(meta_value, str):
+        return meta_value
+    try:
+        return json.dumps(meta_value, ensure_ascii=False)
+    except Exception:
+        return ""
 
 
 def post_exists(post, party_code):
@@ -126,6 +155,20 @@ def get_db_polling():
     conn.execute("CREATE INDEX IF NOT EXISTS idx_polling_party_code ON polling_data(party_code)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_polling_scraped_at ON polling_data(scraped_at DESC)")
     
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS polling_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            party_code TEXT NOT NULL,
+            maaling_date TEXT NOT NULL,
+            maaling_value REAL NOT NULL,
+            scraped_at TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(party_code, maaling_date)
+        )
+    """)
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_polling_history_party ON polling_history(party_code)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_polling_history_date ON polling_history(maaling_date)")
+    
     conn.commit()
     return conn
 
@@ -154,6 +197,29 @@ def insert_polling_data(polling_data):
         return True
     except Exception as e:
         print(f"[DB] Error inserting polling data: {e}", flush=True)
+        return False
+    finally:
+        conn.close()
+
+
+def insert_polling_history(entry):
+    """Insert or replace a single polling history data point."""
+    conn = get_db_polling()
+    try:
+        conn.execute("""
+            INSERT OR REPLACE INTO polling_history (
+                party_code, maaling_date, maaling_value, scraped_at
+            ) VALUES (?, ?, ?, ?)
+        """, (
+            entry.get("party_code"),
+            entry.get("maaling_date"),
+            entry.get("maaling_value"),
+            entry.get("scraped_at") or datetime.now(timezone.utc).isoformat(),
+        ))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"[DB] Error inserting polling history: {e}", flush=True)
         return False
     finally:
         conn.close()

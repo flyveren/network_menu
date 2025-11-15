@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HomeLab :: Dashboard</title>
     <link rel="preconnect" href="https://fonts.bunny.net" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css"
+    />
     <style>
       @import url(https://fonts.bunny.net/css?family=jura:300,500);
       @import url("https://fonts.googleapis.com/css2?family=Jersey+10&display=swap");
@@ -836,8 +840,9 @@
           position: fixed;
           top: calc(var(--git-top-offset, 80px));
           right: clamp(1rem, 3vw, 3rem);
-          width: auto;
-          max-width: 420px;
+          width: clamp(520px, 38vw, 680px);
+          max-width: 520px;
+          min-width: 520px;
           z-index: 1000;
           display: none;
           padding: 0;
@@ -894,25 +899,22 @@
         }
         
         /* Apply party button background colors to title */
-        .party-stats__title[data-party="A"] { background: #8B1A1A; }
-        .party-stats__title[data-party="B"] { background: #6A1B9A; }
-        .party-stats__title[data-party="C"] { background: #9ACD32; }
-        .party-stats__title[data-party="F"] { background: #FF69B4; }
-        .party-stats__title[data-party="H"] { background: #4682B4; }
-        .party-stats__title[data-party="I"] { background: #40E0D0; }
-        .party-stats__title[data-party="M"] { background: #4B0082; }
-        .party-stats__title[data-party="O"] { background: #FFD700; }
-        .party-stats__title[data-party="V"] { background: #1E3A8A; }
-        .party-stats__title[data-party="Æ"] { background: #87CEEB; }
-        .party-stats__title[data-party="Ø"] { background: #FF8C00; }
-        .party-stats__title[data-party="Å"] { background: #228B22; }
+        .party-stats__title {
+          background: transparent !important;
+          padding: 0;
+          margin: 0 0 0.75rem 0;
+          min-width: 0;
+          width: auto;
+        }
 
         .party-stats__values {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(140px, 1fr));
-          gap: 0.85rem;
+          display: flex;
+          flex-wrap: nowrap;
+          gap: 0.5rem;
           margin-left: auto;
-          justify-items: stretch;
+          justify-content: space-between;
+          width: 100%;
+          min-width: 520px;
         }
 
         .party-stats__value {
@@ -920,11 +922,179 @@
           flex-direction: column;
           align-items: center;
           gap: 0.25rem;
-          min-width: 150px;
-          padding: 0.75rem 1rem;
-          border-radius: 10px;
-          background: rgba(0, 0, 0, 0.6);
-          border: 2px solid rgba(255, 255, 255, 0.15);
+          min-width: 120px;
+          padding: 0;
+          border-radius: 0;
+          background: transparent;
+          border: none;
+        }
+
+        .party-stats__pie {
+          width: 90px;
+          height: 90px;
+          border-radius: 50%;
+          position: relative;
+          font-family: "Jersey 10", "Courier New", monospace;
+          font-size: 1rem;
+          color: #222222;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: #ffffff;
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+          overflow: hidden;
+        }
+
+        .party-stats__pie::after {
+          content: attr(data-value);
+          position: absolute;
+          width: 65px;
+          height: 65px;
+          border-radius: 50%;
+          background: #000000;
+          z-index: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.4rem;
+          color: #ffffff;
+        }
+
+        .party-stats__history-card {
+          width: 100%;
+          margin-top: 0.75rem;
+          padding: 1.25rem 1rem 1rem;
+          border-radius: 30px;
+          background: #f1f1f150;
+          border: 3px solid var(--party-color, #3b82f6);
+          backdrop-filter: blur(12px);
+          box-shadow: 0 12px 30px rgba(254, 254, 254, 0.116);
+        }
+
+        .party-history__header {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-bottom: 0rem;
+          text-align: center;
+        }
+
+        .party-history__header h3 {
+          margin: 0;
+          font-family: "JetBrains Mono", system-ui, sans-serif;
+          font-size: 14px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+        }
+
+        .party-history__chart-wrapper {
+          display: flex;
+          gap: 0.75rem;
+          align-items: stretch;
+        }
+
+        .party-history__axis {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          font-family: "JetBrains Mono", system-ui, sans-serif;
+          font-size: 0.75rem;
+          min-width: 2.5rem;
+          text-align: right;
+          padding-top: 0.90rem;
+          top: 2rem;
+          padding-bottom: 0.8rem;
+          color: #000000;
+        }
+
+        .party-history__axis span {
+          position: relative;
+          top: -6px;
+        }
+
+        .party-history__chart {
+          flex: 1;
+          min-height: 180px;
+          background: transparent;
+          padding: 0;
+          border-left: 1px solid #000000;
+        }
+
+        .party-history__chart table {
+          width: 100%;
+          height: 180px;
+          --color: var(--party-color, red);
+          --line-size: 3px;
+          position: relative;
+        }
+
+        .party-history__chart table tr {
+          font-size: 0.7rem;
+        }
+
+        .party-history__chart table td {
+          --color: var(--party-color, red);
+          position: relative;
+          padding-bottom: 1.8rem;
+        }
+
+        .party-history__chart table th {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0 0 0 0);
+          border: 0;
+        }
+
+        .party-history__value {
+          position: absolute;
+          left: 50%;
+          bottom: calc(var(--end, 0) * 100% - 25px);
+          transform: translate(-50%, -120%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        }
+
+        .party-history__point {
+          font-size: 0.85rem;
+          color: #ffffff;
+          letter-spacing: 0.04em;
+          padding: 0.1rem 0.35rem;
+          border-radius: 999px;
+        }
+
+        .party-history__label {
+          position: absolute;
+          left: 50%;
+          bottom: 0px;
+          transform: translate(-50%, 90%);
+          line-height: 1.5;
+          font-size: 0.85rem;
+          color: #fff;
+          letter-spacing: 0.1em;
+          pointer-events: none;
+          padding-top: 5px;
+        }
+
+        .party-history__chart table td:hover .party-history__point,
+        .party-history__chart table td:focus-within .party-history__point {
+          display: inline-block;
+        }
+
+        .party-history__chart table td:hover .party-history__label,
+        .party-history__chart table td:focus-within .party-history__label {
+          color: #ffffff;
+        }
+
+        .party-stats__history-empty {
+          margin: 0;
+          font-size: 0.8rem;
+          opacity: 0.8;
         }
 
         .party-stats__value[data-party="A"] { border-color: rgba(139, 26, 26, 0.8); }
@@ -955,18 +1125,37 @@
 
         .party-stats__label {
           font-family: "Courier New", Courier, monospace;
-          font-size: clamp(0.65rem, 1.1vw, 0.8rem);
-          font-weight: 500;
+          font-size: clamp(0.8rem, 1.1vw, 0.8rem);
+          font-weight: 700;
           color: #ffffff;
           text-align: center;
+        }
+
+        .party-stats__value .party-stats__pie {
+          order: 1;
+        }
+
+        .party-stats__value .party-stats__meta,
+        .party-stats__value .party-stats__label {
+          order: 2;
+          margin-top: 0.35rem;
+          text-align: center;
+          width: 100%;
         }
 
         .party-stats__meta {
           display: flex;
           flex-direction: column;
-          gap: 0.1rem;
-          width: 100%;
+          gap: 0.2rem;
           align-items: center;
+        }
+
+        .party-stats__meta .party-stats__label {
+          order: 1;
+        }
+
+        .party-stats__meta .party-stats__date {
+          order: 2;
         }
 
         .party-stats__date {
@@ -974,19 +1163,11 @@
           font-size: clamp(0.65rem, 1vw, 0.8rem);
           color: #ffffff;
           text-align: center;
+          opacity: 1;
         }
 
         .party-stats__number {
-          font-family: "Press Start 2P", "Courier New", monospace;
-          font-size: clamp(1rem, 1.4vw, 1.2rem);
-          font-weight: 400;
-          color: #ffffff;
-          text-align: center;
-          min-height: 1.5em;
-          display: block !important;
-          visibility: visible !important;
-          opacity: 1 !important;
-          padding: 0;
+          display: none;
         }
         
         /* Apply party button background colors to numbers */
@@ -1716,7 +1897,7 @@
           gap: 2rem;
           align-items: flex-start;
           max-width: fit-content;
-          margin-left: 3rem;
+          margin-left: 0px;
           margin-right: auto;
           flex: 0 0 auto;
         }
@@ -1937,7 +2118,7 @@
           transition: all 0.2s ease;
           align-items: flex-start;
           height: auto;
-          width: 600px;
+          width: 550px;
           flex-shrink: 0;
           overflow: hidden;
         }
@@ -2154,7 +2335,7 @@
         }
         .facebook-post__read-more:hover,
         .facebook-post__read-more:focus-visible {
-          color: #cde4ff;
+          color: blue;
         }
         .facebook-post__time {
           display: none; /* Hide post_time, use scraped_at instead */
@@ -2191,7 +2372,7 @@
           display: block;
           width: 100% !important;
           height: auto;
-          min-height: 400px;
+          min-height: 350px;
           border-radius: 0;
           border: none;
           overflow: hidden;
@@ -2202,8 +2383,8 @@
         }
         .facebook-post__media-video iframe {
           width: 100% !important;
-          height: 400px !important;
-          min-height: 400px;
+          height: 350px !important;
+          min-height: 350px;
           border: none !important;
           display: block;
           overflow: hidden;
@@ -2648,6 +2829,20 @@
           --txt-dark: rgb(245, 245, 245);
           --git-top-offset: 0px;
           --git-bottom-offset: 0px;
+          --party-color: #3b82f6;
+          --party-color-light: #8ab4ff;
+          --party-color-a: #8B1A1A;
+          --party-color-b: #6A1B9A;
+          --party-color-c: #9ACD32;
+          --party-color-f: #FF69B4;
+          --party-color-h: #4682B4;
+          --party-color-i: #40E0D0;
+          --party-color-m: #4B0082;
+          --party-color-o: #FFD700;
+          --party-color-v: #1E3A8A;
+          --party-color-æ: #87CEEB;
+          --party-color-ø: #FF8C00;
+          --party-color-å: #228B22;
         }
 
         body {
@@ -2665,6 +2860,17 @@
           gap: 2rem;
           place-items: center;
           overflow-x: hidden;
+        }
+
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
+          overflow: hidden;
+          clip: rect(0, 0, 0, 0);
+          border: 0;
         }
 
         body.politics-mode {
@@ -2776,29 +2982,49 @@
     </div>
     <div class="party-stats" id="party-stats" aria-label="Party polling statistics" hidden>
       <div class="party-stats__container">
-        <h2 class="party-stats__title" id="party-stats-title">Parti</h2>
+        <h2 class="party-stats__title" id="party-stats-title" aria-live="polite"></h2>
         <div class="party-stats__values">
           <div class="party-stats__value" id="party-stats-seneste-card">
             <div class="party-stats__meta">
               <span class="party-stats__label">Seneste måling</span>
               <span class="party-stats__date" id="party-stats-seneste-date">--</span>
             </div>
-            <span class="party-stats__number" id="party-stats-seneste">--</span>
+            <div class="party-stats__pie" id="party-stats-seneste">--</div>
           </div>
           <div class="party-stats__value" id="party-stats-forrige-card">
             <div class="party-stats__meta">
               <span class="party-stats__label">Forrige måling</span>
               <span class="party-stats__date" id="party-stats-forrige-date">--</span>
             </div>
-            <span class="party-stats__number" id="party-stats-forrige">--</span>
+            <div class="party-stats__pie" id="party-stats-forrige">--</div>
           </div>
           <div class="party-stats__value" id="party-stats-maaned-card">
             <span class="party-stats__label">1 måned siden</span>
-            <span class="party-stats__number" id="party-stats-maaned">--</span>
+            <div class="party-stats__pie" id="party-stats-maaned">--</div>
           </div>
           <div class="party-stats__value" id="party-stats-valg-card">
             <span class="party-stats__label">Valget 2022</span>
-            <span class="party-stats__number" id="party-stats-valg">--</span>
+            <div class="party-stats__pie" id="party-stats-valg">--</div>
+          </div>
+        </div>
+        <div class="party-stats__history-card" id="party-stats-history-card" hidden>
+          <div class="party-history__header">
+            <h3>10 ugers udvikling</h3>
+          </div>
+          <div class="party-history__chart-wrapper">
+            <div class="party-history__axis" aria-hidden="true">
+              <span>25%</span>
+              <span>20%</span>
+              <span>15%</span>
+              <span>10%</span>
+              <span>5%</span>
+              <span>0%</span>
+            </div>
+            <div class="party-history__chart" id="party-stats-history-chart">
+              <p class="party-stats__history-empty" id="party-stats-history-empty">
+                Ingen historik endnu
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -3165,11 +3391,32 @@
         });
       }
 
+      const latestPartySnapshot = {};
+
       const politicsButton = document.getElementById("politics-button");
       const facebookPosts = document.getElementById("facebook-posts");
       const facebookPostsList = document.getElementById("facebook-posts-list");
       const facebookPostsError = document.getElementById("facebook-posts-error");
       const facebookPostsLoading = document.getElementById("facebook-posts-loading");
+      const partyStats = document.getElementById("party-stats");
+      const partyStatsTitle = document.getElementById("party-stats-title");
+      const partyStatsSeneste = document.getElementById("party-stats-seneste");
+      const partyStatsForrige = document.getElementById("party-stats-forrige");
+      const partyStatsMaaned = document.getElementById("party-stats-maaned");
+      const partyStatsValg = document.getElementById("party-stats-valg");
+      const partyStatsSenesteDate = document.getElementById("party-stats-seneste-date");
+      const partyStatsForrigeDate = document.getElementById("party-stats-forrige-date");
+      const partyStatsSenesteCard = document.getElementById("party-stats-seneste-card");
+      const partyStatsForrigeCard = document.getElementById("party-stats-forrige-card");
+      const partyStatsMaanedCard = document.getElementById("party-stats-maaned-card");
+      const partyStatsValgCard = document.getElementById("party-stats-valg-card");
+      const partyStatsHistoryCard = document.getElementById("party-stats-history-card");
+      const partyStatsHistoryChart = document.getElementById("party-stats-history-chart");
+      const partyStatsHistoryEmpty = document.getElementById("party-stats-history-empty");
+      const HISTORY_MAX_POINTS = 10;
+      const HISTORY_MAX_VALUE = 25;
+      const HISTORY_WINDOW_DAYS = 120;
+      const HISTORY_WINDOW_MS = HISTORY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
       const facebookPostsEmpty = document.getElementById("facebook-posts-empty");
       let facebookPostsInitialized = false;
 
@@ -3646,20 +3893,310 @@
         });
       };
 
-      async function loadPartyStats(partyCode) {
-        const partyStats = document.getElementById("party-stats");
-        const partyStatsTitle = document.getElementById("party-stats-title");
-        const partyStatsSeneste = document.getElementById("party-stats-seneste");
-        const partyStatsSenesteDate = document.getElementById("party-stats-seneste-date");
-        const partyStatsForrige = document.getElementById("party-stats-forrige");
-        const partyStatsForrigeDate = document.getElementById("party-stats-forrige-date");
-        const partyStatsSenesteCard = document.getElementById("party-stats-seneste-card");
-        const partyStatsForrigeCard = document.getElementById("party-stats-forrige-card");
-        const partyStatsMaanedCard = document.getElementById("party-stats-maaned-card");
-        const partyStatsValgCard = document.getElementById("party-stats-valg-card");
-        const partyStatsMaaned = document.getElementById("party-stats-maaned");
-        const partyStatsValg = document.getElementById("party-stats-valg");
+      function getPartyColorValue(partyCode) {
+        if (!partyCode) return "#3b82f6";
+        const cssVarName = `--party-color-${partyCode.toLowerCase()}`;
+        const styles = getComputedStyle(document.documentElement);
+        const color = styles.getPropertyValue(cssVarName)?.trim();
+        return color || "#3b82f6";
+      }
 
+      function updatePartyTheme(partyCode) {
+        const color = getPartyColorValue(partyCode);
+        document.documentElement.style.setProperty("--party-color", color);
+        document.documentElement.style.setProperty("--party-color-light", `${color}cc`);
+        document.documentElement.style.setProperty("--party-border-color", `${color}66`);
+      }
+
+      function normalizeHistoryDateString(dateStr) {
+        if (!dateStr) return null;
+        const trimmed = dateStr.trim();
+        if (!trimmed) return null;
+
+        const parts = trimmed.split(/[./-]/).map((p) => p.trim());
+        if (parts.length === 3) {
+          let [first, second, third] = parts;
+          let y;
+          let m;
+          let d;
+
+          const isYearFirst = first.length === 4;
+          const isYearLast = third.length === 4;
+
+          if (isYearFirst) {
+            [y, m, d] = [first, second, third];
+          } else if (isYearLast) {
+            [d, m, y] = [first, second, third];
+          } else {
+            // Default to day-month-year and expand two-digit years
+            [d, m, y] = [first, second, third];
+            if (y.length === 2) y = `20${y}`;
+          }
+
+          if (d.length === 1) d = `0${d}`;
+          if (m.length === 1) m = `0${m}`;
+          if (y.length === 2) y = `20${y}`;
+
+          return `${y}-${m}-${d}`;
+        }
+
+        const parsed = new Date(trimmed);
+        if (!Number.isNaN(parsed.valueOf())) {
+          return parsed.toISOString().slice(0, 10);
+        }
+        return trimmed;
+      }
+
+      function applySnapshotFallback(history, snapshot, partyCode) {
+        if (!snapshot) return history;
+        const augmented = [...history];
+        const existingKeys = new Set(
+          augmented.map((entry) => (entry.maaling_date || entry.scraped_at || "").slice(0, 10))
+        );
+
+        const pushEntry = (value, date) => {
+          if (value == null || !date) return;
+          const normalizedDate = normalizeHistoryDateString(date);
+          if (!normalizedDate || existingKeys.has(normalizedDate)) return;
+          augmented.push({
+            party_code: partyCode,
+            maaling_value: value,
+            maaling_date: normalizedDate,
+            scraped_at: snapshot.scrapedAt || new Date().toISOString(),
+          });
+          existingKeys.add(normalizedDate);
+        };
+
+        pushEntry(snapshot.senesteValue, snapshot.senesteDate);
+
+        augmented.sort((a, b) => {
+          const dateA = new Date(a.maaling_date || a.scraped_at || 0);
+          const dateB = new Date(b.maaling_date || b.scraped_at || 0);
+          return dateA - dateB;
+        });
+
+        return augmented;
+      }
+
+      function parseHistoryDateToTimestamp(dateStr) {
+        const normalized = normalizeHistoryDateString(dateStr);
+        if (!normalized) return null;
+        const parsed = new Date(normalized);
+        if (Number.isNaN(parsed.valueOf())) return null;
+        return parsed.getTime();
+      }
+
+      function filterHistoryDisplayWindow(history, snapshot) {
+        if (!Array.isArray(history) || !history.length) return [];
+        const normalizedSeneste = snapshot ? normalizeHistoryDateString(snapshot.senesteDate) : null;
+        const normalizedForrige = snapshot ? normalizeHistoryDateString(snapshot.forrigeDate) : null;
+
+        const candidateThresholds = [];
+        const forrigeTs = parseHistoryDateToTimestamp(normalizedForrige);
+        if (forrigeTs != null) candidateThresholds.push(forrigeTs);
+        const senesteTs = parseHistoryDateToTimestamp(normalizedSeneste);
+        if (senesteTs != null) candidateThresholds.push(senesteTs);
+
+        const latestEntry = history[history.length - 1];
+        const latestEntryTs = latestEntry
+          ? parseHistoryDateToTimestamp(latestEntry.maaling_date || latestEntry.scraped_at)
+          : null;
+        if (latestEntryTs != null) candidateThresholds.push(latestEntryTs);
+
+        const rollingThreshold = Date.now() - HISTORY_WINDOW_MS;
+
+        const earliestCandidate = candidateThresholds.length
+          ? Math.min(...candidateThresholds)
+          : null;
+
+        const threshold =
+          earliestCandidate != null
+            ? Math.max(rollingThreshold, earliestCandidate)
+            : rollingThreshold;
+
+        return history
+          .filter((entry) => {
+            const ts = parseHistoryDateToTimestamp(entry.maaling_date || entry.scraped_at);
+            return ts && ts >= threshold;
+          })
+          .sort((a, b) => {
+            const tsA = parseHistoryDateToTimestamp(a.maaling_date || a.scraped_at) || 0;
+            const tsB = parseHistoryDateToTimestamp(b.maaling_date || b.scraped_at) || 0;
+            return tsA - tsB;
+          });
+      }
+
+      function buildSnapshotHistory(history, snapshot, partyCode) {
+        const sortHistory = (collection) =>
+          collection.sort((a, b) => {
+            const tsA = parseHistoryDateToTimestamp(a.maaling_date || a.scraped_at) || 0;
+            const tsB = parseHistoryDateToTimestamp(b.maaling_date || b.scraped_at) || 0;
+            return tsA - tsB;
+          });
+
+        if (!snapshot) {
+          return sortHistory([...history]);
+        }
+
+        const entries = [];
+        const seenKeys = new Set();
+        const pushSnapshotEntry = (value, date) => {
+          if (value == null || !date) return;
+          const normalizedDate = normalizeHistoryDateString(date) || date.trim();
+          if (!normalizedDate || seenKeys.has(normalizedDate)) return;
+          entries.push({
+            party_code: partyCode,
+            maaling_value: value,
+            maaling_date: normalizedDate,
+            scraped_at: snapshot.scrapedAt || new Date().toISOString(),
+          });
+          seenKeys.add(normalizedDate);
+        };
+
+        // Always prioritize the snapshot dates so the chart mirrors the visible cards
+        pushSnapshotEntry(snapshot.forrigeValue, snapshot.forrigeDate);
+        pushSnapshotEntry(snapshot.senesteValue, snapshot.senesteDate);
+
+        if (entries.length === 0) {
+          // Fall back to DB history only if the snapshot does not expose any dates
+          return sortHistory([...history]);
+        }
+
+        // When both snapshot dates exist we intentionally skip DB rows to avoid mismatched dates.
+        return sortHistory(entries);
+      }
+
+      function clampHistoryValue(value) {
+        const number = Number(value);
+        if (Number.isNaN(number)) return 0;
+        return Math.max(0, Math.min(HISTORY_MAX_VALUE, number));
+      }
+
+      function formatHistoryLabel(dateStr) {
+        if (!dateStr) return "--";
+        const normalized = normalizeHistoryDateString(dateStr) || dateStr;
+        const parsed = new Date(normalized);
+        if (Number.isNaN(parsed.valueOf())) {
+          return normalized.slice(0, 10);
+        }
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${pad(parsed.getDate())}/${pad(parsed.getMonth() + 1)}/${parsed.getFullYear()}`;
+      }
+
+      function formatHistoryAxisLabel(dateStr) {
+        const normalized = normalizeHistoryDateString(dateStr) || dateStr;
+        const parsed = new Date(normalized);
+        const pad = (n) => String(n).padStart(2, "0");
+        if (!Number.isNaN(parsed.valueOf())) {
+          return `${pad(parsed.getDate())}/${pad(parsed.getMonth() + 1)}`;
+        }
+        if (typeof normalized === "string" && normalized.includes("-")) {
+          const parts = normalized.split("-");
+          if (parts.length === 3) {
+            return `${pad(Number(parts[2]))}/${pad(Number(parts[1]))}`;
+          }
+        }
+        return normalized.slice(0, 5);
+      }
+
+      async function loadPartyHistory(partyCode, snapshot = null) {
+        if (!partyCode || !partyStatsHistoryCard || !partyStatsHistoryChart || !partyStatsHistoryEmpty) {
+          return;
+        }
+        try {
+          partyStatsHistoryCard.hidden = false;
+          partyStatsHistoryEmpty.hidden = false;
+          partyStatsHistoryEmpty.textContent = "Henter historik…";
+          partyStatsHistoryChart.innerHTML = "";
+
+          const response = await fetch(`/api/voxmeter/history?party=${encodeURIComponent(partyCode)}&limit=${HISTORY_MAX_POINTS}`);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const payload = await response.json();
+          let history = Array.isArray(payload.history) ? payload.history.slice(-HISTORY_MAX_POINTS) : [];
+          history = buildSnapshotHistory(
+            filterHistoryDisplayWindow(
+              applySnapshotFallback(history, snapshot, partyCode),
+              snapshot
+            ),
+            snapshot,
+            partyCode
+          ).slice(-HISTORY_MAX_POINTS);
+
+          renderPartyHistory(history, partyCode);
+        } catch (error) {
+          console.error("[PARTY-HISTORY] Failed to load history:", error);
+          const fallback = buildSnapshotHistory(
+            filterHistoryDisplayWindow(
+              applySnapshotFallback([], snapshot, partyCode),
+              snapshot
+            ),
+            snapshot,
+            partyCode
+          ).slice(-HISTORY_MAX_POINTS);
+          renderPartyHistory(fallback, partyCode, true);
+        }
+      }
+
+      function renderPartyHistory(history, partyCode, errored = false) {
+        if (!partyStatsHistoryCard || !partyStatsHistoryChart || !partyStatsHistoryEmpty) return;
+
+        if (!history.length) {
+          partyStatsHistoryCard.hidden = false;
+          partyStatsHistoryChart.innerHTML = "";
+          partyStatsHistoryEmpty.hidden = false;
+          partyStatsHistoryEmpty.textContent = errored ? "Kunne ikke hente historik" : "Ingen historik endnu";
+          return;
+        }
+
+        const dataset = history.slice(-HISTORY_MAX_POINTS);
+
+        const rows = dataset.map((entry, index) => {
+          const value = clampHistoryValue(entry.maaling_value ?? entry.seneste_maaling_value);
+          const ratio = Number((value / HISTORY_MAX_VALUE).toFixed(4));
+          const previous = index === 0
+            ? ratio
+            : Number(
+                (
+                  clampHistoryValue(
+                    dataset[index - 1].maaling_value ?? dataset[index - 1].seneste_maaling_value
+                  ) / HISTORY_MAX_VALUE
+                ).toFixed(4)
+              );
+          const fullDateLabel = formatHistoryLabel(entry.maaling_date || entry.scraped_at);
+          const axisLabel = formatHistoryAxisLabel(entry.maaling_date || entry.scraped_at);
+          const valueLabel = `${value.toFixed(1)}%`;
+          return `
+            <tr>
+              <th scope="row" aria-hidden="true">
+                <span class="sr-only">${fullDateLabel}</span>
+              </th>
+              <td style="--start:${previous}; --end:${ratio};" data-date="${fullDateLabel}">
+                <span class="data" aria-hidden="true"></span>
+                <span class="party-history__value">
+                  <span class="party-history__point" aria-hidden="true">${valueLabel}</span>
+                </span>
+                <span class="party-history__label">${axisLabel}</span>
+                <span class="sr-only">${fullDateLabel}: ${valueLabel}</span>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        partyStatsHistoryEmpty.hidden = true;
+        partyStatsHistoryCard.hidden = false;
+        partyStatsHistoryChart.innerHTML = `
+          <table class="charts-css line show-data-markers show-labels show-primary-axis show-5-secondary-axes party-history-chart" style="--color: var(--party-color, #3b82f6); margin-top: 20px;">
+            <caption class="sr-only">Seneste målinger – linjegraf (maks 10 punkter)</caption>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        `;
+      }
+
+      async function loadPartyStats(partyCode) {
         console.log(`[PARTY-STATS] loadPartyStats called with partyCode: ${partyCode}`);
         console.log(`[PARTY-STATS] Elements found:`, {
           partyStats: !!partyStats,
@@ -3672,16 +4209,24 @@
 
         if (!partyStats || !partyConfig[partyCode]) {
           console.log("[PARTY-STATS] Party stats element or party config not found");
+          if (partyStatsHistoryCard) partyStatsHistoryCard.hidden = true;
+          if (partyStatsTitle) partyStatsTitle.textContent = "";
           return;
+        }
+
+        updatePartyTheme(partyCode);
+        if (partyStatsHistoryCard && partyStatsHistoryEmpty && partyStatsHistoryChart) {
+          partyStatsHistoryCard.hidden = false;
+          partyStatsHistoryEmpty.hidden = false;
+          partyStatsHistoryEmpty.textContent = "Henter historik…";
+          partyStatsHistoryChart.innerHTML = "";
         }
 
         // Update title with party name and set data-party attribute
         if (partyStatsTitle) {
-          partyStatsTitle.textContent = partyConfig[partyCode].name;
+          partyStatsTitle.textContent = "";
           partyStatsTitle.setAttribute("data-party", partyCode);
-          // Ensure background color is applied
           partyStatsTitle.style.background = "";
-          // Force reflow to ensure CSS is applied
           void partyStatsTitle.offsetWidth;
         }
 
@@ -3763,6 +4308,9 @@
           const senesteDate = dates.seneste_date || null;
           const forrigeDate = dates.forrige_date || null;
           
+          const normalizedSenesteDate = normalizeHistoryDateString(senesteDate);
+          const normalizedForrigeDate = normalizeHistoryDateString(forrigeDate);
+          
           console.log(`[PARTY-STATS] Dates for ${partyCode}:`, { 
             senesteDate, 
             forrigeDate, 
@@ -3781,19 +4329,37 @@
           }
           
           // Force update with explicit style changes to ensure visibility
-          const updateValue = (element, value, label, cardElement) => {
+          const updateValue = (element, value, label, cardElement, options = {}) => {
             if (element) {
               const formattedValue = `${value.toFixed(1)}%`;
-              element.textContent = formattedValue;
-              element.style.display = "block";
-              element.style.visibility = "visible";
-              element.style.opacity = "1";
-              element.style.color = "#ffffff"; // White text
-              element.style.background = ""; // Clear inline background to allow CSS to apply
+              if (options.type === "pie") {
+                const pct = Math.max(0, Math.min(100, value));
+                element.dataset.value = formattedValue;
+                element.textContent = formattedValue;
+                element.style.display = "flex";
+                element.style.visibility = "visible";
+                element.style.opacity = "1";
+                element.style.background = `
+                  conic-gradient(
+                    var(--party-color, #3b82f6) 0deg ${pct * 3.6}deg,
+                    #f1f1f18a ${pct * 3.6}deg 360deg
+                  )
+                `;
+              } else {
+                element.textContent = formattedValue;
+                element.style.display = "block";
+                element.style.visibility = "visible";
+                element.style.opacity = "1";
+                element.style.color = "#ffffff";
+                element.style.background = "";
+              }
               element.setAttribute("data-party", partyCode); // Set data-party for background color
               if (cardElement) {
                 cardElement.setAttribute("data-party", partyCode);
-                const partyColor = getComputedStyle(document.documentElement).getPropertyValue(`--party-color-${partyCode.toLowerCase()}`) || element.style.color || "#3b82f6";
+                const partyColor = getComputedStyle(document.documentElement)
+                  .getPropertyValue(`--party-color-${partyCode.toLowerCase()}`) ||
+                  element.style.color ||
+                  "#3b82f6";
                 document.documentElement.style.setProperty("--party-color", partyColor.trim());
                 document.documentElement.style.setProperty("--party-color-light", `${partyColor.trim()}cc`);
               }
@@ -3805,10 +4371,21 @@
             }
           };
           
-          updateValue(partyStatsSeneste, partyData[0], "Seneste måling", partyStatsSenesteCard);
-          updateValue(partyStatsForrige, partyData[1], "Forrige måling", partyStatsForrigeCard);
-          updateValue(partyStatsMaaned, partyData[2], "1 måned siden", partyStatsMaanedCard);
-          updateValue(partyStatsValg, partyData[3], "Valget 2022", partyStatsValgCard);
+          updateValue(partyStatsSeneste, partyData[0], "Seneste måling", partyStatsSenesteCard, { type: "pie" });
+          updateValue(partyStatsForrige, partyData[1], "Forrige måling", partyStatsForrigeCard, { type: "pie" });
+          updateValue(partyStatsMaaned, partyData[2], "1 måned siden", partyStatsMaanedCard, { type: "pie" });
+          updateValue(partyStatsValg, partyData[3], "Valget 2022", partyStatsValgCard, { type: "pie" });
+
+          latestPartySnapshot[partyCode] = {
+            partyCode,
+            senesteValue: partyData[0],
+            forrigeValue: partyData[1],
+            senesteDate: normalizedSenesteDate || senesteDate,
+            forrigeDate: normalizedForrigeDate || forrigeDate,
+            scrapedAt: data?.scraped_at || new Date().toISOString(),
+          };
+
+          loadPartyHistory(partyCode, latestPartySnapshot[partyCode]);
 
           console.log(`[PARTY-STATS] Updated stats for ${partyCode}:`, partyData);
           
@@ -3824,6 +4401,9 @@
           console.error("[PARTY-STATS] Failed to load party stats:", error);
           // Hide stats on error
           partyStats.hidden = true;
+          if (partyStatsHistoryCard) {
+            partyStatsHistoryCard.hidden = true;
+          }
           // Update padding after hiding
           setTimeout(() => updateFacebookPostsPadding(), 100);
         }

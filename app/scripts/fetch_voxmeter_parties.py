@@ -11,6 +11,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from time import sleep
+from db_helper import insert_polling_data, insert_polling_history
 
 try:
     from bs4 import BeautifulSoup
@@ -31,6 +32,22 @@ except ImportError as e:
 
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
+
+def normalize_date_string(raw: str | None) -> str | None:
+    """Normalize various date formats into YYYY-MM-DD strings."""
+    if not raw:
+        return None
+    candidate = raw.strip().replace(".", "/").replace("-", "/")
+    for fmt in ("%d/%m/%Y", "%d/%m/%y", "%d/%m"):
+        try:
+            parsed = datetime.strptime(candidate, fmt)
+            if fmt == "%d/%m":
+                parsed = parsed.replace(year=datetime.now().year)
+            return parsed.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return candidate or None
 
 
 def setup_chrome_driver(headless: bool = True) -> webdriver.Chrome:
@@ -1536,17 +1553,20 @@ def write_payload(data: dict, output_path: Path) -> None:
     # Save to database
     try:
         sys.path.insert(0, str(Path(__file__).parent))
-        from db_helper import insert_polling_data
         
         saved_count = 0
         for party_code, party_data in data.items():
             if isinstance(party_data, dict) and "values" in party_data:
                 values = party_data["values"]
                 if len(values) >= 4:
+                    seneste_date_raw = party_data.get("seneste_date")
+                    forrige_date_raw = party_data.get("forrige_date")
+                    normalized_seneste_date = normalize_date_string(seneste_date_raw)
+                    normalized_forrige_date = normalize_date_string(forrige_date_raw)
                     polling_data = {
                         "party_code": party_code,
                         "seneste_maaling_value": values[0],
-                        "seneste_maaling_date": party_data.get("seneste_date"),
+                        "seneste_maaling_date": seneste_date_raw,
                         "forrige_maaling_value": values[1],
                         "forrige_maaling_date": party_data.get("forrige_date"),
                         "maaned_siden_value": values[2],
@@ -1555,6 +1575,20 @@ def write_payload(data: dict, output_path: Path) -> None:
                     }
                     if insert_polling_data(polling_data):
                         saved_count += 1
+                        if normalized_seneste_date:
+                            insert_polling_history({
+                                "party_code": party_code,
+                                "maaling_date": normalized_seneste_date,
+                                "maaling_value": values[0],
+                                "scraped_at": scraped_at,
+                            })
+                        if normalized_forrige_date:
+                            insert_polling_history({
+                                "party_code": party_code,
+                                "maaling_date": normalized_forrige_date,
+                                "maaling_value": values[1],
+                                "scraped_at": scraped_at,
+                            })
             elif isinstance(party_data, list) and len(party_data) >= 4:
                 # Old format without dates
                 polling_data = {

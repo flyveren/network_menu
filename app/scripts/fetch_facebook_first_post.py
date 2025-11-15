@@ -24,6 +24,8 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
+from post_metadata import generate_post_metadata
+
 SEE_MORE_KEYWORDS = [
     "see more",
     "se mere",
@@ -298,7 +300,7 @@ def login_to_facebook(driver, email: str, password: str) -> bool:
         return False
 
 
-def scrape_first_post(driver, page_url: str) -> dict | None:
+def scrape_first_post(driver, page_url: str, party_code: str | None = None) -> dict | None:
     """Scrape the first post from the party page."""
     print(f"[INFO] Navigating to: {page_url}", flush=True)
     driver.get(page_url)
@@ -390,6 +392,30 @@ def scrape_first_post(driver, page_url: str) -> dict | None:
             _click_see_more(article, driver)
 
             post_text = ""
+
+            # Attempt to grab the entire message block (covers text-on-background posts)
+            block_selectors = [
+                ".//div[@data-ad-preview='message']",
+                ".//div[contains(@class,'x1iorvi4') and .//span[@dir='auto']]",
+                ".//div[contains(@class,'x1lliihq') and contains(@style,'background')]",
+            ]
+            for selector in block_selectors:
+                try:
+                    block_elem = article.find_element(By.XPATH, selector)
+                except Exception:
+                    continue
+                block_spans = block_elem.find_elements(By.XPATH, ".//span[@dir='auto']") or []
+                if block_spans:
+                    block_text = "\n".join(
+                        [(span.text or "").strip() for span in block_spans if (span.text or "").strip()]
+                    ).strip()
+                else:
+                    block_text = (block_elem.text or "").strip()
+                block_text = _clean_post_text(block_text)
+                if _is_valid_post_text(block_text):
+                    post_text = block_text[:1000]
+                    print("[INFO] Captured message block text", flush=True)
+                    break
             
             # Helper function to check if element is in a comment section
             def is_in_comment_section(element):
@@ -519,8 +545,46 @@ def scrape_first_post(driver, page_url: str) -> dict | None:
                     best_score = score
                     best_candidate = candidate
             
-            if best_candidate:
+            if best_candidate and not post_text:
                 post_text = best_candidate[:1000]
+            
+            # Extract video URL (preferred)
+            video_url = None
+            video_links = article.find_elements(By.XPATH, ".//a[contains(@href, '/reel/')] | .//a[contains(@href, '/video/')] | .//a[contains(@href, '/watch/')]")
+            if video_links:
+                for link in video_links:
+                    href = link.get_attribute("href") or ""
+                    if href and not href.startswith("blob:") and ("/reel/" in href or "/video/" in href or "/watch/" in href):
+                        if href.startswith("http"):
+                            video_url = href.split("?")[0]
+                        elif href.startswith("/"):
+                            video_url = "https://www.facebook.com" + href.split("?")[0]
+                        if "/reel/" in video_url:
+                            reel_id = video_url.split("/reel/")[-1].split("/")[0].split("?")[0]
+                            video_url = f"https://www.facebook.com/reel/{reel_id}"
+                        print(f"[INFO] Found video URL: {video_url}", flush=True)
+                        break
+            
+            # Extract image URL (fallback if no video)
+            image_url = None
+            image_alt_text = ""
+            if not video_url:
+                img_elements = article.find_elements(By.CSS_SELECTOR, "img")
+                for img in img_elements:
+                    src = img.get_attribute("src") or ""
+                    if src and "fbcdn.net" in src and len(src) > 100:
+                        if "emoji" not in src.lower() and "icon" not in src.lower() and "profile" not in src.lower():
+                            if "scontent" in src or "video" in src.lower() or "thumb" in src.lower():
+                                image_url = src
+                                alt_candidate = (img.get_attribute("alt") or "").strip()
+                                if alt_candidate:
+                                    image_alt_text = alt_candidate
+                                print(f"[INFO] Found image URL", flush=True)
+                                break
+
+            if not post_text and image_alt_text:
+                post_text = image_alt_text[:1000]
+                print("[INFO] Using image alt text as post content fallback", flush=True)
 
             if not post_text:
                 # Fallback: get all text and try to extract post text (not comments)
@@ -571,36 +635,6 @@ def scrape_first_post(driver, page_url: str) -> dict | None:
             
             print(f"[INFO] Found text: {post_text[:100]}... (length: {len(post_text)})", flush=True)
             
-            # Extract video URL (preferred)
-            video_url = None
-            video_links = article.find_elements(By.XPATH, ".//a[contains(@href, '/reel/')] | .//a[contains(@href, '/video/')] | .//a[contains(@href, '/watch/')]")
-            if video_links:
-                for link in video_links:
-                    href = link.get_attribute("href") or ""
-                    if href and not href.startswith("blob:") and ("/reel/" in href or "/video/" in href or "/watch/" in href):
-                        if href.startswith("http"):
-                            video_url = href.split("?")[0]
-                        elif href.startswith("/"):
-                            video_url = "https://www.facebook.com" + href.split("?")[0]
-                        if "/reel/" in video_url:
-                            reel_id = video_url.split("/reel/")[-1].split("/")[0].split("?")[0]
-                            video_url = f"https://www.facebook.com/reel/{reel_id}"
-                        print(f"[INFO] Found video URL: {video_url}", flush=True)
-                        break
-            
-            # Extract image URL (fallback if no video)
-            image_url = None
-            if not video_url:
-                img_elements = article.find_elements(By.CSS_SELECTOR, "img")
-                for img in img_elements:
-                    src = img.get_attribute("src") or ""
-                    if src and "fbcdn.net" in src and len(src) > 100:
-                        if "emoji" not in src.lower() and "icon" not in src.lower() and "profile" not in src.lower():
-                            if "scontent" in src or "video" in src.lower() or "thumb" in src.lower():
-                                image_url = src
-                                print(f"[INFO] Found image URL", flush=True)
-                                break
-            
             # Extract author name
             author = "Unknown"
             author_selectors = [
@@ -634,6 +668,14 @@ def scrape_first_post(driver, page_url: str) -> dict | None:
                 author or "",
             ])
             post_id = hashlib.sha256(hash_source.encode("utf-8")).hexdigest()[:16]
+            
+            metadata = generate_post_metadata(
+                post_text,
+                party_code=party_code,
+                author_name=author,
+                post_link=post_link,
+            )
+            
             post = {
                 "post_id": post_id,
                 "author_name": author,
@@ -642,6 +684,62 @@ def scrape_first_post(driver, page_url: str) -> dict | None:
                 "post_link": post_link,
                 "video_url": video_url or "",
                 "video_thumbnail": image_url or "",
+                "meta_tags": metadata or None,
+                "scraped_at": datetime.now(timezone.utc).isoformat(),
+            }
+            
+            print(f"[SUCCESS] Extracted post: author='{author}', text_length={len(post_text)}, video={bool(video_url)}, image={bool(image_url)}", flush=True)
+            return post
+
+            # Extract author name
+            author = "Unknown"
+            author_selectors = [
+                ".//h2//a",
+                ".//strong//a",
+                ".//a[contains(@href, 'socialdemokratiet')]",
+            ]
+            for selector in author_selectors:
+                try:
+                    author_elem = article.find_element(By.XPATH, selector)
+                    author_text = author_elem.text.strip()
+                    if author_text and len(author_text) > 2:
+                        author = author_text
+                        break
+                except:
+                    continue
+            
+            # Extract post link
+            post_link = page_url
+            link_elem = article.find_elements(By.XPATH, ".//a[contains(@href, '/posts/')] | .//a[contains(@href, '/reel/')]")
+            if link_elem:
+                href = link_elem[0].get_attribute("href") or ""
+                if href and href.startswith("http"):
+                    post_link = href.split("?")[0]
+            
+            # Create post object
+            hash_source = "|".join([
+                post_link or "",
+                (post_text or "")[:200],
+                video_url or "",
+                author or "",
+            ])
+            post_id = hashlib.sha256(hash_source.encode("utf-8")).hexdigest()[:16]
+            metadata = generate_post_metadata(
+                post_text,
+                party_code=party_code,
+                author_name=author,
+                post_link=post_link,
+            )
+
+            post = {
+                "post_id": post_id,
+                "author_name": author,
+                "post_text": post_text[:1000],  # Limit text length
+                "post_time": "",
+                "post_link": post_link,
+                "video_url": video_url or "",
+                "video_thumbnail": image_url or "",
+                "meta_tags": metadata or {},
                 "scraped_at": datetime.now(timezone.utc).isoformat(),
             }
             
@@ -710,7 +808,7 @@ def main():
         driver = setup_driver(headless=args.headless)
         
         # Scrape first post
-        post = scrape_first_post(driver, args.group_url)
+        post = scrape_first_post(driver, args.group_url, party_code=party_code)
         
         if not post:
             print("[ERROR] Failed to scrape post", flush=True)

@@ -1,15 +1,15 @@
 {
   "source": "https://vejr.tv2.dk/vejr/maribo-2617072",
-  "fetchedAt": "2025-11-14T09:35:37.006261+00:00",
-  "temperature_c": 8.0,
-  "temperature_text": "8°",
-  "feels_like_c": null,
-  "feels_like_text": null,
-  "symbol_url": "https://web.tv2a.dk/gfx/weather/symbols/cloudy.svg",
-  "symbol_description": "Skyet",
+  "fetchedAt": "2025-11-15T20:30:02.410197+00:00",
+  "temperature_c": 2.0,
+  "temperature_text": "2°",
+  "feels_like_c": -1.0,
+  "feels_like_text": "Føles som -1°",
+  "symbol_url": "https://web.tv2a.dk/gfx/weather/symbols/clearsky_night.svg",
+  "symbol_description": "Klart",
   "precipitation_mm": 0.0,
   "precipitation_text": "0",
-  "wind_speed_ms": 1.0,
-  "wind_text": "1",
-  "wind_direction": "Næsten stille fra sydvest"
+  "wind_speed_ms": 3.0,
+  "wind_text": "3",
+  "wind_direction": "Svag vind fra nordøst"
 }

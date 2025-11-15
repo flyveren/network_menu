@@ -30,6 +30,7 @@ function initializeDatabase(db) {
       post_link TEXT,
       video_url TEXT,
       video_thumbnail TEXT,
+      meta_tags TEXT,
       scraped_at TEXT NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(post_id, party_code, post_link)
@@ -55,9 +56,37 @@ function initializeDatabase(db) {
     CREATE INDEX IF NOT EXISTS idx_author_name ON posts(author_name);
     CREATE INDEX IF NOT EXISTS idx_polling_party_code ON polling_data(party_code);
     CREATE INDEX IF NOT EXISTS idx_polling_scraped_at ON polling_data(scraped_at DESC);
+    
+    CREATE TABLE IF NOT EXISTS polling_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      party_code TEXT NOT NULL,
+      maaling_date TEXT NOT NULL,
+      maaling_value REAL NOT NULL,
+      scraped_at TEXT NOT NULL,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(party_code, maaling_date)
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_polling_history_party ON polling_history(party_code);
+    CREATE INDEX IF NOT EXISTS idx_polling_history_date ON polling_history(maaling_date);
   `);
   
+  ensureColumn(db, "posts", "meta_tags", "TEXT");
   console.log("[DB] Database initialized at", DB_PATH);
+}
+
+function ensureColumn(db, tableName, columnName, columnDefinition) {
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  if (columns.some((column) => column.name === columnName)) {
+    return;
+  }
+  try {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDefinition}`);
+  } catch (error) {
+    if (!String(error?.message ?? "").includes("duplicate column name")) {
+      throw error;
+    }
+  }
 }
 
 export function insertPost(post, partyCode) {
@@ -66,8 +95,8 @@ export function insertPost(post, partyCode) {
   const stmt = db.prepare(`
     INSERT OR REPLACE INTO posts (
       post_id, party_code, author_name, post_text, post_time,
-      post_link, video_url, video_thumbnail, scraped_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      post_link, video_url, video_thumbnail, meta_tags, scraped_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
   try {
@@ -80,6 +109,7 @@ export function insertPost(post, partyCode) {
       post.post_link || "",
       post.video_url || "",
       post.video_thumbnail || "",
+      serializeMetaTags(post.meta_tags),
       post.scraped_at || new Date().toISOString()
     );
     return true;
@@ -102,6 +132,7 @@ export function getAllPosts(limit = 1000) {
       post_link,
       video_url,
       video_thumbnail,
+      meta_tags,
       scraped_at
     FROM posts
     ORDER BY scraped_at DESC
@@ -117,6 +148,7 @@ export function getAllPosts(limit = 1000) {
     post_link: row.post_link,
     video_url: row.video_url,
     video_thumbnail: row.video_thumbnail,
+    meta_tags: parseMetaTags(row.meta_tags),
     scraped_at: row.scraped_at,
   }));
 }
@@ -134,6 +166,7 @@ export function getPostsByParty(partyCode, limit = 100) {
       post_link,
       video_url,
       video_thumbnail,
+      meta_tags,
       scraped_at
     FROM posts
     WHERE party_code = ?
@@ -150,6 +183,7 @@ export function getPostsByParty(partyCode, limit = 100) {
     post_link: row.post_link,
     video_url: row.video_url,
     video_thumbnail: row.video_thumbnail,
+    meta_tags: parseMetaTags(row.meta_tags),
     scraped_at: row.scraped_at,
   }));
 }
@@ -228,6 +262,49 @@ export function insertPollingData(pollingData) {
   }
 }
 
+export function insertPollingHistoryEntry(entry) {
+  const db = getDatabase();
+  const stmt = db.prepare(`
+    INSERT OR REPLACE INTO polling_history (
+      party_code,
+      maaling_date,
+      maaling_value,
+      scraped_at
+    ) VALUES (?, ?, ?, ?)
+  `);
+  
+  try {
+    stmt.run(
+      entry.party_code,
+      entry.maaling_date,
+      entry.maaling_value,
+      entry.scraped_at || new Date().toISOString()
+    );
+    return true;
+  } catch (error) {
+    console.error("[DB] Error inserting polling history:", error);
+    return false;
+  }
+}
+
+export function getPollingHistory(partyCode, limit = 180) {
+  const db = getDatabase();
+  const stmt = db.prepare(`
+    SELECT party_code, maaling_date, maaling_value, scraped_at
+    FROM polling_history
+    WHERE party_code = ?
+    ORDER BY date(maaling_date) ASC, created_at ASC
+    LIMIT ?
+  `);
+  
+  try {
+    return stmt.all(partyCode, limit);
+  } catch (error) {
+    console.error("[DB] Error loading polling history:", error);
+    return [];
+  }
+}
+
 export function getLatestPollingData(partyCode = null) {
   const db = getDatabase();
   
@@ -272,6 +349,30 @@ export function closeDatabase() {
   if (db) {
     db.close();
     db = null;
+  }
+}
+
+function serializeMetaTags(metaTags) {
+  if (!metaTags || (Array.isArray(metaTags) && metaTags.length === 0)) {
+    return null;
+  }
+  if (typeof metaTags === "string") {
+    return metaTags;
+  }
+  try {
+    return JSON.stringify(metaTags);
+  } catch {
+    return null;
+  }
+}
+
+function parseMetaTags(value) {
+  if (!value) return null;
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
   }
 }
 
