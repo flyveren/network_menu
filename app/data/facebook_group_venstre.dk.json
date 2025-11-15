@@ -7,7 +7,26 @@
     "post_link": "https://www.facebook.com/reel/1336496181124996/",
     "video_url": "https://www.facebook.com/reel/1336496181124996",
     "video_thumbnail": "",
-    "scraped_at": "2025-11-15T19:03:35.959493+00:00",
+    "meta_tags": {
+      "primary_topic": "politik",
+      "political_alignment": "venstrefløjen",
+      "actors": [
+        "Venstre, Danmarks Liberale Parti"
+      ],
+      "geography": [
+        "Danmark"
+      ],
+      "tone": "kritisk",
+      "social_themes": [],
+      "hashtags": [],
+      "engagement_level": "unknown",
+      "meta_tags": [
+        "politik",
+        "venstrefløjen",
+        "kritisk"
+      ]
+    },
+    "scraped_at": "2025-11-15T21:04:14.183634+00:00",
     "party_code": "V"
   }
 ]

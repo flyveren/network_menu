@@ -1038,6 +1038,52 @@
           padding-bottom: 1.8rem;
         }
 
+        .party-wordcloud-panel {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: clamp(360px, 30vw, 520px);
+          height: min(90vh, 1200px);
+          padding: 0;
+          border-radius: 36px;
+          background: transparent;
+          box-shadow: none;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 0.75rem;
+          z-index: 4;
+          pointer-events: none;
+        }
+
+        .party-wordcloud-panel[hidden] {
+          display: none !important;
+        }
+
+        .party-wordcloud-panel__figure {
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin: 0;
+        }
+
+        .party-wordcloud-panel__image {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          background: transparent;
+        }
+
+        @media (max-width: 1500px) {
+          .party-wordcloud-panel {
+            display: none !important;
+          }
+        }
+
         .party-history__chart table th {
           position: absolute;
           width: 1px;
@@ -3029,6 +3075,19 @@
         </div>
       </div>
     </div>
+    <div class="party-wordcloud-panel" id="party-wordcloud-panel" hidden>
+      <figure class="party-wordcloud-panel__figure">
+        <img
+          id="party-wordcloud-img"
+          class="party-wordcloud-panel__image"
+          src=""
+          alt=""
+          width="800"
+          height="1500"
+          loading="lazy"
+        />
+      </figure>
+    </div>
     <nav aria-label="Main navigation (collapsed)" data-expanded="false">
       <div class="nav-backdrop" aria-hidden="true"></div>
       <button
@@ -3413,6 +3472,8 @@
       const partyStatsHistoryCard = document.getElementById("party-stats-history-card");
       const partyStatsHistoryChart = document.getElementById("party-stats-history-chart");
       const partyStatsHistoryEmpty = document.getElementById("party-stats-history-empty");
+      const partyWordcloudPanel = document.getElementById("party-wordcloud-panel");
+      const partyWordcloudImg = document.getElementById("party-wordcloud-img");
       const HISTORY_MAX_POINTS = 10;
       const HISTORY_MAX_VALUE = 25;
       const HISTORY_WINDOW_DAYS = 120;
@@ -3686,6 +3747,22 @@
         Å: { name: "Alternativet", url: "https://www.facebook.com/alternativet.dk" }
       };
       
+      const partyWordclouds = {
+        A: "/wordclouds/socialdemokratiet_wordcloud.png",
+        B: "/wordclouds/radikale_wordcloud.png",
+        C: "/wordclouds/konservative_wordcloud.png",
+        F: "/wordclouds/sf_wordcloud.png",
+        H: "/wordclouds/borgernes_parti_wordcloud.png",
+        I: "/wordclouds/liberal_alliance_wordcloud.png",
+        M: "/wordclouds/moderaterne_wordcloud.png",
+        O: "/wordclouds/dansk_folkeparti_wordcloud.png",
+        V: "/wordclouds/venstre_wordcloud.png",
+        Æ: "/wordclouds/danmarksdemokraterne_wordcloud.png",
+        Ø: "/wordclouds/enhedslisten_wordcloud.png",
+        Å: "/wordclouds/alternativet_wordcloud.png",
+        ALL: "/wordclouds/alle_partier_wordcloud.png"
+      };
+      
       let currentParty = "A"; // Default to Socialdemokratiet
       
       // Function to determine which party a post belongs to
@@ -3906,6 +3983,21 @@
         document.documentElement.style.setProperty("--party-color", color);
         document.documentElement.style.setProperty("--party-color-light", `${color}cc`);
         document.documentElement.style.setProperty("--party-border-color", `${color}66`);
+      }
+
+      function updatePartyWordcloud(partyCode) {
+        if (!partyWordcloudPanel || !partyWordcloudImg) return;
+        const src = partyWordclouds[partyCode];
+        const partyName = partyConfig[partyCode]?.name || "";
+        if (!src) {
+          partyWordcloudPanel.hidden = true;
+          partyWordcloudImg.removeAttribute("src");
+          partyWordcloudImg.alt = "";
+          return;
+        }
+        partyWordcloudPanel.hidden = false;
+        partyWordcloudImg.setAttribute("src", src);
+        partyWordcloudImg.alt = partyName ? `Ordsky for ${partyName}` : "Ordsky";
       }
 
       function normalizeHistoryDateString(dateStr) {
@@ -4250,6 +4342,7 @@
         resetCard(partyStatsValgCard, partyStatsValg);
         if (partyStatsSenesteDate) partyStatsSenesteDate.textContent = "--";
         if (partyStatsForrigeDate) partyStatsForrigeDate.textContent = "--";
+        updatePartyWordcloud(null);
 
         try {
           console.log("[PARTY-STATS] Fetching party stats from /api/voxmeter/parties");
@@ -4295,6 +4388,7 @@
             if (partyStatsSenesteDate) partyStatsSenesteDate.textContent = "--";
             if (partyStatsForrigeDate) partyStatsForrigeDate.textContent = "--";
             // Keep stats visible but show placeholder values
+            updatePartyWordcloud(null);
             setTimeout(() => updateFacebookPostsPadding(), 100);
             return;
           }
@@ -4388,6 +4482,7 @@
           loadPartyHistory(partyCode, latestPartySnapshot[partyCode]);
 
           console.log(`[PARTY-STATS] Updated stats for ${partyCode}:`, partyData);
+          updatePartyWordcloud(partyCode);
           
           // Force visibility of container
           if (partyStats) {
@@ -4399,12 +4494,11 @@
           
         } catch (error) {
           console.error("[PARTY-STATS] Failed to load party stats:", error);
-          // Hide stats on error
           partyStats.hidden = true;
           if (partyStatsHistoryCard) {
             partyStatsHistoryCard.hidden = true;
           }
-          // Update padding after hiding
+          updatePartyWordcloud(null);
           setTimeout(() => updateFacebookPostsPadding(), 100);
         }
       }

@@ -1,8 +1,18 @@
 {
   "source": "https://wallnot.dk/rss?category=udland",
   "category": "udland",
-  "fetchedAt": "2025-11-15T20:30:02.869563+00:00",
+  "fetchedAt": "2025-11-15T21:45:04.672948+00:00",
   "items": [
+    {
+      "title": "Hotel evakueret i Istanbul efter mistanke om forgiftning af familie",
+      "link": "https://www.kristeligt-dagblad.dk/udland/hotel-evakueret-i-istanbul-efter-mistanke-om-forgiftning-af-familie",
+      "pubDate": "Sat, 15 Nov 2025 22:09:30 +0100"
+    },
+    {
+      "title": "Trumps fredsplan mangler det, der virkede i Nordirland",
+      "link": "https://dr.dk/nyheder/udland/trumps-fredsplan-mangler-det-der-virkede-i-nordirland",
+      "pubDate": "Sat, 15 Nov 2025 21:30:00 +0100"
+    },
     {
       "title": "Vanvittigt indbrud: Kører direkte ind i butikken",
       "link": "https://www.bt.dk/udland/vanvittigt-indbrud-koerer-direkte-ind-i-butikken",
@@ -92,16 +102,6 @@
       "title": "Demonstranter bærer kæmpe jordklode gennem COP30-bys gader",
       "link": "https://www.kristeligt-dagblad.dk/udland/demonstranter-baerer-kaempe-jordklode-gennem-cop30-bys-gader",
       "pubDate": "Sat, 15 Nov 2025 15:09:22 +0100"
-    },
-    {
-      "title": "Spansk superinfluencer har mødt Fredes Madrid-veninde: - Casanova er en virkelig smuk kvinde",
-      "link": "https://ekstrabladet.dk/underholdning/udlandkendte/spansk-superinfluencer-har-moedt-fredes-madrid-veninde-casanova-er-en-virkelig-smuk-kvinde/11008730",
-      "pubDate": "Sat, 15 Nov 2025 14:53:10 +0100"
-    },
-    {
-      "title": "Russisk mareridt: Putins olie brænder",
-      "link": "https://www.bt.dk/udland/russisk-mareridt-putins-olie-braender",
-      "pubDate": "Sat, 15 Nov 2025 14:52:12 +0100"
     }
   ]
 }

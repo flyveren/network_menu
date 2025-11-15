@@ -7,7 +7,30 @@
     "post_link": "https://www.facebook.com/reel/1238048228193414/",
     "video_url": "https://www.facebook.com/reel/1238048228193414",
     "video_thumbnail": "",
-    "scraped_at": "2025-11-15T20:02:01.615050+00:00",
+    "meta_tags": {
+      "primary_topic": "overvågning",
+      "political_alignment": "liberal",
+      "actors": [
+        "Borgernes Parti",
+        "H"
+      ],
+      "geography": [
+        "Danmark"
+      ],
+      "tone": "kritisk",
+      "social_themes": [
+        "privatliv",
+        "civic freedoms"
+      ],
+      "hashtags": [],
+      "engagement_level": "unknown",
+      "meta_tags": [
+        "overvågning",
+        "liberal",
+        "kritisk"
+      ]
+    },
+    "scraped_at": "2025-11-15T21:02:22.929257+00:00",
     "party_code": "H"
   }
 ]

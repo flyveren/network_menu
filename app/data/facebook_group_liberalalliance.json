@@ -7,7 +7,30 @@
     "post_link": "https://www.facebook.com/LiberalAlliance/posts/pfbid0BxWD8sgBiR3C8oSyYJLXKoJwf5Y9hYuT1vzA1wvuVFB4gsRkvsadZjbpKARmqZVHl",
     "video_url": "",
     "video_thumbnail": "",
-    "scraped_at": "2025-11-15T20:02:25.210968+00:00",
+    "meta_tags": {
+      "primary_topic": "lokalpolitik",
+      "political_alignment": "liberal",
+      "actors": [
+        "Liberal Alliance"
+      ],
+      "geography": [
+        "Danmark"
+      ],
+      "tone": "kritisk",
+      "social_themes": [
+        "kommunalvalg",
+        "borgerinddragelse"
+      ],
+      "hashtags": [],
+      "engagement_level": "unknown",
+      "meta_tags": [
+        "lokalpolitik",
+        "liberal",
+        "kritisk",
+        "kommunalvalg"
+      ]
+    },
+    "scraped_at": "2025-11-15T21:02:51.757312+00:00",
     "party_code": "I"
   }
 ]

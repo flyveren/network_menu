@@ -9,6 +9,8 @@ import os
 from pathlib import Path
 from datetime import datetime, timezone
 
+from generate_party_wordclouds import generate_party_wordclouds
+
 # Get database path
 SCRIPT_DIR = Path(__file__).parent
 DATA_DIR = SCRIPT_DIR.parent / "data"
@@ -72,6 +74,10 @@ def insert_post(post, party_code):
             post.get("scraped_at") or datetime.now(timezone.utc).isoformat(),
         ))
         conn.commit()
+        try:
+            generate_party_wordclouds(target_party=party_code)
+        except Exception as e:
+            print(f"[WORDCLOUD] Failed to regenerate for {party_code}: {e}", flush=True)
         return True
     except Exception as e:
         print(f"[DB] Error inserting post: {e}", flush=True)

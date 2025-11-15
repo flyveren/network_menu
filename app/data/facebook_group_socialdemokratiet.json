@@ -7,7 +7,29 @@
     "post_link": "https://www.facebook.com/reel/2052011485630554/",
     "video_url": "https://www.facebook.com/reel/2052011485630554",
     "video_thumbnail": "",
-    "scraped_at": "2025-11-15T20:00:25.137829+00:00",
+    "meta_tags": {
+      "primary_topic": "samarbejde",
+      "political_alignment": "venstrefløjen",
+      "actors": [
+        "Socialdemokratiet"
+      ],
+      "geography": [
+        "Danmark"
+      ],
+      "tone": "neutral",
+      "social_themes": [
+        "samarbejde",
+        "konfliktløsning"
+      ],
+      "hashtags": [],
+      "engagement_level": "unknown",
+      "meta_tags": [
+        "samarbejde",
+        "venstrefløjen",
+        "neutral"
+      ]
+    },
+    "scraped_at": "2025-11-15T21:00:27.683587+00:00",
     "party_code": "A"
   }
 ]

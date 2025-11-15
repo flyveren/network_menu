@@ -1,14 +1,35 @@
 [
   {
-    "post_id": "1018c109d37fbe95",
+    "post_id": "24db176ee7ba0594",
     "author_name": "Enhedslisten",
-    "post_text": "Og lad være med at straffe os økonomisk, der har opsparet til pensionen med modregne alt",
+    "post_text": "Hvad med at gøre folkepension skattefri",
     "post_time": "",
     "post_link": "https://www.facebook.com/enhedslisten/posts/pfbid02f9iVZpJHdyRpVkpbev3RGoAjnhaCZ1w5dpF1CcRUkmhv2JKsm4sRvBYTiENAbL9Sl",
     "video_url": "",
     "video_thumbnail": "",
-    "meta_tags": null,
-    "scraped_at": "2025-11-15T20:13:07.043284+00:00",
+    "meta_tags": {
+      "primary_topic": "økonomi",
+      "political_alignment": "venstrefløjen",
+      "actors": [
+        "Enhedslisten"
+      ],
+      "geography": [
+        "Danmark"
+      ],
+      "tone": "alvorlig",
+      "social_themes": [
+        "velfærd",
+        "skattepolitik"
+      ],
+      "hashtags": [],
+      "engagement_level": "unknown",
+      "meta_tags": [
+        "økonomi",
+        "venstrefløjen",
+        "alvorlig"
+      ]
+    },
+    "scraped_at": "2025-11-15T21:05:11.456748+00:00",
     "party_code": "Ø"
   }
 ]

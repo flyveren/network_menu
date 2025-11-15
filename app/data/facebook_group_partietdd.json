@@ -7,7 +7,29 @@
     "post_link": "https://www.facebook.com/reel/1333847494495505/",
     "video_url": "https://www.facebook.com/reel/1333847494495505",
     "video_thumbnail": "",
-    "scraped_at": "2025-11-15T19:03:59.811872+00:00",
+    "meta_tags": {
+      "primary_topic": "transport",
+      "political_alignment": "konservativ",
+      "actors": [
+        "Inger Støjberg",
+        "Æ"
+      ],
+      "geography": [
+        "Danmark"
+      ],
+      "tone": "alvorlig",
+      "social_themes": [
+        "velfærd"
+      ],
+      "hashtags": [],
+      "engagement_level": "unknown",
+      "meta_tags": [
+        "transport",
+        "konservativ",
+        "alvorlig"
+      ]
+    },
+    "scraped_at": "2025-11-15T21:04:43.447265+00:00",
     "party_code": "Æ"
   }
 ]

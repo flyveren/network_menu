@@ -1,8 +1,18 @@
 {
   "source": "https://wallnot.dk/rss?category=debat",
   "category": "debat",
-  "fetchedAt": "2025-11-15T20:30:03.976052+00:00",
+  "fetchedAt": "2025-11-15T21:45:03.008741+00:00",
   "items": [
+    {
+      "title": "Klimakongen",
+      "link": "https://ekstrabladet.dk/nyheder/lederen/klimakongen/11010316",
+      "pubDate": "Sat, 15 Nov 2025 22:00:00 +0100"
+    },
+    {
+      "title": "Metoderne afslører den politikertype, Mette Frederiksen har udviklet sig til",
+      "link": "https://politiken.dk/del/CJefSiAFazwg",
+      "pubDate": "Sat, 15 Nov 2025 21:35:00 +0100"
+    },
     {
       "title": "Søges: Politikere med hjertet på rette sted",
       "link": "https://avisendanmark.dk/debat/soeges-politikere-med-hjertet-paa-rette-sted",
@@ -92,16 +102,6 @@
       "title": "Havet kan genrejses med stærk lokal indsats",
       "link": "https://avisendanmark.dk/debat/havet-kan-genrejses-med-staerk-lokal-indsats",
       "pubDate": "Fri, 14 Nov 2025 10:00:00 +0100"
-    },
-    {
-      "title": "Handicappolitik bliver levende i kommunerne",
-      "link": "https://avisendanmark.dk/debat/handicappolitik-bliver-levende-i-kommunerne",
-      "pubDate": "Fri, 14 Nov 2025 08:00:00 +0100"
-    },
-    {
-      "title": "Praktikken kan blive kommunernes stærkeste valgkort",
-      "link": "https://avisendanmark.dk/debat/praktikken-kan-blive-kommunernes-staerkeste-valgkort",
-      "pubDate": "Fri, 14 Nov 2025 06:00:00 +0100"
     }
   ]
 }

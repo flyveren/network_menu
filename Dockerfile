@@ -33,12 +33,17 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     pytesseract \
     PyPDF2 \
     pdfplumber \
-    requests
+    requests \
+    wordcloud \
+    matplotlib
 
 WORKDIR /usr/src/app
 
 # Copy application source
 COPY app/ .
+
+# Bundle the upstream word cloud examples/scripts for future use
+COPY github/word_cloud /opt/word_cloud
 
 # Copy cron configuration
 COPY cron/root /etc/crontabs/root

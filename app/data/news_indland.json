@@ -1,8 +1,23 @@
 {
   "source": "https://wallnot.dk/rss?category=indland",
   "category": "indland",
-  "fetchedAt": "2025-11-15T20:30:02.742226+00:00",
+  "fetchedAt": "2025-11-15T21:45:02.998814+00:00",
   "items": [
+    {
+      "title": "Politiet vil i kontakt med ung dreng efter brand i Netto-butik",
+      "link": "https://avisendanmark.dk/danmark/politiet-vil-i-kontakt-med-ung-dreng-efter-brand-i-netto-butik",
+      "pubDate": "Sat, 15 Nov 2025 22:21:25 +0100"
+    },
+    {
+      "title": "Kat mishandlet til døde: - Jeg kan stadig høre den skrige",
+      "link": "https://ekstrabladet.dk/krimi/kat-mishandlet-til-doede-jeg-kan-stadig-hoere-den-skrige/11009798",
+      "pubDate": "Sat, 15 Nov 2025 21:59:00 +0100"
+    },
+    {
+      "title": "Caroline Fleming flytter til Dubai: Kæresten skal pendle",
+      "link": "https://ekstrabladet.dk/underholdning/dkkendte/caroline-fleming-flytter-til-dubai-kaeresten-skal-pendle/11010450",
+      "pubDate": "Sat, 15 Nov 2025 21:31:14 +0100"
+    },
     {
       "title": "På valgnatten fordeles 'ben' til 180 millioner kroner – men prisen kan være langt højere, frygter analysechef",
       "link": "https://nyheder.tv2.dk/samfund/2025-11-14-paa-valgnatten-fordeles-ben-til-180-millioner-kroner-men-prisen-kan-vaere-langt-hoejere-frygter-analysechef",
@@ -87,21 +102,6 @@
       "title": "Han poserede med Nyrup og ville være borgmester – nu går han imod sit gamle parti",
       "link": "https://nyheder.tv2.dk/samfund/2025-11-15-han-poserede-med-nyrup-og-ville-vaere-borgmester-nu-gaar-han-imod-sit-gamle-parti",
       "pubDate": "Sat, 15 Nov 2025 16:26:49 +0100"
-    },
-    {
-      "title": "'Borgen'-forestilling aflyst efter milliontyveri",
-      "link": "https://nyheder.tv2.dk/samfund/2025-11-15-borgen-forestilling-aflyst-efter-milliontyveri",
-      "pubDate": "Sat, 15 Nov 2025 16:03:12 +0100"
-    },
-    {
-      "title": "Rosenkrantz-Theil vil finansiere gratis dagtilbud ud fra otte principper",
-      "link": "https://www.kristeligt-dagblad.dk/danmark/rosenkrantz-theil-vil-finansiere-gratis-dagtilbud-ud-fra-otte-principper",
-      "pubDate": "Sat, 15 Nov 2025 15:47:52 +0100"
-    },
-    {
-      "title": "Venstre-kandidat i Nyborg trækker sig: Partiet kendte godt til sagen",
-      "link": "https://dr.dk/nyheder/indland/venstre-kandidat-i-nyborg-traekker-sig-partiet-kendte-godt-til-sagen",
-      "pubDate": "Sat, 15 Nov 2025 15:33:00 +0100"
     }
   ]
 }

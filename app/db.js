@@ -1,7 +1,7 @@
 import Database from "better-sqlite3";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
+import { spawn } from "node:child_process";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const DB_PATH = join(__dirname, "data", "facebook_posts.db");
@@ -210,23 +210,45 @@ export function getPostCount() {
   return result?.count || 0;
 }
 
+function regenerateWordcloud(partyCode) {
+  if (!partyCode) return;
+  try {
+    const child = spawn("python3", ["scripts/generate_party_wordclouds.py", "--party", partyCode], {
+      cwd: __dirname,
+      stdio: "ignore",
+      detached: true,
+    });
+    child.unref();
+  } catch (error) {
+    console.error("[WORDCLOUD] Failed to regenerate wordcloud:", error);
+  }
+}
+
 export function deletePost(postId, partyCode = null) {
   const db = getDatabase();
   
   try {
+    const existing = db.prepare(`
+      SELECT party_code FROM posts WHERE post_id = ? LIMIT 1
+    `).get(postId);
     let stmt;
+    let result;
     if (partyCode) {
       stmt = db.prepare(`
         DELETE FROM posts WHERE post_id = ? AND party_code = ?
       `);
-      const result = stmt.run(postId, partyCode);
-      return result.changes > 0;
+      result = stmt.run(postId, partyCode);
+    } else {
+      stmt = db.prepare(`
+        DELETE FROM posts WHERE post_id = ?
+      `);
+      result = stmt.run(postId);
     }
-    stmt = db.prepare(`
-      DELETE FROM posts WHERE post_id = ?
-    `);
-    const result = stmt.run(postId);
-    return result.changes > 0;
+    if (result.changes > 0) {
+      regenerateWordcloud(existing?.party_code || partyCode);
+      return true;
+    }
+    return false;
   } catch (error) {
     console.error("[DB] Error deleting post:", error);
     return false;
