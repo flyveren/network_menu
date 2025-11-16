@@ -9,7 +9,7 @@
     "video_thumbnail": "",
     "meta_tags": {
       "primary_topic": "transport",
-      "political_alignment": "konservativ",
+      "political_alignment": "venstrefløjen",
       "actors": [
         "Inger Støjberg",
         "Æ"
@@ -19,17 +19,19 @@
       ],
       "tone": "alvorlig",
       "social_themes": [
-        "velfærd"
+        "regional balance",
+        "bosætning"
       ],
       "hashtags": [],
       "engagement_level": "unknown",
       "meta_tags": [
         "transport",
-        "konservativ",
-        "alvorlig"
+        "venstrefløjen",
+        "alvorlig",
+        "regional balance"
       ]
     },
-    "scraped_at": "2025-11-15T21:04:43.447265+00:00",
+    "scraped_at": "2025-11-16T10:56:53.469204+00:00",
     "party_code": "Æ"
   }
 ]

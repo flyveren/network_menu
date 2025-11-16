@@ -1,8 +1,23 @@
 {
   "source": "https://wallnot.dk/rss?category=debat",
   "category": "debat",
-  "fetchedAt": "2025-11-15T21:45:03.008741+00:00",
+  "fetchedAt": "2025-11-16T11:00:04.744209+00:00",
   "items": [
+    {
+      "title": "Valget er også et sundhedsvalg",
+      "link": "https://avisendanmark.dk/debat/valget-er-ogsaa-et-sundhedsvalg",
+      "pubDate": "Sun, 16 Nov 2025 10:00:00 +0100"
+    },
+    {
+      "title": "Hans ankomst til København udstiller, at forholdet til USA er alt andet end normalt",
+      "link": "https://politiken.dk/del/s4bz-kAFbFBA",
+      "pubDate": "Sun, 16 Nov 2025 09:01:00 +0100"
+    },
+    {
+      "title": "Du har et valg",
+      "link": "https://avisendanmark.dk/debat/du-har-et-valg",
+      "pubDate": "Sun, 16 Nov 2025 06:03:00 +0100"
+    },
     {
       "title": "Klimakongen",
       "link": "https://ekstrabladet.dk/nyheder/lederen/klimakongen/11010316",
@@ -87,21 +102,6 @@
       "title": "Stem på et parti, der er imod byggeriet på Amager Fælled!",
       "link": "https://arbejderen.dk/debat/stem-paa-et-parti-der-er-imod-byggeriet-paa-amager-faelled/",
       "pubDate": "Fri, 14 Nov 2025 15:01:29 +0100"
-    },
-    {
-      "title": "Jo, kommunalpolitik har rigtig meget med Palæstina og Israel at gøre …",
-      "link": "https://arbejderen.dk/debat/jo-kommunalpolitik-har-rigtig-meget-med-palaestina-og-israel-at-goere/",
-      "pubDate": "Fri, 14 Nov 2025 14:41:00 +0100"
-    },
-    {
-      "title": "Klar støtte til Palæstina i regionsvalgkampen",
-      "link": "https://arbejderen.dk/debat/klar-stoette-til-palaestina-i-regionsvalgkampen/",
-      "pubDate": "Fri, 14 Nov 2025 11:03:41 +0100"
-    },
-    {
-      "title": "Havet kan genrejses med stærk lokal indsats",
-      "link": "https://avisendanmark.dk/debat/havet-kan-genrejses-med-staerk-lokal-indsats",
-      "pubDate": "Fri, 14 Nov 2025 10:00:00 +0100"
     }
   ]
 }

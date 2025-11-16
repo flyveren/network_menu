@@ -1,34 +1,35 @@
 [
   {
-    "post_id": "d6eae4304014d641",
+    "post_id": "58358382652b4ef1",
     "author_name": "Moderaterne",
-    "post_text": "\"The party has just announced that it will create DPMI (Det Politiske Mødested Internationals, which translates as The Political Meeting Place for Internationals). It will be an “Informal, non-partisan think tank connected to Moderaterne.\" - The Copenhagen Post\nhttps://cphpost.dk/.../attacking-international-people-is.../\nJoin the conversation today: DPMI.dk",
+    "post_text": "Mød Thomas Elong, han stiller op til kommunalvalget i Hillerød",
     "post_time": "",
-    "post_link": "https://www.facebook.com/moderaterne/posts/pfbid02cJUsPBPH1htNSi6DL6qenbGX3ju1s6eWxAeWYpNzR7s8Cdg2quu6epkHunAi9Jnvl",
-    "video_url": "",
-    "video_thumbnail": "https://scontent-vie1-1.xx.fbcdn.net/v/t39.30808-6/581997078_846780851059873_7172568614719819653_n.jpg?stp=cp6_dst-jpg_s640x640_tt6&_nc_cat=105&ccb=1-7&_nc_sid=127cfc&_nc_ohc=Khp1oArgSlsQ7kNvwGGnT02&_nc_oc=AdkW76Hh42RtK9UwU__KUq2i2RyavUrY1D2xNzItjSwIxbLty7Ycegx5OrR1Kn-euvM&_nc_zt=23&_nc_ht=scontent-vie1-1.xx&_nc_gid=ujgXwd29fUXQIYxjmhrF1g&oh=00_Afi-YVm3OIaeGcR5HimPOYBUoTkmVDcwLVR4nlpOkvO1bg&oe=691EBF22",
+    "post_link": "https://www.facebook.com/reel/2952622761600833/",
+    "video_url": "https://www.facebook.com/reel/2952622761600833",
+    "video_thumbnail": "",
     "meta_tags": {
       "primary_topic": "politik",
       "political_alignment": "liberal",
       "actors": [
+        "Thomas Elong",
         "Moderaterne"
       ],
       "geography": [
-        "Danmark"
+        "Hillerød"
       ],
       "tone": "neutral",
       "social_themes": [
-        "politisk deltagelse"
+        "lokalpolitik"
       ],
       "hashtags": [],
       "engagement_level": "unknown",
       "meta_tags": [
-        "politisk mødested",
-        "Moderaterne",
-        "liberal"
+        "politisk",
+        "kommunalvalg",
+        "Hillerød"
       ]
     },
-    "scraped_at": "2025-11-15T21:03:19.280456+00:00",
+    "scraped_at": "2025-11-16T10:54:39.380843+00:00",
     "party_code": "M"
   }
 ]

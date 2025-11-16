@@ -58,18 +58,18 @@ RESPONSE_SCHEMA: Dict[str, Any] = {
     ],
 }
 
-PROMPT_TEMPLATE = """Du skal analysere følgende Facebook-opslag og returnere metadata.
+PROMPT_TEMPLATE = """Du er ekspert i politisk analyse ogskal analysere følgende Facebook-opslag og returnere metadata.
 
 Følg disse trin:
 1. Identificer det primære emne (økonomi, sundhed, klima, transport, osv.).
-2. Bestem politisk retning eller holdning (venstrefløjen, højrefløjen, liberal, konservativ, tværpolitisk).
-3. Udtræk personer, organisationer eller partier der nævnes.
-4. Angiv geografisk fokus (fx Danmark, EU, Aarhus).
-5. Beskriv tonen (kritisk, optimistisk, vred, satirisk, alvorlig, neutral).
-6. Find sociale emner eller tendenser (fx klimaændringer, migration, velfærd).
-7. Medtag hashtags hvis de optræder.
-8. Angiv engagement-niveauet (low/medium/high) hvis likes/kommentarer/delinger er nævnt, ellers "unknown".
-9. Opret et sæt meta-tags (3-10 korte korte tags) der sammenfatter indholdet, fx ["økonomi", "venstrefløjen", "kritisk"].
+2. Angiv geografisk fokus (fx Danmark, EU, Aarhus).
+3. Beskriv tonen (kritisk, optimistisk, vred, satirisk, alvorlig, neutral).
+4. Find sociale emner eller tendenser (fx klimaændringer, migration, velfærd).
+5. Medtag hashtags hvis de optræder.
+6. Angiv engagement-niveauet (low/medium/high) hvis likes/kommentarer/delinger er nævnt, ellers "unknown".
+7. Opret et sæt meta-tags (3-10 korte korte tags) der sammenfatter indholdet, fx ["økonomi", "venstrefløjen", "kritisk"].
+
+Tildel minimum 3 meta-tags og max 6 til indholdet, hvis du har flere tags end 6 vælg de mest relevante.
 
 Tekst: <<<POST_START>>>
 {post_text}

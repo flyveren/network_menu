@@ -119,16 +119,32 @@
 
         .footer-menu {
           position: fixed;
-          bottom: 12px;
-          z-index: 13;
+          bottom: clamp(1rem, 2vh, 1.8rem);
+          z-index: 40;
           display: flex;
           align-items: center;
           gap: 1rem;
           pointer-events: auto;
+          transition: opacity 0.25s ease, transform 0.25s ease;
+          opacity: 1;
+          transform: translateY(0);
         }
 
         .footer-menu--left {
           left: clamp(1.5rem, 4vw, 3.5rem);
+        }
+
+        body.politics-mode .footer-menu {
+          opacity: 1;
+          pointer-events: auto;
+          transform: translateY(0);
+        }
+
+        body.ai-mode .footer-menu,
+        body.news-mode .footer-menu {
+          opacity: 1;
+          pointer-events: auto;
+          transform: translateY(0);
         }
 
         .footer-menu__button {
@@ -1761,29 +1777,19 @@
           display: flex !important;
         }
 
-        body.news-mode .brain-controls {
-          display: flex !important;
-        }
-
-        body.news-mode .brain-controls .corner-link {
-          display: inline-flex !important;
-        }
-
-        body.news-mode .brain-center {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: min(90vw, 420px);
-        }
-
-        body.news-mode .brain-toggle {
-          width: clamp(3.25rem, 7vw, 4.75rem);
-          height: clamp(3.25rem, 7vw, 4.75rem);
-        }
-
-        body.news-mode .music-reactive {
-          opacity: 0;
+        body.news-mode .brain-controls,
+        body.news-mode .brain-center,
+        body.news-mode .brain-toggle,
+        body.news-mode .music-reactive,
+        body.news-mode .party-stats,
+        body.news-mode .party-wordcloud-panel,
+        body.news-mode .facebook-posts,
+        body.news-mode .party-overlay,
+        body.news-mode .party-sidebar__buttons,
+        body.news-mode .party-stats__container,
+        body.news-mode .party-stats__history-card,
+        body.news-mode .party-stats__values {
+          display: none !important;
         }
 
         .brain-input {
@@ -2728,6 +2734,10 @@
           z-index: 3 !important;
         }
 
+        body.news-mode .background-overlay {
+          background: rgba(0, 5, 18, 0.92);
+        }
+
         .weather-widget {
           position: relative;
           display: flex;
@@ -2889,6 +2899,11 @@
           --party-color-æ: #87CEEB;
           --party-color-ø: #FF8C00;
           --party-color-å: #228B22;
+          --git-grid-color-0: rgba(30, 45, 95, 0.32);
+          --git-grid-color-1: #113264;
+          --git-grid-color-2: #1d4ed8;
+          --git-grid-color-3: #2346ff;
+          --git-grid-color-4: #6d7dff;
         }
 
         body {
@@ -2924,7 +2939,7 @@
         }
 
 
-        body > *:not(.background-video, .background-overlay) {
+        body > *:not(.background-video, .background-overlay, .party-overlay) {
           position: relative;
           z-index: 1;
         }
@@ -2951,6 +2966,21 @@
           pointer-events: none;
         }
 
+        .party-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(17, 17, 17, 0.75);
+          mix-blend-mode: multiply;
+          z-index: -1;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+          pointer-events: none;
+        }
+
+        body.politics-mode .party-overlay {
+          opacity: 1;
+        }
+
       }
     </style>
     <script
@@ -2969,6 +2999,7 @@
       aria-hidden="true"
     ></video>
     <div class="background-overlay" aria-hidden="true"></div>
+    <div class="party-overlay" id="party-overlay" aria-hidden="true"></div>
     <div class="top-hud">
     <aside class="weather-widget" id="weather-widget" aria-live="polite">
       <div class="weather-widget__primary">
@@ -3983,6 +4014,19 @@
         document.documentElement.style.setProperty("--party-color", color);
         document.documentElement.style.setProperty("--party-color-light", `${color}cc`);
         document.documentElement.style.setProperty("--party-border-color", `${color}66`);
+        const partyOverlay = document.getElementById("party-overlay");
+        if (partyOverlay) {
+          const styleColor = color.startsWith("#") ? color : "#0b0c0d";
+          partyOverlay.style.setProperty("--party-overlay-color", styleColor);
+          partyOverlay.style.background = `${styleColor}bf`;
+        }
+        const newPalette = generateGitGridPaletteFromHex(color);
+        if (newPalette) {
+          gitGridPalette = newPalette;
+          updateGitGridPaletteVariables(newPalette);
+        } else {
+          gitGridPalette = computeGitGridPalette();
+        }
       }
 
       function updatePartyWordcloud(partyCode) {
@@ -4483,6 +4527,10 @@
 
           console.log(`[PARTY-STATS] Updated stats for ${partyCode}:`, partyData);
           updatePartyWordcloud(partyCode);
+          // Redraw Git grids with new palette
+          if (contributionMatrix) {
+            contributionViews.forEach((view) => drawContributionGridForView(contributionMatrix, view));
+          }
           
           // Force visibility of container
           if (partyStats) {
@@ -6062,6 +6110,51 @@
       },
     ].filter((view) => view.canvas && view.container && view.tooltip);
 
+    const gitGridPaletteFallback = [
+      "rgba(30, 45, 95, 0.32)",
+      "#113264",
+      "#1d4ed8",
+      "#2346ff",
+      "#6d7dff",
+    ];
+
+    function computeGitGridPalette() {
+      const styles = getComputedStyle(document.documentElement);
+      return gitGridPaletteFallback.map((color, idx) => {
+        const value = styles.getPropertyValue(`--git-grid-color-${idx}`).trim();
+        return value || color;
+      });
+    }
+
+    function generateGitGridPaletteFromHex(hexColor) {
+      if (!hexColor) return null;
+      const cleaned = hexColor.trim();
+      const match = cleaned.match(/^#?([0-9a-f]{6})$/i);
+      if (!match) return null;
+      const base = match[1];
+      const r = parseInt(base.slice(0, 2), 16);
+      const g = parseInt(base.slice(2, 4), 16);
+      const b = parseInt(base.slice(4, 6), 16);
+      const stops = [0, 0.35, 0.55, 0.75, 0.9];
+      return stops.map((ratio) => {
+        const blend = (channel) => Math.round(channel + (255 - channel) * ratio);
+        const rr = blend(r).toString(16).padStart(2, "0");
+        const gg = blend(g).toString(16).padStart(2, "0");
+        const bb = blend(b).toString(16).padStart(2, "0");
+        return `rgba(${parseInt(rr, 16)}, ${parseInt(gg, 16)}, ${parseInt(bb, 16)}, 0.6)`;
+      });
+    }
+
+    function updateGitGridPaletteVariables(palette) {
+      if (!palette || !palette.length) return;
+      palette.forEach((color, index) => {
+        document.documentElement.style.setProperty(`--git-grid-color-${index}`, color);
+      });
+    }
+
+    let gitGridPalette = computeGitGridPalette();
+    updateGitGridPaletteVariables(gitGridPalette);
+
     let contributionMatrix = null;
     let contributionStartDate = null;
     let contributionEndDate = null;
@@ -6240,13 +6333,7 @@
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-      const palette = [
-        "rgba(30, 45, 95, 0.32)",
-        "#113264",
-        "#1d4ed8",
-        "#2346ff",
-        "#6d7dff",
-      ];
+      const palette = gitGridPalette && gitGridPalette.length ? gitGridPalette : gitGridPaletteFallback;
       view.cells = [];
 
       for (let col = 0; col < drawColumns; col++) {

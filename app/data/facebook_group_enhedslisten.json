@@ -16,20 +16,19 @@
       "geography": [
         "Danmark"
       ],
-      "tone": "alvorlig",
+      "tone": "neutral",
       "social_themes": [
-        "velfærd",
-        "skattepolitik"
+        "velfærd"
       ],
       "hashtags": [],
       "engagement_level": "unknown",
       "meta_tags": [
         "økonomi",
         "venstrefløjen",
-        "alvorlig"
+        "velfærd"
       ]
     },
-    "scraped_at": "2025-11-15T21:05:11.456748+00:00",
+    "scraped_at": "2025-11-16T10:57:31.270004+00:00",
     "party_code": "Ø"
   }
 ]

@@ -1,8 +1,23 @@
 {
   "source": "https://wallnot.dk/rss?category=kultur",
   "category": "kultur",
-  "fetchedAt": "2025-11-15T21:45:02.900629+00:00",
+  "fetchedAt": "2025-11-16T11:00:02.759707+00:00",
   "items": [
+    {
+      "title": "Kopikage i 'Den store bagedyst': Vil ikke tale om det",
+      "link": "https://ekstrabladet.dk/underholdning/filmogtv/kopikage-i-den-store-bagedyst-vil-ikke-tale-om-det/11010680",
+      "pubDate": "Sun, 16 Nov 2025 10:56:20 +0100"
+    },
+    {
+      "title": "Bill McKibben: Sol kan skabe social forandring",
+      "link": "https://www.information.dk/kultur/2025/11/bill-mckibben-sol-kan-skabe-social-forandring?kupon=eyJpYXQiOjE3NjMyODQ3OTMsInN1YiI6IjE1MjkzNTo4MzQ4MDMifQ.VTf_KotHnBzciQmP9W-N5g",
+      "pubDate": "Sun, 16 Nov 2025 08:25:51 +0100"
+    },
+    {
+      "title": "Værste nogensinde: Katastrofalt for Mariah Carey",
+      "link": "https://ekstrabladet.dk/musik/intlmusiknyt/vaerste-nogensinde-katastrofalt-for-mariah-carey/11010069",
+      "pubDate": "Sun, 16 Nov 2025 08:11:28 +0100"
+    },
     {
       "title": "Guldfund i garage: Glyders redder rockåret",
       "link": "https://ekstrabladet.dk/musik/intlalbum/guldfund-i-garage-glyders-redder-rockaaret/11005729",
@@ -87,21 +102,6 @@
       "title": "Torsdagskoncerten med Jonas Kaufmann: Tonernes og ordenes intensitet ramte direkte i hjertekulen",
       "link": "https://pov.international/torsdagskoncerten-med-jonas-kaufmann-tonernes-og-ordenes-intensitet-ramte-direkte-i-hjertekulen/",
       "pubDate": "Fri, 14 Nov 2025 20:41:40 +0100"
-    },
-    {
-      "title": "Dansk teater i chok: Aflyser 'Borgen' efter million-tyveri",
-      "link": "https://ekstrabladet.dk/underholdning/kultur/dansk-teater-i-chok-aflyser-borgen-efter-million-tyveri/11009785",
-      "pubDate": "Fri, 14 Nov 2025 20:34:44 +0100"
-    },
-    {
-      "title": "Mors bitre afskedsbrev blev til voldlyttet podcast. Nu er filmen her - og denne gange er det også fars tur",
-      "link": "https://dr.dk/nyheder/kultur/film/mors-bitre-afskedsbrev-blev-til-voldlyttet-podcast-nu-er-filmen-her-og-denne-gange-er-det-ogsaa",
-      "pubDate": "Fri, 14 Nov 2025 20:26:00 +0100"
-    },
-    {
-      "title": "Når film og serier om Besættelsen overhaler forskningen indenom",
-      "link": "https://www.information.dk/kultur/2025/11/naar-film-serier-besaettelsen-overhaler-forskningen-indenom?kupon=eyJpYXQiOjE3NjMxNDYxMjUsInN1YiI6IjU1MTc0MDo4MzQ3MDQifQ.-St7AYzTYF9mjirgBAFP0g",
-      "pubDate": "Fri, 14 Nov 2025 19:47:16 +0100"
     }
   ]
 }
