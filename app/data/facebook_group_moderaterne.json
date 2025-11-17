@@ -1,35 +1,36 @@
 [
   {
-    "post_id": "58358382652b4ef1",
+    "post_id": "11f5ca2142bfe0af",
     "author_name": "Moderaterne",
-    "post_text": "Mød Thomas Elong, han stiller op til kommunalvalget i Hillerød",
+    "post_text": "Join DPM Internationals' first meeting tonight!\nNico Blier-Silvestri hosts, Lars Løkke Rasmussen joins and they can’t wait to hear from you.\nDPM Internationals is an informal civic think tank for internationals living in Denmark.\nThe meeting starts at 18:45\nJoin here: https://zoom.us/j/91650937515...",
     "post_time": "",
-    "post_link": "https://www.facebook.com/reel/2952622761600833/",
-    "video_url": "https://www.facebook.com/reel/2952622761600833",
+    "post_link": "https://www.facebook.com/reel/2043544749732749/",
+    "video_url": "https://www.facebook.com/reel/2043544749732749",
     "video_thumbnail": "",
     "meta_tags": {
-      "primary_topic": "politik",
-      "political_alignment": "liberal",
+      "primary_topic": "civilsamfund",
+      "political_alignment": "M",
       "actors": [
-        "Thomas Elong",
-        "Moderaterne"
+        "Nico Blier-Silvestri",
+        "Lars Løkke Rasmussen"
       ],
       "geography": [
-        "Hillerød"
+        "Danmark"
       ],
       "tone": "neutral",
       "social_themes": [
-        "lokalpolitik"
+        "civilt samfund",
+        "integration"
       ],
       "hashtags": [],
       "engagement_level": "unknown",
       "meta_tags": [
-        "politisk",
-        "kommunalvalg",
-        "Hillerød"
+        "civilsamfund",
+        "M",
+        "DPM Internationals"
       ]
     },
-    "scraped_at": "2025-11-16T10:54:39.380843+00:00",
+    "scraped_at": "2025-11-17T22:05:03.868733+00:00",
     "party_code": "M"
   }
 ]

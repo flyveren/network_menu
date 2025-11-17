@@ -27,6 +27,75 @@ const mimeTypes = {
 const spotifyStateStore = new Map();
 const SPOTIFY_STATE_TTL = 15 * 60 * 1000;
 
+const voxmeterCache = {
+  snapshot: null,
+  fetchedAt: 0,
+  ttlMs: Number(process.env.VOXMETER_CACHE_TTL || 5 * 60 * 1000),
+  pending: null,
+};
+
+function invalidateVoxmeterCache() {
+  voxmeterCache.snapshot = null;
+  voxmeterCache.fetchedAt = 0;
+}
+
+async function loadVoxmeterSnapshot(force = false) {
+  if (!force && voxmeterCache.snapshot && Date.now() - voxmeterCache.fetchedAt < voxmeterCache.ttlMs) {
+    return voxmeterCache.snapshot;
+  }
+  if (voxmeterCache.pending && !force) {
+    return voxmeterCache.pending;
+  }
+
+  voxmeterCache.pending = (async () => {
+    const partiesPath = join(__dirname, "data", "voxmeter_parties.json");
+    let partiesPayload = {
+      scraped_at: null,
+      data: {},
+      dates: {},
+      format: null,
+    };
+
+    try {
+      const fileContent = await readFile(partiesPath, "utf8");
+      const parsed = JSON.parse(fileContent);
+      partiesPayload = {
+        scraped_at: parsed?.scraped_at || null,
+        data: parsed?.data || {},
+        dates: parsed?.dates || {},
+        format: parsed?.format || null,
+      };
+    } catch (error) {
+      console.warn("[VOXMETER] Failed to read parties file:", error.message);
+    }
+
+    const history = {};
+    try {
+      const { getPollingHistory } = await import("./db.js");
+      for (const partyCode of Object.keys(partiesPayload.data || {})) {
+        const normalizedCode = partyCode.trim().toUpperCase();
+        history[normalizedCode] = getPollingHistory(normalizedCode, 180);
+      }
+    } catch (error) {
+      console.warn("[VOXMETER] Failed to load history from database:", error.message);
+    }
+
+    const snapshot = {
+      parties: partiesPayload,
+      history,
+    };
+
+    voxmeterCache.snapshot = snapshot;
+    voxmeterCache.fetchedAt = Date.now();
+    return snapshot;
+  })()
+    .finally(() => {
+      voxmeterCache.pending = null;
+    });
+
+  return voxmeterCache.pending;
+}
+
 function normalizeSpotifyPlaylistId(raw) {
   if (!raw) return null;
   const trimmed = String(raw).trim();
@@ -197,7 +266,7 @@ const requestListener = async (req, res) => {
       req.method === "GET"
     ) {
       console.log("[SERVER] Handling /api/voxmeter/parties");
-      await handleVoxmeterParties(req, res);
+      await handleVoxmeterParties(req, res, requestUrl);
       return;
     }
 
@@ -207,6 +276,15 @@ const requestListener = async (req, res) => {
     ) {
       console.log("[SERVER] Handling /api/voxmeter/history");
       await handleVoxmeterHistory(req, res, requestUrl);
+      return;
+    }
+
+    if (
+      (requestUrl.pathname === "/api/voxmeter/snapshot" || normalizedPathname === "/api/voxmeter/snapshot") &&
+      req.method === "GET"
+    ) {
+      console.log("[SERVER] Handling /api/voxmeter/snapshot");
+      await handleVoxmeterSnapshot(requestUrl, res);
       return;
     }
 
@@ -1528,193 +1606,23 @@ async function handleVoxmeterPolls(req, res) {
   }
 }
 
-async function handleVoxmeterParties(req, res) {
-  console.log("[VOXMETER-PARTIES] /api/voxmeter/parties request received");
-  
-  // First, try to return cached data immediately
-  const dataPath = join(__dirname, "data", "voxmeter_parties.json");
-  
+async function handleVoxmeterParties(req, res, requestUrl) {
   try {
-    if (existsSync(dataPath)) {
-      const fileContent = await readFile(dataPath, "utf-8");
-      const data = JSON.parse(fileContent);
-      
-      // Check if data is recent (less than 1 hour old)
-      const scrapedAt = new Date(data.scraped_at);
-      const now = new Date();
-      const ageHours = (now - scrapedAt) / (1000 * 60 * 60);
-      
-      if (ageHours < 1 && data.data && Object.keys(data.data).length > 0) {
-        // Try to enrich with dates from database
-        try {
-          const { getLatestPollingData } = await import("./db.js");
-          const dbData = getLatestPollingData();
-          
-          if (dbData && Array.isArray(dbData) && dbData.length > 0) {
-            // Create a map of party_code to dates
-            const datesMap = {};
-            for (const row of dbData) {
-              if (row.party_code) {
-                datesMap[row.party_code] = {
-                  seneste_date: row.seneste_maaling_date,
-                  forrige_date: row.forrige_maaling_date,
-                };
-              }
-            }
-            
-            // Add dates to data if not already present
-            if (!data.dates) {
-              data.dates = datesMap;
-            } else {
-              // Merge dates from database (prefer database dates)
-              for (const [partyCode, dates] of Object.entries(datesMap)) {
-                if (!data.dates[partyCode] || !data.dates[partyCode].seneste_date) {
-                  data.dates[partyCode] = dates;
-                }
-              }
-            }
-          }
-        } catch (dbError) {
-          console.log(`[VOXMETER-PARTIES] Could not enrich cached data with database dates: ${dbError.message}`);
-        }
-        
-        // Return cached data immediately
-        res.writeHead(200, {
-          "Content-Type": "application/json; charset=utf-8",
-          "Cache-Control": "no-cache",
-        });
-        res.end(JSON.stringify(data));
-        console.log(`[VOXMETER-PARTIES] Returned cached data (age: ${ageHours.toFixed(2)} hours)`);
-        return;
-      }
+    const forceRefresh = requestUrl.searchParams.get("refresh") === "1";
+    if (forceRefresh) {
+      invalidateVoxmeterCache();
     }
+    const snapshot = await loadVoxmeterSnapshot(forceRefresh);
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-cache",
+    });
+    res.end(JSON.stringify(snapshot.parties));
   } catch (error) {
-    console.log(`[VOXMETER-PARTIES] Could not read cached data, will scrape: ${error.message}`);
-  }
-  
-  // If no cached data or data is old, run scraper in background and return existing data
-  const scriptPath = join(__dirname, "scripts", "fetch_voxmeter_parties.py");
-  if (!existsSync(scriptPath)) {
-    // Try to return existing data even if scraper is missing
-    try {
-      if (existsSync(dataPath)) {
-        const fileContent = await readFile(dataPath, "utf-8");
-        const data = JSON.parse(fileContent);
-        res.writeHead(200, {
-          "Content-Type": "application/json; charset=utf-8",
-          "Cache-Control": "no-cache",
-        });
-        res.end(JSON.stringify(data));
-        return;
-      }
-    } catch (e) {
-      // Fall through to error
-    }
+    console.error("[VOXMETER] Failed to serve parties:", error);
     res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
-    res.end(JSON.stringify({ error: "Voxmeter parties scraping script not found" }));
-    return;
+    res.end(JSON.stringify({ error: "Failed to load Voxmeter parties" }));
   }
-
-  // Return existing data immediately (even if old), and update in background
-  try {
-    if (existsSync(dataPath)) {
-      const fileContent = await readFile(dataPath, "utf-8");
-      const data = JSON.parse(fileContent);
-      
-      // Try to enrich with dates from database
-      try {
-        const { getLatestPollingData } = await import("./db.js");
-        const dbData = getLatestPollingData();
-        
-        if (dbData && Array.isArray(dbData) && dbData.length > 0) {
-          // Create a map of party_code to dates
-          const datesMap = {};
-          for (const row of dbData) {
-            if (row.party_code) {
-              datesMap[row.party_code] = {
-                seneste_date: row.seneste_maaling_date,
-                forrige_date: row.forrige_maaling_date,
-              };
-            }
-          }
-          
-          // Add dates to data if not already present
-          if (!data.dates) {
-            data.dates = datesMap;
-          } else {
-            // Merge dates from database (prefer database dates)
-            for (const [partyCode, dates] of Object.entries(datesMap)) {
-              if (!data.dates[partyCode] || !data.dates[partyCode].seneste_date) {
-                data.dates[partyCode] = dates;
-              }
-            }
-          }
-        }
-      } catch (dbError) {
-        console.log(`[VOXMETER-PARTIES] Could not enrich with database dates: ${dbError.message}`);
-      }
-      
-      res.writeHead(200, {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-cache",
-      });
-      res.end(JSON.stringify(data));
-      console.log(`[VOXMETER-PARTIES] Returned existing data, updating in background`);
-    } else {
-      // No data at all, return empty structure
-      res.writeHead(200, {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-cache",
-      });
-      res.end(JSON.stringify({ 
-        scraped_at: new Date().toISOString(),
-        data: {},
-        format: {
-          description: "6 values per party: [Valget 2022, Uge 41/2025, Uge 42/2025, Uge 43/2025, Uge 44/2025, Uge 45/2025]"
-        }
-      }));
-      console.log(`[VOXMETER-PARTIES] No data file found, returned empty structure`);
-    }
-  } catch (error) {
-    console.error(`[VOXMETER-PARTIES] Error reading data file:`, error);
-    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
-    res.end(JSON.stringify({ 
-      error: "Failed to read party polling data", 
-      details: error.message 
-    }));
-    return;
-  }
-
-  // Run scraper in background (don't wait for it)
-  const args = [scriptPath];
-  console.log(`[VOXMETER-PARTIES] Running scraper in background: python3 ${args.join(" ")}`);
-
-  const pythonProcess = spawn("python3", args, {
-    cwd: __dirname,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  let stdout = "";
-  let stderr = "";
-
-  pythonProcess.stdout.on("data", (data) => {
-    stdout += data.toString();
-  });
-
-  pythonProcess.stderr.on("data", (data) => {
-    stderr += data.toString();
-  });
-
-  pythonProcess.on("close", (code) => {
-    console.log(`[VOXMETER-PARTIES] Background scraper exited with code ${code}`);
-    if (code !== 0) {
-      console.error(`[VOXMETER-PARTIES] Scraper error: ${stderr || stdout}`);
-    }
-  });
-
-  pythonProcess.on("error", (error) => {
-    console.error(`[VOXMETER-PARTIES] Failed to start background scraper:`, error);
-  });
 }
 
 async function handleVoxmeterHistory(req, res, requestUrl) {
@@ -1725,20 +1633,17 @@ async function handleVoxmeterHistory(req, res, requestUrl) {
       res.end(JSON.stringify({ error: "Missing required 'party' query parameter" }));
       return;
     }
-    
     const partyCode = partyParam.trim().toUpperCase();
     if (!partyCode || partyCode.length > 2) {
       res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
       res.end(JSON.stringify({ error: "Invalid party code" }));
       return;
     }
-    
     const limitParam = Number.parseInt(requestUrl.searchParams.get("limit") ?? "0", 10);
     const limit = Number.isFinite(limitParam) && limitParam > 0 ? Math.min(limitParam, 365) : 180;
-    
-    const { getPollingHistory } = await import("./db.js");
-    const history = getPollingHistory(partyCode, limit);
-    
+    const snapshot = await loadVoxmeterSnapshot();
+    const rawHistory = snapshot.history?.[partyCode] || [];
+    const history = limit > 0 ? rawHistory.slice(-limit) : rawHistory;
     res.writeHead(200, {
       "Content-Type": "application/json; charset=utf-8",
       "Cache-Control": "no-cache",
@@ -1753,6 +1658,25 @@ async function handleVoxmeterHistory(req, res, requestUrl) {
     console.error("[VOXMETER-HISTORY] Failed to load history:", error);
     res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
     res.end(JSON.stringify({ error: "Failed to load history", details: error.message }));
+  }
+}
+
+async function handleVoxmeterSnapshot(requestUrl, res) {
+  try {
+    const forceRefresh = requestUrl.searchParams.get("refresh") === "1";
+    if (forceRefresh) {
+      invalidateVoxmeterCache();
+    }
+    const snapshot = await loadVoxmeterSnapshot(forceRefresh);
+    res.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-cache",
+    });
+    res.end(JSON.stringify(snapshot));
+  } catch (error) {
+    console.error("[VOXMETER] Failed to serve snapshot:", error);
+    res.writeHead(500, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify({ error: "Failed to load Voxmeter snapshot" }));
   }
 }
 

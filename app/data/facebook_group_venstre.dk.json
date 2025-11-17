@@ -1,32 +1,34 @@
 [
   {
-    "post_id": "03779e5f7bad92d6",
-    "author_name": "Unknown",
-    "post_text": "VENSTRE UNDER SPÆRREGRÆNSEN",
+    "post_id": "9c12d4db5e693655",
+    "author_name": "Venstre, Danmarks Liberale Parti",
+    "post_text": "Det er lidt skræmmende...",
     "post_time": "",
-    "post_link": "https://www.facebook.com/venstre.dk/posts/pfbid02mAXtF8vSrE9gUD1qpuF36td6MGzxRYkHPXj6zpNKHm5BEeJoEiQPFUiRw6npETKul",
-    "video_url": "",
+    "post_link": "https://www.facebook.com/reel/3580285542108873/",
+    "video_url": "https://www.facebook.com/reel/3580285542108873",
     "video_thumbnail": "",
     "meta_tags": {
-      "primary_topic": "politik",
-      "political_alignment": "venstrefløjen",
+      "primary_topic": "ukendt",
+      "political_alignment": "V",
       "actors": [
-        "Venstre"
+        "Venstre, Danmarks Liberale Parti"
       ],
       "geography": [
         "Danmark"
       ],
-      "tone": "kritisk",
-      "social_themes": [],
+      "tone": "alvorlig",
+      "social_themes": [
+        "ukendt"
+      ],
       "hashtags": [],
       "engagement_level": "unknown",
       "meta_tags": [
-        "politik",
-        "venstrefløjen",
-        "kritisk"
+        "alvorlig",
+        "Venstre",
+        "ukendt"
       ]
     },
-    "scraped_at": "2025-11-16T10:56:15.341313+00:00",
+    "scraped_at": "2025-11-17T22:06:20.783542+00:00",
     "party_code": "V"
   }
 ]

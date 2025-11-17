@@ -1,14 +1,14 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-wordcloud-version="1731769200">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>HomeLab :: Dashboard</title>
     <link rel="preconnect" href="https://fonts.bunny.net" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css"
-    />
+      <link
+        rel="stylesheet"
+        href="./styles/vendor/charts.min.css"
+      />
     <style>
       @import url(https://fonts.bunny.net/css?family=jura:300,500);
       @import url("https://fonts.googleapis.com/css2?family=Jersey+10&display=swap");
@@ -799,11 +799,11 @@
         /* Color divider container - positioned at the bottom, above git grid, behind spotify player */
         .politics-divider {
           position: fixed;
-          bottom: 0;
+          margin-top:10px;
           left: 0;
           right: 0;
           width: 100%;
-          height: 12px; /* Thin line */
+          height: 18px; /* Thin line */
           transform: translateY(10px);
           /* Default gradient - will be updated by JavaScript based on Voxmeter data */
           background: linear-gradient(to right, #ff0000 0%, #ff0000 47.5%, #808080 47.5%, #808080 52.5%, #1111ea 52.5%, #1111ea 100%);
@@ -897,15 +897,14 @@
 
         .party-stats__title {
           font-family: "JetBrains Mono", system-ui, sans-serif;
-          font-size: clamp(0.85rem, 1.6vw, 1.2rem);
-          font-weight: 600;
+          font-size: clamp(0.75rem, 1.6vw, 1.2rem);
+          font-weight: 400;
           color: #ffffff;
           margin: 0 0 0.75rem 0;
           text-align: left;
           white-space: nowrap;
           flex-shrink: 0;
           padding: 0.35rem 1rem;
-          border-radius: 999px;
           width: auto;
           min-width: 0;
           max-width: none;
@@ -957,15 +956,14 @@
           align-items: center;
           justify-content: center;
           background: #ffffff;
-          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
           overflow: hidden;
         }
 
         .party-stats__pie::after {
           content: attr(data-value);
           position: absolute;
-          width: 65px;
-          height: 65px;
+          width: 70px;
+          height: 70px;
           border-radius: 50%;
           background: #000000;
           z-index: 1;
@@ -981,10 +979,9 @@
           margin-top: 0.75rem;
           padding: 1.25rem 1rem 1rem;
           border-radius: 30px;
-          background: #f1f1f150;
+          background: #000;
           border: 3px solid var(--party-color, #3b82f6);
           backdrop-filter: blur(12px);
-          box-shadow: 0 12px 30px rgba(254, 254, 254, 0.116);
         }
 
         .party-history__header {
@@ -998,8 +995,8 @@
         .party-history__header h3 {
           margin: 0;
           font-family: "JetBrains Mono", system-ui, sans-serif;
-          font-size: 14px;
-          letter-spacing: 0.2em;
+          font-size: 12px;
+          letter-spacing: 0.1em;
           text-transform: uppercase;
         }
 
@@ -1020,7 +1017,7 @@
           padding-top: 0.90rem;
           top: 2rem;
           padding-bottom: 0.8rem;
-          color: #000000;
+          color: #fff;
         }
 
         .party-history__axis span {
@@ -1033,13 +1030,13 @@
           min-height: 180px;
           background: transparent;
           padding: 0;
-          border-left: 1px solid #000000;
+          border-left: 1px dashed var(--party-color, #3b82f6);
         }
 
         .party-history__chart table {
           width: 100%;
           height: 180px;
-          --color: var(--party-color, red);
+          --color: var(--party-color, #3b82f6);
           --line-size: 3px;
           position: relative;
         }
@@ -1049,7 +1046,7 @@
         }
 
         .party-history__chart table td {
-          --color: var(--party-color, red);
+          --color: var(--party-color, #3b82f6);
           position: relative;
           padding-bottom: 1.8rem;
         }
@@ -1085,6 +1082,7 @@
           align-items: center;
           justify-content: center;
           margin: 0;
+          position: relative;
         }
 
         .party-wordcloud-panel__image {
@@ -1092,6 +1090,15 @@
           height: 100%;
           object-fit: contain;
           background: transparent;
+          position: absolute;
+          inset: 0;
+          opacity: 0;
+          transition: opacity 0.35s ease;
+          pointer-events: none;
+        }
+
+        .party-wordcloud-panel__image.is-visible {
+          opacity: 1;
         }
 
         @media (max-width: 1500px) {
@@ -1370,12 +1377,7 @@
         .party-button:focus-visible {
           border-color: #ffffff;
           color: #000000 !important; /* Dark text on hover */
-          transform: scale(1.25); /* ensure scale is applied (override earlier transforms) */
-          filter: brightness(1.2);
-        }
-
-        .party-button:active {
-          filter: brightness(0.9);
+          transform: scale(1.4); /* ensure scale is applied (override earlier transforms) */
         }
 
         .party-button__tooltip {
@@ -1719,10 +1721,6 @@
           display: none !important;
         }
 
-        body.ai-mode .news-feed {
-          display: none !important;
-        }
-
         body.ai-mode .brain-controls .corner-link {
           display: none !important;
         }
@@ -1771,25 +1769,6 @@
           margin: 0 !important;
           padding: 0 !important;
           height: 0 !important;
-        }
-
-        body.news-mode .news-feed {
-          display: flex !important;
-        }
-
-        body.news-mode .brain-controls,
-        body.news-mode .brain-center,
-        body.news-mode .brain-toggle,
-        body.news-mode .music-reactive,
-        body.news-mode .party-stats,
-        body.news-mode .party-wordcloud-panel,
-        body.news-mode .facebook-posts,
-        body.news-mode .party-overlay,
-        body.news-mode .party-sidebar__buttons,
-        body.news-mode .party-stats__container,
-        body.news-mode .party-stats__history-card,
-        body.news-mode .party-stats__values {
-          display: none !important;
         }
 
         .brain-input {
@@ -2672,19 +2651,6 @@
           display: none !important;
         }
 
-        body.politics-mode .news-feed {
-          display: none !important;
-        }
-
-        body.politics-mode .facebook-posts {
-          display: flex !important;
-          margin-top: 0; /* No top margin - closer to top menu */
-        }
-
-        body.politics-mode .facebook-posts[hidden] {
-          display: flex !important;
-        }
-
         .facebook-posts.facebook-posts--empty {
           min-height: 60vh;
         }
@@ -2904,6 +2870,8 @@
           --git-grid-color-2: #1d4ed8;
           --git-grid-color-3: #2346ff;
           --git-grid-color-4: #6d7dff;
+          --view-transition-duration: 420ms;
+          --view-transition-ease: cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         body {
@@ -2921,6 +2889,35 @@
           gap: 2rem;
           place-items: center;
           overflow-x: hidden;
+        }
+
+        .view-surface {
+          opacity: 0;
+          visibility: hidden;
+          pointer-events: none;
+          transform: translate3d(0, 24px, 0) scale(0.985);
+          transition:
+            opacity var(--view-transition-duration) var(--view-transition-ease),
+            transform calc(var(--view-transition-duration) + 120ms) var(--view-transition-ease);
+        }
+
+        .view-surface[data-view-static="true"] {
+          transform: scale(1);
+        }
+
+        body[data-view="politics"] .view-surface[data-view-panel~="politics"],
+        body[data-view="news"] .view-surface[data-view-panel~="news"],
+        body[data-view="ai"] .view-surface[data-view-panel~="ai"] {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          transform: translate3d(0, 0, 0) scale(1);
+        }
+
+        body[data-view="politics"] .view-surface[data-view-panel~="politics"][data-view-static="true"],
+        body[data-view="news"] .view-surface[data-view-panel~="news"][data-view-static="true"],
+        body[data-view="ai"] .view-surface[data-view-panel~="ai"][data-view-static="true"] {
+          transform: scale(1);
         }
 
         .sr-only {
@@ -2959,26 +2956,29 @@
         }
 
         .background-overlay {
+          width: 100%;
+          height: 100%;
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.80);
+          background: rgba(0, 0, 0, 0.75);
           z-index: -1;
           pointer-events: none;
         }
 
         .party-overlay {
+          width: 100%;
+          height: 100%;
           position: fixed;
           inset: 0;
-          background: rgba(17, 17, 17, 0.75);
-          mix-blend-mode: multiply;
+          background: rgba(17, 17, 17, 1);
+          mix-blend-mode: plus-darker;
           z-index: -1;
-          opacity: 0;
-          transition: opacity 0.3s ease;
+          opacity: 0.1;
           pointer-events: none;
         }
 
         body.politics-mode .party-overlay {
-          opacity: 1;
+          opacity: 0.4;
         }
 
       }
@@ -2988,7 +2988,7 @@
       type="module"
     ></script>
   </head>
-  <body>
+  <body class="news-mode" data-view="news">
     <video
       class="background-video"
       id="background-video"
@@ -2999,7 +2999,13 @@
       aria-hidden="true"
     ></video>
     <div class="background-overlay" aria-hidden="true"></div>
-    <div class="party-overlay" id="party-overlay" aria-hidden="true"></div>
+    <div
+      class="party-overlay"
+      id="party-overlay"
+      data-view-panel="politics"
+      data-view-static="true"
+      aria-hidden="true"
+    ></div>
     <div class="top-hud">
     <aside class="weather-widget" id="weather-widget" aria-live="polite">
       <div class="weather-widget__primary">
@@ -3022,7 +3028,7 @@
         Kan ikke hente vejret lige nu.
       </p>
     </aside>
-      <div class="brain-center">
+      <div class="brain-center view-surface" data-view-panel="politics news ai">
         <div class="brain-controls" aria-label="Brain controls">
           <a href="#" class="corner-link brain-controls__link" data-category="indland">Indland</a>
           <a href="#" class="corner-link brain-controls__link" data-category="udland">Udland</a>
@@ -3052,12 +3058,18 @@
       </div>
       <div class="static-clock" id="static-clock" aria-live="off">--:--</div>
     </div>
-    <div class="politics-divider" aria-hidden="true">
+    <div class="politics-divider view-surface" data-view-panel="politics" data-view-static="true" aria-hidden="true">
       <span class="politics-divider__label politics-divider__label--red">47.5%</span>
       <span class="politics-divider__label politics-divider__label--gray">4.1%</span>
       <span class="politics-divider__label politics-divider__label--blue">48.4%</span>
     </div>
-    <div class="party-stats" id="party-stats" aria-label="Party polling statistics" hidden>
+    <div
+      class="party-stats view-surface"
+      id="party-stats"
+      data-view-panel="politics"
+      aria-label="Party polling statistics"
+      hidden
+    >
       <div class="party-stats__container">
         <h2 class="party-stats__title" id="party-stats-title" aria-live="polite"></h2>
         <div class="party-stats__values">
@@ -3106,17 +3118,13 @@
         </div>
       </div>
     </div>
-    <div class="party-wordcloud-panel" id="party-wordcloud-panel" hidden>
+    <div
+      class="party-wordcloud-panel view-surface"
+      id="party-wordcloud-panel"
+      data-view-panel="politics"
+      hidden
+    >
       <figure class="party-wordcloud-panel__figure">
-        <img
-          id="party-wordcloud-img"
-          class="party-wordcloud-panel__image"
-          src=""
-          alt=""
-          width="1000"
-          height="1200"
-          loading="lazy"
-        />
       </figure>
     </div>
     <nav aria-label="Main navigation (collapsed)" data-expanded="false">
@@ -3180,7 +3188,7 @@
       </a>
     </nav>
 
-    <section class="music-reactive" aria-label="Music reactive visualizer">
+    <section class="music-reactive view-surface" data-view-panel="ai" aria-label="Music reactive visualizer">
       <iframe
         class="music-reactive__frame"
         src="shaders/music-reactive.html"
@@ -3190,36 +3198,44 @@
       ></iframe>
     </section>
 
-    <aside class="news-feed news-feed--left-primary" aria-label="Latest headlines from wallnot.dk">
+    <aside
+      class="news-feed news-feed--left-primary view-surface"
+      data-view-panel="news"
+      aria-label="Latest headlines from wallnot.dk"
+    >
       <ul id="news-list-left-primary" aria-live="polite"></ul>
       <p class="news-error" id="news-error" hidden>
         Unable to load headlines right now.
       </p>
     </aside>
     <aside
-      class="news-feed news-feed--left-secondary"
+      class="news-feed news-feed--left-secondary view-surface"
+      data-view-panel="news"
       aria-label="Additional headlines from wallnot.dk"
       hidden
     >
       <ul id="news-list-left-secondary" aria-live="polite"></ul>
     </aside>
     <aside
-      class="news-feed news-feed--right-primary"
+      class="news-feed news-feed--right-primary view-surface"
+      data-view-panel="news"
       aria-label="Latest headlines from wallnot.dk"
       hidden
     >
       <ul id="news-list-right-primary" aria-live="polite"></ul>
     </aside>
     <aside
-      class="news-feed news-feed--right-secondary"
+      class="news-feed news-feed--right-secondary view-surface"
+      data-view-panel="news"
       aria-label="Additional headlines from wallnot.dk"
       hidden
     >
       <ul id="news-list-right-secondary" aria-live="polite"></ul>
     </aside>
     <aside
-      class="facebook-posts"
+      class="facebook-posts view-surface"
       id="facebook-posts"
+      data-view-panel="politics"
       aria-label="Facebook group posts"
       hidden
     >
@@ -3238,7 +3254,12 @@
         Scraping Facebook group...
       </p>
     </aside>
-    <div class="facebook-posts__sidebar" id="facebook-posts-sidebar" aria-label="Party menu with polling bars">
+    <div
+      class="facebook-posts__sidebar view-surface"
+      id="facebook-posts-sidebar"
+      data-view-panel="politics"
+      aria-label="Party menu with polling bars"
+    >
       <div class="party-sidebar__buttons" aria-label="Political party buttons">
         <!-- Will be populated by JavaScript -->
       </div>
@@ -3395,10 +3416,16 @@
           msg.includes('failed to execute \'matches\'') ||
           msg.includes('failed to execute \'queryselectorall\'') ||
           msg.includes('matches-path') ||
+          msg.includes('mutationobserver') ||
+          msg.includes('privacy_sandbox') ||
           msg.includes('css-selector') ||
           msg.includes('syntaxerror: invalid flags') ||
           msg.includes('syntaxerror: failed to execute') ||
           msg.includes('not a valid selector') ||
+          msg.includes(':has-text') ||
+          msg.includes('watch_feed') ||
+          msg.includes('marketplace/item') ||
+          msg.includes('aria-posinset') ||
           msg.includes('has-text') || // Playwright-style selector not supported in browser
           msg.includes('watch_feed') || // Facebook-specific extension filter
           msg.includes('marketplace/item') || // Facebook marketplace filter
@@ -3458,13 +3485,8 @@
       if (aiModeButton) {
         aiModeButton.addEventListener("click", (event) => {
           event.preventDefault();
-          const isAiMode = document.body.classList.toggle("ai-mode");
-          if (isAiMode) {
-            document.body.classList.add("visualizer-active");
-            document.body.classList.remove("news-mode");
-          } else {
-            document.body.classList.remove("visualizer-active");
-          }
+          const nextView = activeView === "ai" ? "politics" : "ai";
+          setActiveView(nextView);
         });
       }
 
@@ -3472,16 +3494,15 @@
       if (newsModeButton) {
         newsModeButton.addEventListener("click", (event) => {
           event.preventDefault();
-          const isNewsMode = document.body.classList.toggle("news-mode");
-          if (isNewsMode) {
-            document.body.classList.remove("ai-mode");
-            document.body.classList.remove("visualizer-active");
-            document.body.classList.remove("politics-mode");
-          }
+          const nextView = activeView === "news" ? "politics" : "news";
+          setActiveView(nextView);
         });
       }
 
       const latestPartySnapshot = {};
+      let partyStatsRequestId = 0;
+      let partyHistoryRequestId = 0;
+      let paletteRequestId = 0;
 
       const politicsButton = document.getElementById("politics-button");
       const facebookPosts = document.getElementById("facebook-posts");
@@ -3504,13 +3525,221 @@
       const partyStatsHistoryChart = document.getElementById("party-stats-history-chart");
       const partyStatsHistoryEmpty = document.getElementById("party-stats-history-empty");
       const partyWordcloudPanel = document.getElementById("party-wordcloud-panel");
-      const partyWordcloudImg = document.getElementById("party-wordcloud-img");
+      const partyWordcloudFigure = partyWordcloudPanel
+        ? partyWordcloudPanel.querySelector(".party-wordcloud-panel__figure")
+        : null;
+      const wordcloudImageMap = new Map();
       const HISTORY_MAX_POINTS = 10;
       const HISTORY_MAX_VALUE = 25;
       const HISTORY_WINDOW_DAYS = 120;
       const HISTORY_WINDOW_MS = HISTORY_WINDOW_DAYS * 24 * 60 * 60 * 1000;
       const facebookPostsEmpty = document.getElementById("facebook-posts-empty");
       let facebookPostsInitialized = false;
+
+      const WORDCLOUD_CACHE_VERSION =
+        window.__WORDCLOUD_VERSION__ || document.documentElement?.dataset?.wordcloudVersion || "";
+      const wordcloudSrcCache = new Map();
+      let voxmeterSnapshot = null;
+      let voxmeterSnapshotPromise = null;
+      const PARTY_HISTORY_CACHE_TTL = 5 * 60 * 1000;
+      const partyHistoryCache = new Map();
+
+      function fetchVoxmeterSnapshot(force = false) {
+        if (!force && voxmeterSnapshot) {
+          return Promise.resolve(voxmeterSnapshot);
+        }
+        if (voxmeterSnapshotPromise && !force) {
+          return voxmeterSnapshotPromise;
+        }
+        voxmeterSnapshotPromise = (async () => {
+          try {
+            const response = await fetch(`/api/voxmeter/snapshot?_=${Date.now()}`, {
+              method: "GET",
+              headers: { "Content-Type": "application/json" },
+              cache: "no-store",
+            });
+            if (!response.ok) {
+              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            voxmeterSnapshot = await response.json();
+          } catch (error) {
+            console.warn("[VOXMETER] Snapshot endpoint failed, falling back to legacy endpoints:", error);
+            voxmeterSnapshot = await fetchLegacyVoxmeterSnapshot();
+          }
+          return voxmeterSnapshot || { parties: { data: {}, dates: {} }, history: {} };
+        })();
+        voxmeterSnapshotPromise
+          .catch(() => {
+            // Already logged in inner block
+          })
+          .finally(() => {
+            voxmeterSnapshotPromise = null;
+          });
+        return voxmeterSnapshotPromise;
+      }
+
+      async function fetchVoxmeterParties(force = false) {
+        const snapshot = await fetchVoxmeterSnapshot(force);
+        return snapshot?.parties ?? { scraped_at: null, data: {}, dates: {}, format: null };
+      }
+
+      async function fetchLegacyVoxmeterSnapshot() {
+        const snapshot = {
+          parties: { scraped_at: null, data: {}, dates: {}, format: null },
+          history: {},
+        };
+        try {
+          const response = await fetch(`/api/voxmeter/parties?_=${Date.now()}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+          });
+          if (response.ok) {
+            snapshot.parties = await response.json();
+          } else {
+            console.warn("[VOXMETER] Legacy parties endpoint failed:", response.status, response.statusText);
+          }
+        } catch (error) {
+          console.warn("[VOXMETER] Legacy parties fetch failed:", error);
+        }
+        return snapshot;
+      }
+
+      async function fetchLegacyPartyHistory(partyCode) {
+        try {
+          const response = await fetch(
+            `/api/voxmeter/history?party=${encodeURIComponent(partyCode)}&limit=${HISTORY_MAX_POINTS}`,
+            { method: "GET", headers: { "Content-Type": "application/json" }, cache: "no-store" }
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const payload = await response.json();
+          return Array.isArray(payload.history) ? payload.history.slice(-HISTORY_MAX_POINTS) : [];
+        } catch (error) {
+          console.error("[VOXMETER] Legacy history fetch failed:", error);
+          return [];
+        }
+      }
+
+      function hidePoliticsPanels() {
+        if (facebookPosts) {
+          facebookPosts.hidden = true;
+        }
+        if (partyStats) {
+          partyStats.hidden = true;
+        }
+        if (partyWordcloudPanel) {
+          partyWordcloudPanel.hidden = true;
+        }
+      }
+
+      function showPoliticsPanels() {
+        if (facebookPosts) {
+          facebookPosts.hidden = false;
+        }
+        if (partyStats) {
+          partyStats.hidden = false;
+        }
+        if (partyWordcloudPanel) {
+          partyWordcloudPanel.hidden = false;
+        }
+        updatePartyWordcloud(currentParty);
+      }
+
+      function setPartyButtonsActive(partyCode) {
+        document.querySelectorAll(".party-button").forEach((btn) => {
+          const code = btn.getAttribute("data-party");
+          btn.classList.toggle("active", code === partyCode);
+        });
+        document.querySelectorAll(".party-sidebar__button").forEach((btn) => {
+          const code = btn.getAttribute("data-party");
+          btn.classList.toggle("active", code === partyCode);
+        });
+        paletteRequestId++;
+      }
+
+      function applyPartySelection(partyCode, options = {}) {
+        const targetParty = partyCode || "ALL";
+        const shouldLoadStats = options.loadStats !== false;
+        currentParty = targetParty;
+        setPartyButtonsActive(targetParty);
+        queueMicrotask(() => updatePartyTheme(targetParty));
+        filterFacebookPostsByParty(targetParty);
+
+        if (targetParty === "ALL") {
+          if (partyStats) {
+            partyStats.hidden = true;
+          }
+          updatePartyWordcloud(targetParty);
+          return Promise.resolve();
+        }
+
+        if (partyStats) {
+          partyStats.hidden = false;
+        }
+
+        updatePartyWordcloud(targetParty);
+
+        if (shouldLoadStats) {
+          return loadPartyStats(targetParty);
+        }
+
+        return Promise.resolve();
+      }
+
+      const VIEW_CLASS_MAP = {
+        politics: ["politics-mode"],
+        news: ["news-mode"],
+        ai: ["ai-mode", "visualizer-active"],
+      };
+      const VIEW_CLASS_LIST = [...new Set(Object.values(VIEW_CLASS_MAP).flat())];
+      let activeView = document.body.dataset.view || "politics";
+      document.body.dataset.view = activeView;
+
+      function applyViewClasses(view) {
+        if (VIEW_CLASS_LIST.length) {
+          document.body.classList.remove(...VIEW_CLASS_LIST);
+        }
+        const mapped = VIEW_CLASS_MAP[view] || [];
+        mapped.forEach((cls) => document.body.classList.add(cls));
+        if (view === "politics" && !mapped.includes("politics-mode")) {
+          document.body.classList.add("politics-mode");
+        }
+      }
+
+      applyViewClasses(activeView);
+
+      function setActiveView(nextView) {
+        const targetView = VIEW_CLASS_MAP[nextView] ? nextView : "politics";
+        const previousView = activeView;
+        const leavingPolitics = previousView === "politics" && targetView !== "politics";
+        const enteringPolitics = previousView !== "politics" && targetView === "politics";
+        activeView = targetView;
+        document.body.dataset.view = targetView;
+        if (leavingPolitics) {
+          closeFacebookPosts();
+        }
+        applyViewClasses(targetView);
+        if (targetView !== "politics") {
+          hidePoliticsPanels();
+          resetGitGridPaletteToBase();
+          return;
+        }
+
+        showPoliticsPanels();
+        if (enteringPolitics) {
+          applyPartySelection("ALL", { loadStats: false });
+        } else {
+          applyPartySelection(currentParty, { loadStats: currentParty !== "ALL" });
+        }
+        if (!facebookPostsInitialized || !facebookPostsEventSource || facebookPosts.hidden) {
+          openFacebookPosts();
+        } else {
+          updatePoliticsDivider();
+          updateFacebookPostsPadding();
+        }
+      }
 
       const MAX_POST_TEXT_PREVIEW = 320;
 
@@ -3794,7 +4023,9 @@
         ALL: "/wordclouds/alle_partier_wordcloud.png"
       };
       
-      let currentParty = "A"; // Default to Socialdemokratiet
+      ensureWordcloudImages();
+      
+      let currentParty = "ALL"; // Default to all parties view
       
       // Function to determine which party a post belongs to
       function getPartyForPost(post) {
@@ -3869,46 +4100,13 @@
           e.stopPropagation();
           const party = button.getAttribute("data-party");
           const url = button.getAttribute("data-url");
-          currentParty = party;
           
           console.log(`[PARTY] Button clicked: ${party}, URL: ${url}`);
           
-          // Remove active class from all buttons
-          document.querySelectorAll(".party-button").forEach((btn) => {
-            btn.classList.remove("active");
-          });
-          
-          // Add active class to clicked button
-          button.classList.add("active");
-          
-          // Ensure the diagram/posts container stays visible before filtering.
-          // This guarantees we don't accidentally hide the sidebar when toggling parties quickly.
           ensurePoliticsModeActive().then(() => {
-            document.body.classList.add("politics-mode");
-            document.body.classList.remove("ai-mode");
-            document.body.classList.remove("news-mode");
-            document.body.classList.remove("visualizer-active");
-
-            // Update sidebar active state
-            document.querySelectorAll(".party-sidebar__button").forEach((btn) => {
-              btn.classList.remove("active");
-            });
-            const sidebarButton = document.querySelector(`.party-sidebar__button[data-party="${party}"]`);
-            if (sidebarButton) {
-              sidebarButton.classList.add("active");
-            }
-
-            // Filter visible Facebook posts by party (use setTimeout to ensure posts are rendered)
-            setTimeout(() => {
-              filterFacebookPostsByParty(party);
-            }, 100);
-
-            // Load and display party stats only for actual parties (skip ALL)
-            if (party !== "ALL") {
-              loadPartyStats(party);
-            }
+            applyPartySelection(party);
           });
-
+          
           // Don't scrape posts or update divider when clicking party buttons
         });
         
@@ -3919,87 +4117,46 @@
       });
       
       console.log(`[PARTY] Set up ${document.querySelectorAll(".party-button").length} party buttons`);
+      setPartyButtonsActive(currentParty);
 
       const closeFacebookPosts = () => {
-        if (facebookPosts) {
-          facebookPosts.hidden = true;
-          document.body.classList.remove("politics-mode");
-          // Hide party stats when closing
-          const partyStats = document.getElementById("party-stats");
-          if (partyStats) {
-            partyStats.hidden = true;
-          }
-          // Stop auto-refresh when closing
-          stopFacebookPostsAutoRefresh();
-        }
+        stopFacebookPostsAutoRefresh();
       };
 
       const openFacebookPosts = () => {
-        if (facebookPosts) {
-          facebookPosts.hidden = false;
-          document.body.classList.add("politics-mode");
-          document.body.classList.remove("ai-mode");
-          document.body.classList.remove("news-mode");
-          document.body.classList.remove("visualizer-active");
-        // Show party-stats container
+        if (!facebookPosts) {
+          return;
+        }
+        facebookPosts.hidden = false;
         const partyStats = document.getElementById("party-stats");
-          if (partyStats) {
-            partyStats.hidden = false;
-          }
-          // Load existing posts from all parties
+        if (partyStats) {
+          partyStats.hidden = false;
+        }
+        if (!facebookPostsInitialized) {
           loadFacebookPosts().then(() => {
             facebookPostsInitialized = true;
-            // Start auto-refresh after initial load
             startFacebookPostsAutoRefresh();
           });
-          // Update divider with Voxmeter data
-          setTimeout(() => {
-            updatePoliticsDivider();
-            updateFacebookPostsPadding();
-          }, 100);
+        } else if (!facebookPostsEventSource) {
+          startFacebookPostsAutoRefresh();
         }
+        setTimeout(() => {
+          updatePoliticsDivider();
+          updateFacebookPostsPadding();
+        }, 100);
       };
 
       // Keep the Facebook posts/diagram view alive whenever we need to filter or show stats.
       // Calling this prevents the sidebar from disappearing if the DOM element is still marked as hidden.
-      const ensurePoliticsModeActive = () => {
-        return new Promise((resolve) => {
-          const facebookPostsElement = document.getElementById("facebook-posts");
-          if (!facebookPostsElement) {
-            resolve();
-            return;
-          }
-
-          const alreadyVisible = !facebookPostsElement.hidden;
-          const showView = () => {
-            facebookPostsElement.hidden = false;
-            document.body.classList.add("politics-mode");
-            document.body.classList.remove("ai-mode");
-            document.body.classList.remove("news-mode");
-            document.body.classList.remove("visualizer-active");
-            const partyStats = document.getElementById("party-stats");
-            if (partyStats) {
-              partyStats.hidden = false;
-            }
-          };
-
-          if (alreadyVisible) {
-            showView();
-            resolve();
-            return;
-          }
-
-          showView();
-
-          if (!facebookPostsInitialized) {
-            openFacebookPosts();
+      const ensurePoliticsModeActive = () =>
+        new Promise((resolve) => {
+          setActiveView("politics");
+          if (facebookPostsInitialized) {
+            requestAnimationFrame(resolve);
+          } else {
             setTimeout(resolve, 800);
-            return;
           }
-
-          requestAnimationFrame(() => resolve());
         });
-      };
 
       function getPartyColorValue(partyCode) {
         if (!partyCode) return "#3b82f6";
@@ -4010,6 +4167,7 @@
       }
 
       function updatePartyTheme(partyCode) {
+        const currentPaletteRequest = paletteRequestId;
         const color = getPartyColorValue(partyCode);
         document.documentElement.style.setProperty("--party-color", color);
         document.documentElement.style.setProperty("--party-color-light", `${color}cc`);
@@ -4018,9 +4176,12 @@
         if (partyOverlay) {
           const styleColor = color.startsWith("#") ? color : "#0b0c0d";
           partyOverlay.style.setProperty("--party-overlay-color", styleColor);
-          partyOverlay.style.background = `${styleColor}bf`;
+          partyOverlay.style.background = `${styleColor}90`;
         }
         const newPalette = generateGitGridPaletteFromHex(color);
+        if (currentPaletteRequest !== paletteRequestId) {
+          return;
+        }
         if (newPalette) {
           gitGridPalette = newPalette;
           updateGitGridPaletteVariables(newPalette);
@@ -4029,19 +4190,57 @@
         }
       }
 
+      function ensureWordcloudImages() {
+        if (!partyWordcloudFigure || wordcloudImageMap.size) return;
+        Object.entries(partyWordclouds).forEach(([code]) => {
+          const src = resolveWordcloudSrc(code);
+          if (!src) return;
+          const img = document.createElement("img");
+          img.className = "party-wordcloud-panel__image";
+          img.dataset.party = code;
+          img.loading = "lazy";
+          img.decoding = "async";
+          img.width = 1000;
+          img.height = 1200;
+          img.alt =
+            code === "ALL"
+              ? "Ordsky for alle partier"
+              : `Ordsky for ${partyConfig[code]?.name || code}`;
+          img.src = src;
+          img.addEventListener("load", () => {
+            if (img.classList.contains("is-visible")) {
+              partyWordcloudPanel.hidden = false;
+            }
+          });
+          img.addEventListener("error", () => {
+            console.warn("[WORDCLOUD] Failed to load", code, src);
+            img.classList.remove("is-visible");
+            if (code === "ALL") {
+              partyWordcloudPanel.hidden = true;
+            }
+          });
+          if (code === "ALL") {
+            img.classList.add("is-visible");
+          }
+          partyWordcloudFigure.appendChild(img);
+          wordcloudImageMap.set(code, img);
+        });
+      }
+
       function updatePartyWordcloud(partyCode) {
-        if (!partyWordcloudPanel || !partyWordcloudImg) return;
-        const src = partyWordclouds[partyCode];
-        const partyName = partyConfig[partyCode]?.name || "";
-        if (!src) {
+        if (!partyWordcloudPanel) return;
+        ensureWordcloudImages();
+        if (!wordcloudImageMap.size) {
           partyWordcloudPanel.hidden = true;
-          partyWordcloudImg.removeAttribute("src");
-          partyWordcloudImg.alt = "";
           return;
         }
-        partyWordcloudPanel.hidden = false;
-        partyWordcloudImg.setAttribute("src", src);
-        partyWordcloudImg.alt = partyName ? `Ordsky for ${partyName}` : "Ordsky";
+        const requestedCode = partyCode || "ALL";
+        const safeCode = wordcloudImageMap.has(requestedCode) ? requestedCode : "ALL";
+        const targetImg = wordcloudImageMap.get(safeCode) || wordcloudImageMap.get("ALL");
+        wordcloudImageMap.forEach((img) => {
+          img.classList.toggle("is-visible", img === targetImg);
+        });
+        partyWordcloudPanel.hidden = !targetImg;
       }
 
       function normalizeHistoryDateString(dateStr) {
@@ -4235,22 +4434,43 @@
         return normalized.slice(0, 5);
       }
 
+      function getCachedPartyHistory(partyCode) {
+        const entry = partyHistoryCache.get(partyCode);
+        if (!entry) return null;
+        if (Date.now() - entry.timestamp > PARTY_HISTORY_CACHE_TTL) {
+          partyHistoryCache.delete(partyCode);
+          return null;
+        }
+        return entry.history;
+      }
+
       async function loadPartyHistory(partyCode, snapshot = null) {
+        const requestId = ++partyHistoryRequestId;
+        const isStaleHistoryRequest = () => requestId !== partyHistoryRequestId || currentParty !== partyCode;
         if (!partyCode || !partyStatsHistoryCard || !partyStatsHistoryChart || !partyStatsHistoryEmpty) {
           return;
         }
-        try {
+
+        const cachedHistory = getCachedPartyHistory(partyCode);
+        if (cachedHistory && cachedHistory.length) {
+          renderPartyHistory(cachedHistory, partyCode, false);
+        } else {
           partyStatsHistoryCard.hidden = false;
           partyStatsHistoryEmpty.hidden = false;
           partyStatsHistoryEmpty.textContent = "Henter historik…";
           partyStatsHistoryChart.innerHTML = "";
+        }
 
-          const response = await fetch(`/api/voxmeter/history?party=${encodeURIComponent(partyCode)}&limit=${HISTORY_MAX_POINTS}`);
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+        try {
+          const snapshotData = await fetchVoxmeterSnapshot();
+          let history = Array.isArray(snapshotData?.history?.[partyCode])
+            ? snapshotData.history[partyCode].slice(-HISTORY_MAX_POINTS)
+            : [];
+
+          if (!history.length) {
+            history = await fetchLegacyPartyHistory(partyCode);
           }
-          const payload = await response.json();
-          let history = Array.isArray(payload.history) ? payload.history.slice(-HISTORY_MAX_POINTS) : [];
+
           history = buildSnapshotHistory(
             filterHistoryDisplayWindow(
               applySnapshotFallback(history, snapshot, partyCode),
@@ -4260,18 +4480,23 @@
             partyCode
           ).slice(-HISTORY_MAX_POINTS);
 
-          renderPartyHistory(history, partyCode);
+          if (!isStaleHistoryRequest()) {
+            partyHistoryCache.set(partyCode, { history, timestamp: Date.now() });
+            renderPartyHistory(history, partyCode, history.length === 0);
+          }
         } catch (error) {
           console.error("[PARTY-HISTORY] Failed to load history:", error);
-          const fallback = buildSnapshotHistory(
-            filterHistoryDisplayWindow(
-              applySnapshotFallback([], snapshot, partyCode),
-              snapshot
-            ),
-            snapshot,
-            partyCode
-          ).slice(-HISTORY_MAX_POINTS);
-          renderPartyHistory(fallback, partyCode, true);
+          if (!isStaleHistoryRequest()) {
+            const fallback = buildSnapshotHistory(
+              filterHistoryDisplayWindow(
+                applySnapshotFallback([], snapshot, partyCode),
+                snapshot
+              ),
+              snapshot,
+              partyCode
+            ).slice(-HISTORY_MAX_POINTS);
+            renderPartyHistory(fallback, partyCode, true);
+          }
         }
       }
 
@@ -4308,7 +4533,7 @@
               <th scope="row" aria-hidden="true">
                 <span class="sr-only">${fullDateLabel}</span>
               </th>
-              <td style="--start:${previous}; --end:${ratio};" data-date="${fullDateLabel}">
+              <td style="--start:${previous}; --size:${ratio}; --end:${ratio};" data-date="${fullDateLabel}">
                 <span class="data" aria-hidden="true"></span>
                 <span class="party-history__value">
                   <span class="party-history__point" aria-hidden="true">${valueLabel}</span>
@@ -4332,7 +4557,18 @@
         `;
       }
 
+      function resolveWordcloudSrc(partyCode) {
+        if (!partyWordclouds[partyCode]) return null;
+        if (!wordcloudSrcCache.has(partyCode)) {
+          const suffix = WORDCLOUD_CACHE_VERSION ? `?v=${WORDCLOUD_CACHE_VERSION}` : "";
+          wordcloudSrcCache.set(partyCode, `${partyWordclouds[partyCode]}${suffix}`);
+        }
+        return wordcloudSrcCache.get(partyCode);
+      }
+
       async function loadPartyStats(partyCode) {
+        const requestId = ++partyStatsRequestId;
+        const isStaleRequest = () => requestId !== partyStatsRequestId || currentParty !== partyCode;
         console.log(`[PARTY-STATS] loadPartyStats called with partyCode: ${partyCode}`);
         console.log(`[PARTY-STATS] Elements found:`, {
           partyStats: !!partyStats,
@@ -4343,7 +4579,7 @@
           partyStatsValg: !!partyStatsValg
         });
 
-        if (!partyStats || !partyConfig[partyCode]) {
+        if (!partyStats || !partyConfig[partyCode] || isStaleRequest()) {
           console.log("[PARTY-STATS] Party stats element or party config not found");
           if (partyStatsHistoryCard) partyStatsHistoryCard.hidden = true;
           if (partyStatsTitle) partyStatsTitle.textContent = "";
@@ -4386,22 +4622,10 @@
         resetCard(partyStatsValgCard, partyStatsValg);
         if (partyStatsSenesteDate) partyStatsSenesteDate.textContent = "--";
         if (partyStatsForrigeDate) partyStatsForrigeDate.textContent = "--";
-        updatePartyWordcloud(null);
 
         try {
-          console.log("[PARTY-STATS] Fetching party stats from /api/voxmeter/parties");
-          const response = await fetch("/api/voxmeter/parties", {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-          }
-
-          const data = await response.json();
+          console.log("[PARTY-STATS] Fetching party stats (cached)");
+          const data = await fetchVoxmeterParties();
           console.log("[PARTY-STATS] Received data:", data);
           console.log(`[PARTY-STATS] Looking for party code: ${partyCode}`);
           console.log(`[PARTY-STATS] Available parties in data:`, data?.data ? Object.keys(data.data) : "none");
@@ -4419,6 +4643,11 @@
           console.log(`[PARTY-STATS] Party data for ${partyCode}:`, partyData);
           console.log(`[PARTY-STATS] Party data type:`, typeof partyData, `Is array:`, Array.isArray(partyData), `Length:`, partyData?.length);
 
+          if (isStaleRequest()) {
+            console.log("[PARTY-STATS] Ignoring stale stats response for", partyCode);
+            return;
+          }
+
           if (!partyData || !Array.isArray(partyData) || partyData.length < 4) {
             console.warn(`[PARTY-STATS] No data found for party ${partyCode}`, {
               hasData: !!partyData,
@@ -4431,8 +4660,13 @@
             resetCard(partyStatsValgCard, partyStatsValg);
             if (partyStatsSenesteDate) partyStatsSenesteDate.textContent = "--";
             if (partyStatsForrigeDate) partyStatsForrigeDate.textContent = "--";
-            // Keep stats visible but show placeholder values
-            updatePartyWordcloud(null);
+            if (partyStatsHistoryCard) {
+              partyStatsHistoryCard.hidden = true;
+            }
+            if (partyStatsHistoryEmpty) {
+              partyStatsHistoryEmpty.hidden = false;
+              partyStatsHistoryEmpty.textContent = "Ingen Voxmeter-data for dette parti.";
+            }
             setTimeout(() => updateFacebookPostsPadding(), 100);
             return;
           }
@@ -4480,7 +4714,7 @@
                 element.style.background = `
                   conic-gradient(
                     var(--party-color, #3b82f6) 0deg ${pct * 3.6}deg,
-                    #f1f1f18a ${pct * 3.6}deg 360deg
+                    #ffffff ${pct * 3.6}deg 360deg
                   )
                 `;
               } else {
@@ -4526,6 +4760,11 @@
           loadPartyHistory(partyCode, latestPartySnapshot[partyCode]);
 
           console.log(`[PARTY-STATS] Updated stats for ${partyCode}:`, partyData);
+          if (isStaleRequest()) {
+            console.log("[PARTY-STATS] Skipping UI update for stale stats request", partyCode);
+            return;
+          }
+
           updatePartyWordcloud(partyCode);
           // Redraw Git grids with new palette
           if (contributionMatrix) {
@@ -4542,11 +4781,19 @@
           
         } catch (error) {
           console.error("[PARTY-STATS] Failed to load party stats:", error);
-          partyStats.hidden = true;
+          if (isStaleRequest()) {
+            return;
+          }
+          if (partyStats) {
+            partyStats.hidden = false;
+          }
           if (partyStatsHistoryCard) {
             partyStatsHistoryCard.hidden = true;
           }
-          updatePartyWordcloud(null);
+          if (partyStatsHistoryEmpty) {
+            partyStatsHistoryEmpty.hidden = false;
+            partyStatsHistoryEmpty.textContent = "Kunne ikke hente Voxmeter-data.";
+          }
           setTimeout(() => updateFacebookPostsPadding(), 100);
         }
       }
@@ -4571,11 +4818,8 @@
         // Get polling data
         let pollingData = {};
         try {
-          const response = await fetch("/api/voxmeter/parties");
-          if (response.ok) {
-            const data = await response.json();
-            pollingData = data?.data || {};
-          }
+          const snapshot = await fetchVoxmeterSnapshot();
+          pollingData = snapshot?.parties?.data || {};
         } catch (error) {
           console.warn("[PARTY-SIDEBAR] Failed to load polling data:", error);
         }
@@ -4612,20 +4856,8 @@
             button.addEventListener("click", (e) => {
               e.preventDefault();
               e.stopPropagation();
-              currentParty = "ALL";
-              
-              document.querySelectorAll(".party-sidebar__button").forEach((btn) => {
-                btn.classList.remove("active");
-              });
-              document.querySelectorAll(".party-button").forEach((btn) => {
-                btn.classList.remove("active");
-              });
-              button.classList.add("active");
-              const mainButton = document.querySelector(`.party-button[data-party="ALL"]`);
-              if (mainButton) mainButton.classList.add("active");
-
               ensurePoliticsModeActive().then(() => {
-                filterFacebookPostsByParty("ALL");
+                applyPartySelection("ALL", { loadStats: false });
               });
             });
 
@@ -4677,27 +4909,8 @@
             e.preventDefault();
             e.stopPropagation();
             const party = button.getAttribute("data-party");
-            currentParty = party;
-            
-            // Update active state
-            document.querySelectorAll(".party-sidebar__button").forEach((btn) => {
-              btn.classList.remove("active");
-            });
-            document.querySelectorAll(".party-button").forEach((btn) => {
-              btn.classList.remove("active");
-            });
-            button.classList.add("active");
-            const mainButton = document.querySelector(`.party-button[data-party="${party}"]`);
-            if (mainButton) mainButton.classList.add("active");
-
             ensurePoliticsModeActive().then(() => {
-              // Filter posts
-              filterFacebookPostsByParty(party);
-
-              // Load stats if not ALL
-              if (party !== "ALL") {
-                loadPartyStats(party);
-              }
+              applyPartySelection(party);
             });
           });
 
@@ -4707,13 +4920,7 @@
           buttonsContainer.appendChild(item);
         }
 
-        // Set active state based on currentParty
-        if (currentParty) {
-          const activeButton = buttonsContainer.querySelector(`.party-sidebar__button[data-party="${currentParty}"]`);
-          if (activeButton) {
-            activeButton.classList.add("active");
-          }
-        }
+        setPartyButtonsActive(currentParty || "ALL");
       }
 
       async function loadFacebookPosts(partyUrl = null, silent = false) {
@@ -5073,15 +5280,7 @@
       if (politicsButton) {
         politicsButton.addEventListener("click", (event) => {
           event.preventDefault();
-          const isPoliticsMode = document.body.classList.toggle("politics-mode");
-          if (isPoliticsMode) {
-            document.body.classList.remove("ai-mode");
-            document.body.classList.remove("news-mode");
-            document.body.classList.remove("visualizer-active");
-            openFacebookPosts();
-          } else {
-            closeFacebookPosts();
-          }
+          setActiveView("politics");
         });
       }
 
@@ -6152,7 +6351,8 @@
       });
     }
 
-    let gitGridPalette = computeGitGridPalette();
+    const baseGitGridPalette = computeGitGridPalette();
+    let gitGridPalette = [...baseGitGridPalette];
     updateGitGridPaletteVariables(gitGridPalette);
 
     let contributionMatrix = null;
@@ -6561,6 +6761,17 @@
       }, 100);
     }
 
+    function resetGitGridPaletteToBase() {
+      if (!Array.isArray(baseGitGridPalette) || !baseGitGridPalette.length) {
+        return;
+      }
+      gitGridPalette = [...baseGitGridPalette];
+      updateGitGridPaletteVariables(gitGridPalette);
+      if (contributionMatrix && contributionViews.length > 0) {
+        renderContributionViews();
+      }
+    }
+
     fetchContributionData("flyveren").then((matrix) => {
       if (!matrix) {
         contributionMatrix = null;
@@ -6844,6 +7055,14 @@
         }
       }
 
+      function clearSpotifyAuth() {
+        try {
+          localStorage.removeItem(SPOTIFY_TOKEN_STORAGE_KEY);
+        } catch (error) {
+          console.warn("Failed to clear stored Spotify auth:", error);
+        }
+      }
+
       function storeSpotifyAuth({ access_token, refresh_token, expires_in }) {
         const existing = loadStoredSpotifyAuth();
         const expiresAt =
@@ -6918,6 +7137,7 @@
       async function getValidSpotifyAccessToken() {
         const stored = loadStoredSpotifyAuth();
         if (!stored?.refreshToken) {
+          clearSpotifyAuth();
           throw new Error("Spotify is not connected");
         }
         if (stored.accessToken && stored.expiresAt && stored.expiresAt > Date.now()) {
@@ -6934,10 +7154,30 @@
           }),
         });
 
-        if (!response.ok) {
-          throw new Error(`Spotify refresh failed: ${response.status}`);
+        let payload = null;
+        try {
+          payload = await response.json();
+        } catch {
+          payload = null;
         }
-        const data = await response.json();
+
+        if (!response.ok) {
+          if (response.status === 400 || response.status === 401) {
+            clearSpotifyAuth();
+            setSpotifyUiConnected(false);
+          }
+          const detail =
+            payload?.error ||
+            payload?.error_description ||
+            payload?.message ||
+            response.statusText ||
+            "";
+          throw new Error(
+            `Spotify refresh failed: ${response.status}${detail ? ` - ${detail}` : ""}`
+          );
+        }
+
+        const data = payload || {};
         const updated = storeSpotifyAuth({
           access_token: data.access_token,
           refresh_token: data.refresh_token ?? stored.refreshToken,
@@ -7291,6 +7531,9 @@
       const setVisualizerActive = (active) => {
         document.body.classList.toggle("visualizer-active", Boolean(active));
       };
+
+      // Ensure the initial view state (news by default) is applied on load
+      setActiveView(activeView);
     </script>
   </body>
 </html>
